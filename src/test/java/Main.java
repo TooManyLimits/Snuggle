@@ -17,8 +17,30 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        testMultipleCallable();
+        testOverloads();
     }
+
+    private static void testOverloads() {
+        BuiltinTypes types = new BuiltinTypes()
+                .reflect(TestReflectedClass.class);
+        test(types, """
+                class Silly {
+                    fn new();
+                    fn invoke() {
+                        var x: i32 = 100
+                        System.print(x)
+                    }
+                    fn invoke(x: u32) System.print(x)
+                    fn add(x: u32): u32
+                        x + 1
+                }
+                new Silly()()
+                new Silly()(10)
+                System.print(new Silly() + 3)
+                System.print(TestClass + 10)
+                """);
+    }
+
 
     private static void testMultipleCallable() {
         test("""

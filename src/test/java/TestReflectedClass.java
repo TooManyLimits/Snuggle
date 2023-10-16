@@ -25,4 +25,9 @@ public class TestReflectedClass {
         return 200;
     }
 
+    @SnuggleWhitelist
+    public static int add(int x) {
+        return x + 1;
+    }
+
 }
