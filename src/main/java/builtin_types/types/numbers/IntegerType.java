@@ -222,4 +222,13 @@ public class IntegerType implements BuiltinType {
         return descriptor;
     }
 
+    @Override
+    public String getRuntimeName() {
+        return null;
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
+    }
 }

@@ -25,6 +25,16 @@ public class UnitType implements BuiltinType {
 
     @Override
     public String getDescriptor(int index) {
-        return "L" + Type.getInternalName(Unit.class) + ";";
+        return "L" + getRuntimeName() + ";";
+    }
+
+    @Override
+    public String getRuntimeName() {
+        return Type.getInternalName(Unit.class);
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
     }
 }

@@ -38,14 +38,17 @@ public class NameHelper {
     }
 
     //Helper to generate and set up a class writer with the given parameters
-    public static ClassWriter generateClassWriter(String name, Class<?>... interfaces) {
+    public static ClassWriter generateClassWriter(String name, String supertypeName, Class<?>... interfaces) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         int version = Opcodes.V17; //version 61.0
         int access = Opcodes.ACC_PUBLIC;
-        String supertype = org.objectweb.asm.Type.getInternalName(Object.class); //assume extends object
         String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
-        writer.visit(version, access, name, null, supertype, interfacesMapped);
+        writer.visit(version, access, name, null, supertypeName, interfacesMapped);
         return writer;
+    }
+
+    public static ClassWriter generateClassWriter(String name, Class<?>... interfaces) {
+        return generateClassWriter(name, org.objectweb.asm.Type.getInternalName(Object.class), interfaces);
     }
 
 }

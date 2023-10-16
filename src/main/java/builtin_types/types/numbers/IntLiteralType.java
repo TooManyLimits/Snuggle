@@ -187,4 +187,14 @@ public class IntLiteralType implements BuiltinType {
         //The supertypes of this are all the integer types
         return Set.copyOf(ListUtils.map(IntegerType.ALL_INT_TYPES, pool::getBasicBuiltin));
     }
+
+    @Override
+    public String getRuntimeName() {
+        return null;
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
+    }
 }

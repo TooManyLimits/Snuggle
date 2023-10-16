@@ -34,8 +34,11 @@ public interface TypeDef {
     //The descriptor for this type
     String getDescriptor();
 
-    //The generated class methodName for this type
-    String getGeneratedName();
+    //The name at runtime for this type
+    String getRuntimeName();
+
+    //Is this type extensible?
+    boolean extensible();
 
     //Gets all methods, including the true supertype's.
     default List<? extends MethodDef> getAllMethods(TypePool pool) throws CompilationException {

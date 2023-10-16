@@ -56,6 +56,10 @@ public interface BuiltinType {
      */
     String getDescriptor(int index);
 
+    String getRuntimeName();
+
+    boolean extensible();
+
     /**
      * Attempt to convert this type into a storable type.
      * If this type is already storable, just return thisType.

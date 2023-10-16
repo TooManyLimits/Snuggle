@@ -16,4 +16,14 @@ public class ObjType implements BuiltinType {
     public String getDescriptor(int index) {
         return "Ljava/lang/Object;";
     }
+
+    @Override
+    public String getRuntimeName() {
+        return "java/lang/Object";
+    }
+
+    @Override
+    public boolean extensible() {
+        return true;
+    }
 }

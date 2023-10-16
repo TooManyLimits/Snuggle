@@ -71,4 +71,15 @@ public class TypeChecker {
         //Return the result
         return new TypedAST(checkedTypeDefs, typedFiles);
     }
+
+    /**
+     *
+     * Helper methods to deal with method overload resolution!
+     *
+     */
+
+
+
+
+
 }

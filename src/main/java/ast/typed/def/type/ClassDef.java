@@ -10,7 +10,6 @@ import exceptions.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.ClassWriter;
 
-import java.util.IdentityHashMap;
 import java.util.List;
 
 /**
@@ -52,9 +51,12 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
 
     @Override
     public byte[] compile(Compiler compiler) throws CompilationException {
+        //Figure out our supertype's name
+        String supertypeName = compiler.getTypeDef(supertype).getRuntimeName();
         //Create the writer
-        ClassWriter writer = NameHelper.generateClassWriter(NameHelper.getSnuggleClassName(index));
+        ClassWriter writer = NameHelper.generateClassWriter(NameHelper.getSnuggleClassName(index), supertypeName);
         Type thisType = new Type.Basic(index);
+
         //Write all the methods
         for (SnuggleMethodDef methodDef : methods)
             if (methodDef.numGenerics() == 0)
@@ -65,11 +67,16 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
 
     @Override
     public String getDescriptor() {
-        return "L" + getGeneratedName() + ";";
+        return "L" + getRuntimeName() + ";";
     }
 
     @Override
-    public String getGeneratedName() {
+    public String getRuntimeName() {
         return NameHelper.getSnuggleClassName(index);
+    }
+
+    @Override
+    public boolean extensible() {
+        return true;
     }
 }

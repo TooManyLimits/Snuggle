@@ -16,4 +16,14 @@ public class OptionType implements BuiltinType {
     public String getDescriptor(int index) {
         return null;
     }
+
+    @Override
+    public String getRuntimeName() {
+        return null;
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
+    }
 }

@@ -44,4 +44,14 @@ public class BoolType implements BuiltinType {
                 })
         ));
     }
+
+    @Override
+    public String getRuntimeName() {
+        return null;
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
+    }
 }

@@ -52,7 +52,12 @@ public record BuiltinTypeDef(BuiltinType builtin, List<Type> generics, int index
     }
 
     @Override
-    public String getGeneratedName() {
-        throw new UnsupportedOperationException("Not implemented...");
+    public String getRuntimeName() {
+        return builtin.getRuntimeName();
+    }
+
+    @Override
+    public boolean extensible() {
+        return builtin.extensible();
     }
 }

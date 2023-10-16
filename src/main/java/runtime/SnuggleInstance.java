@@ -22,10 +22,10 @@ public class SnuggleInstance {
         loader = new InstanceLoader();
         try {
             runtime = loader.<SnuggleRuntime>defineClass(runtimeBytes).getConstructor().newInstance();
-            //new ClassReader(runtimeBytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+            new ClassReader(runtimeBytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             for (byte[] otherClass : otherClasses) {
                 loader.defineClass(otherClass);
-                //new ClassReader(otherClass).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+                new ClassReader(otherClass).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             }
 
         } catch (Exception impossible) {

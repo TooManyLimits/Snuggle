@@ -20,7 +20,7 @@ import java.util.Set;
 public class ReflectedBuiltin implements BuiltinType {
 
     public final Class<?> reflectedClass;
-    public final String name, descriptor;
+    public final String name, descriptor, runtimeName;
     public final boolean nameable;
     private final ArrayList<ReflectedMethod> reflectedMethods;
     private final ThrowingFunction<TypePool, Type, CompilationException> supertypeGetter;
@@ -36,6 +36,7 @@ public class ReflectedBuiltin implements BuiltinType {
         this.name = typeAnnotation.name();
         this.nameable = typeAnnotation.nameable();
         this.descriptor = typeAnnotation.descriptor().isEmpty() ? ReflectionUtils.getDescriptor(reflectedClass) : typeAnnotation.descriptor();
+        this.runtimeName = descriptor.substring(1, descriptor.length() - 1);
         //Get supertypeGetter
         Class<?> supertype = typeAnnotation.forceSupertype() ? typeAnnotation.supertype() : reflectedClass.getSuperclass();
         if (supertype == Object.class)
@@ -82,6 +83,16 @@ public class ReflectedBuiltin implements BuiltinType {
     @Override
     public Type getTrueSupertype(TypePool pool) throws CompilationException {
         return supertypeGetter.apply(pool);
+    }
+
+    @Override
+    public String getRuntimeName() {
+        return runtimeName;
+    }
+
+    @Override
+    public boolean extensible() {
+        return true;
     }
 
     @Override

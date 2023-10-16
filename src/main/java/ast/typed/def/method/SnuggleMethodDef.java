@@ -44,7 +44,7 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
             writer.visitParameter(s, 0);
         writer.visitCode();
 
-        //Call this.super() if this is a constructor
+        //Handle special constructor calls
         if (isConstructor()) {
             writer.visitIntInsn(Opcodes.ALOAD, 0);
             writer.visitMethodInsn(Opcodes.INVOKESPECIAL, org.objectweb.asm.Type.getInternalName(Object.class), "<init>", "()V", false);
@@ -60,6 +60,7 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
         if (compiler.getTypeDef(returnType) instanceof BuiltinTypeDef b) {
             if (b.builtin() == UnitType.INSTANCE) {
                 if (isConstructor()) {
+                    //Constructors can't return any value in the jvm
                     writer.visitInsn(Opcodes.POP);
                     writer.visitInsn(Opcodes.RETURN);
                 } else {
@@ -102,18 +103,18 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
             descriptor.append(compiler.getTypeDef(t).getDescriptor());
         descriptor.append(")");
         if (isConstructor())
-            descriptor.append("V");
+            descriptor.append("V"); //Constructors are forced to have *actual* void returns, not faked ones with Unit
         else
             descriptor.append(compiler.getTypeDef(returnType).getDescriptor());
         return descriptor.toString();
     }
 
     public boolean isConstructor() {
-        return name.equals("new");
+        return name.equals("new"); //No other SnuggleMethod can have this name, as it's a keyword
     }
 
     @Override
     public void compileCall(int opcode, Type owner, Compiler compiler, MethodVisitor visitor) throws CompilationException {
-        visitor.visitMethodInsn(opcode, compiler.getTypeDef(owner).getGeneratedName(), getGeneratedName(), getDescriptor(compiler), false);
+        visitor.visitMethodInsn(opcode, compiler.getTypeDef(owner).getRuntimeName(), getGeneratedName(), getDescriptor(compiler), false);
     }
 }

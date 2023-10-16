@@ -17,4 +17,13 @@ public class StringType implements BuiltinType {
         return "Ljava/lang/String;";
     }
 
+    @Override
+    public String getRuntimeName() {
+        return "java/lang/String";
+    }
+
+    @Override
+    public boolean extensible() {
+        return false;
+    }
 }
