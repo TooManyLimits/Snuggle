@@ -6,10 +6,7 @@ import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
-import builtin_types.reflect.annotations.Inline;
-import builtin_types.reflect.annotations.SnuggleType;
-import builtin_types.reflect.annotations.SnuggleWhitelist;
-import builtin_types.reflect.annotations.Unsigned;
+import builtin_types.reflect.annotations.*;
 import builtin_types.types.BoolType;
 import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatType;
@@ -44,8 +41,8 @@ public class ReflectedMethod {
         isVoid = method.getReturnType() == void.class;
 
         origName = method.getName();
-        String rename = method.getAnnotation(SnuggleWhitelist.class).rename();
-        name = rename.isBlank() ? origName : rename;
+        Rename rename = method.getAnnotation(Rename.class);
+        name = rename == null ? origName : rename.value();
         owner = org.objectweb.asm.Type.getInternalName(method.getDeclaringClass());
         descriptor = ReflectionUtils.getDescriptor(List.of(method.getParameterTypes()), method.getReturnType());
 

@@ -8,11 +8,10 @@ import java.lang.annotation.Target;
 /**
  * Signifies to the Reflector that this method/field should be
  * made accessible to Snuggle programs.
+ * If placed on a type, then methods/fields in the class
+ * become whitelisted by default, unless marked with
+ * @SnuggleBlacklist.
  */
-@Target({ElementType.METHOD, ElementType.FIELD, ElementType.CONSTRUCTOR})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.CONSTRUCTOR})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SnuggleWhitelist {
-    //Allow methods with same snuggle-side name and param types, even though
-    //java doesn't allow it
-    String rename() default "";
-}
+public @interface SnuggleWhitelist {}

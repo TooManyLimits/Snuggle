@@ -1,15 +1,4 @@
-import ast.parsed.prog.ParsedAST;
-import ast.passes.GenericVerifier;
-import ast.passes.Parser;
-import ast.passes.TypeChecker;
-import ast.passes.TypeResolver;
-import ast.type_resolved.prog.TypeResolvedAST;
-import ast.typed.prog.TypedAST;
-import ast.typed.prog.TypedFile;
 import builtin_types.BuiltinTypes;
-import builtin_types.reflect.ReflectedBuiltin;
-import compile.Compiler;
-import lexing.Lexer;
 import util.CompileAll;
 
 import java.util.Map;
@@ -17,7 +6,25 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        testOverloads();
+        testFib();
+    }
+
+    private static void testFib() {
+        test("""
+                class Fib {
+                    fn new();
+                    fn fib(n: u32): u32 {
+                        if n < 2 {
+                            n
+                        } else {
+                            this.fib(n-1) + this.fib(n-2)
+                        }
+                    }
+                }
+                var x: u32 = 0
+                while 20 > x = x + 1
+                    System.print(new Fib().fib(x-1))
+                """);
     }
 
     private static void testOverloads() {

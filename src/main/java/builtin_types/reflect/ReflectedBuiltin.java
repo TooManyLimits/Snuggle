@@ -4,6 +4,7 @@ import ast.passes.TypePool;
 import ast.typed.Type;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
+import builtin_types.reflect.annotations.SnuggleBlacklist;
 import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.types.ObjType;
@@ -42,11 +43,19 @@ public class ReflectedBuiltin implements BuiltinType {
         else
             supertypeGetter = pool -> pool.getReflectedBuiltin(supertype);
 
+        boolean isWhitelistDefault = reflectedClass.getAnnotation(SnuggleWhitelist.class) != null;
+
         //Generate methods
         reflectedMethods = new ArrayList<>();
         for (Method method : reflectedClass.getDeclaredMethods()) {
             //Only add whitelisted methods
-            if (method.getAnnotation(SnuggleWhitelist.class) != null)
+            boolean hasWhitelist = method.getAnnotation(SnuggleWhitelist.class) != null;
+            if (isWhitelistDefault && hasWhitelist)
+                throw new IllegalStateException("Warning: method has @SnuggleWhitelist annotation" +
+                        " in class that is already @SnuggleWhitelist! " +
+                        "There is likely a mistake in your environment!");
+            //If the method is whitelisted, or whitelist is default, and it's not blacklisted, then add it.
+            if (hasWhitelist || (isWhitelistDefault && method.getAnnotation(SnuggleBlacklist.class) == null))
                 reflectedMethods.add(new ReflectedMethod(method));
         }
     }

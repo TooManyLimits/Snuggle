@@ -527,10 +527,10 @@ public class Parser {
     private static final ArrayList<Boolean> RIGHT_ASSOCIATIVE = new ArrayList<>();
 
     static {
-        register(false, EQUAL, NOT_EQUAL);
-        register(false, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL);
         register(false, OR);
         register(false, AND);
+        register(false, EQUAL, NOT_EQUAL);
+        register(false, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL);
         register(false, PLUS, MINUS, BITWISE_OR); //a + b + c == (a + b) + c
         register(false, STAR, SLASH, PERCENT, BITWISE_AND, BITWISE_XOR);
         register(true, POWER); //a ^ b ^ c == a ^ (b ^ c)

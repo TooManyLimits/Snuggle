@@ -150,11 +150,11 @@ public class IntegerType implements BuiltinType {
                 })),
 
                 //Comparisons
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ))
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ))
         ));
     }
 
