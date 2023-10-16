@@ -11,7 +11,8 @@ public @interface SnuggleType {
     String name(); //The name of the type
     boolean nameable() default true; //Whether this type should be nameable
     String descriptor() default ""; //The descriptor of this type. If none is specified, will try to auto-calculate.
-    Class<?> supertype() default Object.class; //The supertype of this type. Object by default.
+    boolean forceSupertype() default false; //If false, will try to infer the supertype.
+    Class<?> supertype() default Object.class; //The supertype of this type, if forceSupertype is true.
     TypeType type() default TypeType.CLASS; //What sort of type this is
 
     enum TypeType {

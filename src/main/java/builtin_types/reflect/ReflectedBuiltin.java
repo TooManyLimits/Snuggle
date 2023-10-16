@@ -36,11 +36,12 @@ public class ReflectedBuiltin implements BuiltinType {
         this.nameable = typeAnnotation.nameable();
         this.descriptor = typeAnnotation.descriptor().isEmpty() ? ReflectionUtils.getDescriptor(reflectedClass) : typeAnnotation.descriptor();
         //Get supertypeGetter
-        if (typeAnnotation.supertype() == Object.class) {
+        Class<?> supertype = typeAnnotation.forceSupertype() ? typeAnnotation.supertype() : reflectedClass.getSuperclass();
+        if (supertype == Object.class)
             supertypeGetter = pool -> pool.getBasicBuiltin(ObjType.INSTANCE);
-        } else {
-            supertypeGetter = pool -> pool.getReflectedBuiltin(typeAnnotation.supertype());
-        }
+        else
+            supertypeGetter = pool -> pool.getReflectedBuiltin(supertype);
+
         //Generate methods
         reflectedMethods = new ArrayList<>();
         for (Method method : reflectedClass.getDeclaredMethods()) {

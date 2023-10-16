@@ -5,6 +5,7 @@ import builtin_types.types.*;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.reflected.SystemType;
 
 import java.util.*;
 
@@ -38,6 +39,7 @@ public class BuiltinTypes {
     }
 
     public BuiltinTypes addStandardTypes() {
+        //addType(SystemType.INSTANCE);
         addType(SystemType.INSTANCE);
 
         addType(OptionType.INSTANCE);
