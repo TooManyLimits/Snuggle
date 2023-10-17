@@ -41,9 +41,9 @@ public record Token(Loc loc, TokenType type, Object value) {
             return new Token(loc, TokenType.INT_LITERAL, new IntLiteralData(new BigInteger(text), false, 0));
         }
 
-        //Identifier
-        if (isIdentifier(text))
-            return new Token(loc, TokenType.IDENTIFIER, text);
+        //Handle identifier and super
+        Token maybeIdentifier = maybeMakeTokenIdentifier(loc, text);
+        if (maybeIdentifier != null) return maybeIdentifier;
 
         //String literal
         if (text.startsWith("\"")) {
@@ -77,8 +77,18 @@ public record Token(Loc loc, TokenType type, Object value) {
     }
 
     private static final Pattern WORD_REGEX = Pattern.compile("[a-zA-Z_]\\w*");
-    private static boolean isIdentifier(String str) {
-        return WORD_REGEX.matcher(str).matches();
+    //The number after super is how many superclasses to go up by. With no number, default is 1.
+    private static final Pattern SUPER_REGEX = Pattern.compile("super([1-9]\\d*)?");
+    private static Token maybeMakeTokenIdentifier(Loc loc, String text) {
+        if (WORD_REGEX.matcher(text).matches())
+            if (SUPER_REGEX.matcher(text).matches())
+                return new Token(loc, TokenType.SUPER,
+                        text.length() == 5 ? 1 : Integer.parseInt(text.substring(5))
+                );
+            else
+                return new Token(loc, TokenType.IDENTIFIER, text);
+        else
+            return null;
     }
 
     @Override
