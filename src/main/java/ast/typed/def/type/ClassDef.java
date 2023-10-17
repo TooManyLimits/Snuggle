@@ -56,7 +56,6 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
         //Create the writer
         ClassWriter writer = NameHelper.generateClassWriter(NameHelper.getSnuggleClassName(index), supertypeName);
         Type thisType = new Type.Basic(index);
-
         //Write all the methods
         for (SnuggleMethodDef methodDef : methods)
             if (methodDef.numGenerics() == 0)
