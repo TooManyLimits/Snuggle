@@ -17,11 +17,14 @@ public class Main {
                 }
                 class B: A {
                     fn new() super()
-                    fn get(): i32 10
+                    fn get10(): i32 10
+                    fn get5(): i32 super.get()
                 }
                 
                 System.print(new A().get())
                 System.print(new B().get())
+                System.print(new B().get10())
+                System.print(new B().get5())
             """);
     }
 

@@ -42,7 +42,6 @@ public record ParsedMethodCall(Loc loc, ParsedExpr receiver, String methodName, 
             //If we're calling a super method, then create a SuperMethodCall.
             return new TypeResolvedSuperMethodCall(
                     loc,
-                    parsedSuper.depth(),
                     methodName,
                     ListUtils.map(genericArgs, g -> g.resolve(loc, resolver)),
                     ListUtils.map(args, a -> a.resolve(resolver))

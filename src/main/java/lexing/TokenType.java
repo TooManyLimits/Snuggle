@@ -77,7 +77,7 @@ public enum TokenType {
 
     //in-class things
     THIS("this"),
-    SUPER, //object is int. super == super1. super2, super3, etc are also valid.
+    SUPER("super"),
 
     //Declarations and such
     VAR("var"),

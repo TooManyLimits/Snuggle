@@ -443,7 +443,7 @@ public class Parser {
             //Identifiers
             case IDENTIFIER -> new ParsedVariable(lexer.last().loc(), lexer.last().string());
             case THIS -> new ParsedVariable(lexer.last().loc(), "this");
-            case SUPER -> new ParsedSuper(lexer.last().loc(), (Integer) lexer.last().value());
+            case SUPER -> new ParsedSuper(lexer.last().loc());
 
             //Control flow
             case IF -> parseIf(classGenerics, methodGenerics);

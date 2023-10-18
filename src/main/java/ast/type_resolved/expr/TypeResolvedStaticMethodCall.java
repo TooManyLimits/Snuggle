@@ -9,12 +9,8 @@ import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedStaticMethodCall;
 import exceptions.CompilationException;
-import exceptions.NoSuitableMethodException;
-import exceptions.TypeCheckingException;
 import lexing.Loc;
-import util.ListUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 
 //The type field is never generic; can't call static methods on generic type because there will be no parameters
@@ -32,7 +28,7 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //Lookup best method
         Type receiverType = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, null, 0);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, null);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -47,7 +43,7 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Lookup best method
         Type receiverType = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, expected, 0);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, expected);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

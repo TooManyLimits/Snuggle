@@ -5,7 +5,7 @@ import ast.type_resolved.expr.TypeResolvedExpr;
 import exceptions.CompilationException;
 import lexing.Loc;
 
-public record ParsedSuper(Loc loc, int depth) implements ParsedExpr {
+public record ParsedSuper(Loc loc) implements ParsedExpr {
 
     @Override
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {

@@ -14,7 +14,7 @@ import lexing.Loc;
 
 import java.util.List;
 
-public record TypeResolvedSuperMethodCall(Loc loc, int depth, String methodName, List<ResolvedType> genericArgs, List<TypeResolvedExpr> args) implements TypeResolvedExpr {
+public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<ResolvedType> genericArgs, List<TypeResolvedExpr> args) implements TypeResolvedExpr {
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
@@ -31,7 +31,7 @@ public record TypeResolvedSuperMethodCall(Loc loc, int depth, String methodName,
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, null, depth);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, null);
         Type actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
@@ -45,7 +45,7 @@ public record TypeResolvedSuperMethodCall(Loc loc, int depth, String methodName,
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, expected, depth);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, expected);
         Type actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();

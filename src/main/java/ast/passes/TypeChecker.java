@@ -11,7 +11,6 @@ import ast.typed.Type;
 import ast.typed.prog.TypedAST;
 import ast.typed.prog.TypedFile;
 import lexing.Loc;
-import util.ListUtils;
 import util.MapStack;
 import util.MapUtils;
 
@@ -75,24 +74,23 @@ public class TypeChecker {
     }
 
     /**
-     *
      * Helper method to deal with method overload resolution!
-     *
+     * <p>
      * Tries to find the best method and return useful info about it.
      * If no best method can be chosen, instead throws a CompilationException.
      *
-     * @param receiverType The type of the receiver. This is what we look up methods on.
-     * @param methodName The name in the method call.
-     * @param args The TypeResolved arguments given to the method call. They will be checked here.
-     * @param genericArgs The generic arguments to the method call.
-     * @param typeGenerics The instantiating generic types that are passed to TypedExpr's check() and infer() methods.
-     * @param isCallStatic Whether the call was made statically.
+     * @param receiverType       The type of the receiver. This is what we look up methods on.
+     * @param methodName         The name in the method call.
+     * @param args               The TypeResolved arguments given to the method call. They will be checked here.
+     * @param genericArgs        The generic arguments to the method call.
+     * @param typeGenerics       The instantiating generic types that are passed to TypedExpr's check() and infer() methods.
+     * @param isCallStatic       Whether the call was made statically.
+     * @param isSuperCall        Whether this call to a method was made using the super keyword. If it was, then there's a
+     *                           special process for selecting eligible methods.
      * @param expectedReturnType The type which the best method must return. If null, there's no restriction on the return type.
-     * @param superLookupDepth The number of superclass levels up to look. If 0, then looks at all methods, including inherited ones.
-     *                         If this number is greater than the number of actual supertypes, throws an error.
      */
 
-    public BestMethodInfo getBestMethod(Loc loc, Type currentType, Type receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<Type> typeGenerics, boolean isCallStatic, Type expectedReturnType, int superLookupDepth) throws CompilationException {
+    public BestMethodInfo getBestMethod(Loc loc, Type currentType, Type receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<Type> typeGenerics, boolean isCallStatic, boolean isSuperCall, Type expectedReturnType) throws CompilationException {
         //First step: find a list of potentially matching methods we can call.
 
         List<MethodDef> matchingMethods = new ArrayList<>();
@@ -108,19 +106,14 @@ public class TypeChecker {
         List<MethodDef> thrownOutDueToWrongReturnType = null;
 
         //Get the list of methods to look through:
-        boolean isSuperLookup = superLookupDepth > 0;
         List<? extends MethodDef> methodsToCheck;
-        if (isSuperLookup) {
-            int remainingLookupDepth = superLookupDepth;
-            TypeDef cur = pool().getTypeDef(receiverType);
-            while (remainingLookupDepth > 0) {
-                receiverType = cur.trueSupertype();
-                if (receiverType == null)
-                    throw new NoSuitableMethodException("Cannot look up " + superLookupDepth + " levels into supertypes; only " + (superLookupDepth - remainingLookupDepth) + " exist.", loc);
-                cur = pool().getTypeDef(receiverType);
-                remainingLookupDepth--;
-            }
-            methodsToCheck = cur.getMethods();
+        if (isSuperCall) {
+            TypeDef def = pool().getTypeDef(receiverType);
+            receiverType = def.trueSupertype();
+            if (receiverType == null)
+                throw new NoSuitableMethodException("Cannot use super, as this type has no supertype!", loc);
+            def = pool().getTypeDef(receiverType);
+            methodsToCheck = def.getMethods();
         } else {
             methodsToCheck = pool().getTypeDef(receiverType).getAllMethods(pool());
         }
@@ -232,7 +225,7 @@ public class TypeChecker {
                 }
             }
             if (methodName.equals("new")) {
-                if (isSuperLookup)
+                if (isSuperCall)
                     throw new NoSuitableMethodException("Unable to find suitable super() constructor for provided args", loc);
                 else
                     throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
