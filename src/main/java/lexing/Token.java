@@ -77,9 +77,6 @@ public record Token(Loc loc, TokenType type, Object value) {
         //If none of these, must be an error
         throw new LexingException("Encountered invalid token \"" + text + "\"", loc);
     }
-
-
-
     @Override
     public String toString() {
         String x = type.toString();

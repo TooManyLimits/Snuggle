@@ -39,6 +39,11 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
 
     public void compile(Type thisType, Compiler compiler, ClassWriter classWriter) throws CompilationException {
 
+        if (numGenerics != 0) {
+
+            return;
+        }
+
         MethodVisitor writer = classWriter.visitMethod(Opcodes.ACC_PUBLIC, getGeneratedName(), getDescriptor(compiler), null, null);
         for (String s : paramNames)
             writer.visitParameter(s, 0);

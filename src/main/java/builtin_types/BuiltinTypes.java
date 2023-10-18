@@ -43,6 +43,7 @@ public class BuiltinTypes {
         addType(SystemType.INSTANCE);
 
         addType(OptionType.INSTANCE);
+        addType(ArrayType.INSTANCE);
 
         addType(ObjType.INSTANCE);
         addType(UnitType.INSTANCE);

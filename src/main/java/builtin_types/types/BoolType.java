@@ -22,12 +22,12 @@ public class BoolType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
+    public String getDescriptor(List<Type> generics, TypePool pool) {
         return "Z";
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(TypePool pool) throws CompilationException {
+    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
         Type boolType = pool.getBasicBuiltin(INSTANCE);
 
         return ListUtils.join(List.of(
@@ -46,7 +46,7 @@ public class BoolType implements BuiltinType {
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return null;
     }
 

@@ -1,6 +1,10 @@
 package builtin_types.types;
 
+import ast.passes.TypePool;
+import ast.typed.Type;
 import builtin_types.BuiltinType;
+
+import java.util.List;
 
 public class StringType implements BuiltinType {
 
@@ -13,12 +17,12 @@ public class StringType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
+    public String getDescriptor(List<Type> generics, TypePool pool) {
         return "Ljava/lang/String;";
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return "java/lang/String";
     }
 

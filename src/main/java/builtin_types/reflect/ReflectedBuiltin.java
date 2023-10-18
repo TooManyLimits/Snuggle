@@ -71,22 +71,22 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
+    public String getDescriptor(List<Type> generics, TypePool pool) {
         return descriptor;
     }
 
     @Override
-    public Set<Type> getSupertypes(TypePool pool) throws CompilationException {
+    public Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException {
         return Set.of(supertypeGetter.apply(pool));
     }
 
     @Override
-    public Type getTrueSupertype(TypePool pool) throws CompilationException {
+    public Type getTrueSupertype(List<Type> generics, TypePool pool) throws CompilationException {
         return supertypeGetter.apply(pool);
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return runtimeName;
     }
 
@@ -96,7 +96,7 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(TypePool pool) throws CompilationException {
+    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
         return ListUtils.map(reflectedMethods, m -> m.get(pool));
     }
 }

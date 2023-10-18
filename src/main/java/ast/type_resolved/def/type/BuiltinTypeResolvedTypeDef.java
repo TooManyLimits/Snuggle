@@ -20,7 +20,7 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
 
     @Override
     public int numGenerics() {
-        return 0;
+        return builtin.numGenerics();
     }
 
     @Override
@@ -32,11 +32,14 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
     public TypeDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException {
         //TODO: Verify with the BuiltinType that this is okay
         return new BuiltinTypeDef(builtin,
+                builtin.genericName(generics, checker.pool()),
+                builtin.getDescriptor(generics, checker.pool()),
+                builtin.getRuntimeName(generics, checker.pool()),
                 generics,
                 index,
-                new LateInit<>(() -> builtin.getMethods(checker.pool())),
-                new LateInit<>(() -> builtin.getSupertypes(checker.pool())),
-                new LateInit<>(() -> builtin.getTrueSupertype(checker.pool()))
+                new LateInit<>(() -> builtin.getMethods(generics, checker.pool())),
+                new LateInit<>(() -> builtin.getSupertypes(generics, checker.pool())),
+                new LateInit<>(() -> builtin.getTrueSupertype(generics, checker.pool()))
         );
     }
 

@@ -123,7 +123,7 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(TypePool pool) throws CompilationException {
+    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
         Type mappedIntLiteralType = pool.getBasicBuiltin(INSTANCE);
         Type mappedBoolType = pool.getBasicBuiltin(BoolType.INSTANCE);
         List<Type> mappedIntTypes = ListUtils.map(IntegerType.ALL_INT_TYPES, pool::getBasicBuiltin);
@@ -171,8 +171,8 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
-        throw new IllegalStateException("Cannot get descriptor of int literal. Bug in compiler, please report!");
+    public String getDescriptor(List<Type> generics, TypePool pool) {
+        return null;
     }
 
     @Override
@@ -183,13 +183,13 @@ public class IntLiteralType implements BuiltinType {
     //Despite the integer types being supertypes for type-checking reasons,
     //this has no true supertype, in the sense of being able to perform virtual calls.
     @Override
-    public Set<Type> getSupertypes(TypePool pool) throws CompilationException {
+    public Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException {
         //The supertypes of this are all the integer types
         return Set.copyOf(ListUtils.map(IntegerType.ALL_INT_TYPES, pool::getBasicBuiltin));
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return null;
     }
 

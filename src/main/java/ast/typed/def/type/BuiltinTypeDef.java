@@ -11,10 +11,14 @@ import util.LateInit;
 import java.util.List;
 import java.util.Set;
 
-public record BuiltinTypeDef(BuiltinType builtin, List<Type> generics, int index, LateInit<List<? extends MethodDef>, CompilationException> localizedMethods, LateInit<Set<Type>, CompilationException> localizedSupertypes, LateInit<Type, CompilationException> localizedTrueSupertype) implements TypeDef {
+public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String generifiedDescriptor,
+                             String generifiedRuntimeName, List<Type> generics, int index,
+                             LateInit<List<? extends MethodDef>, CompilationException> localizedMethods,
+                             LateInit<Set<Type>, CompilationException> localizedSupertypes,
+                             LateInit<Type, CompilationException> localizedTrueSupertype) implements TypeDef {
     @Override
     public String name() {
-        return builtin.name();
+        return generifiedName;
     }
 
     @Override
@@ -48,16 +52,16 @@ public record BuiltinTypeDef(BuiltinType builtin, List<Type> generics, int index
 
     @Override
     public String getDescriptor() {
-        return builtin.getDescriptor(index);
+        return generifiedDescriptor;
     }
 
     @Override
     public String getRuntimeName() {
-        return builtin.getRuntimeName();
+        return generifiedRuntimeName;
     }
 
     @Override
     public boolean extensible() {
-        return builtin.extensible();
+        return false;
     }
 }

@@ -7,7 +7,16 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        
+        testArrays();
+    }
+
+    private static void testArrays() {
+        test("""
+                var x = new Array<i32>(5)
+                x.set(3, 10)
+                x.set(1, 4)
+                System.print(x.get(3))
+                """);
     }
 
     private static void testExtension() {
@@ -19,11 +28,14 @@ public class Main {
                 class B: A {
                     fn new() super()
                     fn get10(): i32 10
+                    fn get(): i32 8
                     fn get5(): i32 super.get()
+                    fn get8(): i32 this.get()
                 }
                 
                 System.print(new A().get())
                 System.print(new B().get())
+                System.print(new B().get8())
                 System.print(new B().get10())
                 System.print(new B().get5())
             """);
@@ -32,7 +44,7 @@ public class Main {
     private static void testFib() {
         test("""
                 class Fib {
-                    fn new();
+                    fn new() super()
                     fn fib(n: u32): u32 {
                         if n < 2 {
                             n
@@ -41,8 +53,10 @@ public class Main {
                         }
                     }
                 }
+                //System.print(new Fib().fib(45))
+                
                 var x: u32 = 0
-                while 20 > x = x + 1
+                while 45 >= x = x + 1
                     System.print(new Fib().fib(x-1))
                 """);
     }

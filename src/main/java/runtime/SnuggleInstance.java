@@ -1,6 +1,10 @@
 package runtime;
 
 import compile.Compiler;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.util.TraceClassVisitor;
+
+import java.io.PrintWriter;
 
 /**
  * An instance of some compiled Snuggle code.
@@ -18,10 +22,10 @@ public class SnuggleInstance {
         loader = new InstanceLoader();
         try {
             runtime = loader.<SnuggleRuntime>defineClass(compileResult.runtime().bytes()).getConstructor().newInstance();
-            //new ClassReader(compileResult.runtime()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+            new ClassReader(compileResult.runtime().bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             for (Compiler.CompiledClass otherClass : compileResult.otherClasses()) {
                 loader.defineClass(otherClass.bytes());
-                //new ClassReader(otherClass).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+                new ClassReader(otherClass.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             }
         } catch (Exception impossible) {
             throw new IllegalStateException("Runtime always has default constructor, bug in compiler, please report!");

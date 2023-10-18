@@ -22,12 +22,12 @@ public class ObjType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
+    public String getDescriptor(List<Type> generics, TypePool pool) {
         return "Ljava/lang/Object;";
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return "java/lang/Object";
     }
 
@@ -37,13 +37,13 @@ public class ObjType implements BuiltinType {
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(TypePool pool) throws CompilationException {
+    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
         Type thisType = pool.getBasicBuiltin(INSTANCE);
         Type unitType = pool.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(
                 new BytecodeMethodDef(false, "new", List.of(), unitType, v -> {
                     v.visitIntInsn(Opcodes.ALOAD, 0);
-                    v.visitMethodInsn(Opcodes.INVOKESPECIAL, getRuntimeName(), "<init>", "()V", false);
+                    v.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
                     BytecodeHelper.pushUnit(v);
                 })
         );

@@ -11,6 +11,11 @@ import java.util.Set;
 
 public interface BuiltinType {
     String name();
+    default String genericName(List<Type> generics, TypePool pool) {
+        if (generics.size() != numGenerics())
+            throw new IllegalStateException("Somehow getting generic name with wrong number of generics? Bug in compiler, please report!");
+        return name();
+    }
 
     /**
      * Set to false for types that cannot be referred to by methodName.
@@ -20,15 +25,17 @@ public interface BuiltinType {
      */
     default boolean nameable() { return true; }
 
+    default int numGenerics() { return 0; }
+
     /**
      * Get the type-checking supertypes of this type
      */
-    default Set<Type> getSupertypes(TypePool pool) throws CompilationException { return Set.of(); }
+    default Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException { return Set.of(); }
 
     /**
      * "True" supertype, that which this can call methods of seamlessly
      */
-    default Type getTrueSupertype(TypePool pool) throws CompilationException { return null; }
+    default Type getTrueSupertype(List<Type> generics, TypePool pool) throws CompilationException { return null; }
 
     /**
      * Create all the methods for this, given the mapping
@@ -40,7 +47,7 @@ public interface BuiltinType {
      * - We need this map between the two in order for the GLOBAL concept to generate methods
      *   which operate on LOCAL types.
      */
-    default List<? extends MethodDef> getMethods(TypePool pool) throws CompilationException {return List.of();}
+    default List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {return List.of();}
 
     /**
      * Return the java descriptor for this type.
@@ -54,9 +61,8 @@ public interface BuiltinType {
      * double -> D
      * reference type -> "L" + (fully qualified class methodName) + ";"
      */
-    String getDescriptor(int index);
-
-    String getRuntimeName();
+    String getDescriptor(List<Type> generics, TypePool pool);
+    String getRuntimeName(List<Type> generics, TypePool pool);
 
     boolean extensible();
 

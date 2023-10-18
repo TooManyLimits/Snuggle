@@ -1,8 +1,11 @@
 package builtin_types.types;
 
+import ast.passes.TypePool;
 import builtin_types.BuiltinType;
 import org.objectweb.asm.Type;
 import runtime.Unit;
+
+import java.util.List;
 
 public class UnitType implements BuiltinType {
 
@@ -24,12 +27,12 @@ public class UnitType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
-        return "L" + getRuntimeName() + ";";
+    public String getDescriptor(List<ast.typed.Type> generics, TypePool pool) {
+        return "L" + getRuntimeName(generics, pool) + ";";
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<ast.typed.Type> generics, TypePool pool) {
         return Type.getInternalName(Unit.class);
     }
 

@@ -1,5 +1,7 @@
 package builtin_types.types.numbers;
 
+import ast.passes.TypePool;
+import ast.typed.Type;
 import builtin_types.BuiltinType;
 
 import java.util.List;
@@ -31,12 +33,12 @@ public class FloatType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(int index) {
+    public String getDescriptor(List<Type> generics, TypePool pool) {
         return descriptor;
     }
 
     @Override
-    public String getRuntimeName() {
+    public String getRuntimeName(List<Type> generics, TypePool pool) {
         return null;
     }
 
