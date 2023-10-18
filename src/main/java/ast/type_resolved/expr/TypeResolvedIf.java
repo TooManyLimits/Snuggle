@@ -22,8 +22,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
-        TypedExpr typedCond = cond.check(checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
         //If the expr doesn't have a false branch, then the output type of the expression is Option<output of ifTrue>
         //If the expr does have a false branch, then the output types of the branches must match, and the output type
         //of the if-expression is that type.
@@ -32,13 +32,13 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
             if (b) {
                 if (hasFalseBranch())
-                    return ifTrue.infer(checker, typeGenerics);
+                    return ifTrue.infer(currentType, checker, typeGenerics);
                 else {
                     throw new IllegalStateException("If expressions without else branches are not yet supported!");
                 }
             } else {
                 if (hasFalseBranch())
-                    return ifFalse.infer(checker, typeGenerics);
+                    return ifFalse.infer(currentType, checker, typeGenerics);
                 else {
                     throw new IllegalStateException("If expressions without else branches are not yet supported!");
                 }
@@ -46,9 +46,9 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         }
 
         //Otherwise, need to output a TypedIf
-        TypedExpr typedTrueBranch = ifTrue.infer(checker, typeGenerics);
+        TypedExpr typedTrueBranch = ifTrue.infer(currentType, checker, typeGenerics);
         if (hasFalseBranch()) {
-            TypedExpr typedFalseBranch = ifFalse.check(checker, typeGenerics, typedTrueBranch.type());
+            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, typedTrueBranch.type());
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, typedTrueBranch.type());
         } else {
             throw new IllegalStateException("If expressions without else branches are not yet supported!");
@@ -61,20 +61,20 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
 
     //Works similarly to infer(), but with some infers replaced with checks.
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Check condition is bool
-        TypedExpr typedCond = cond.check(checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
         //Check if constant
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
             if (b) {
                 if (hasFalseBranch())
-                    return ifTrue.check(checker, typeGenerics, expected);
+                    return ifTrue.check(currentType, checker, typeGenerics, expected);
                 else {
                     throw new IllegalStateException("If expressions without else branches are not yet supported!");
                 }
             } else {
                 if (hasFalseBranch())
-                    return ifFalse.check(checker, typeGenerics, expected);
+                    return ifFalse.check(currentType, checker, typeGenerics, expected);
                 else {
                     throw new IllegalStateException("If expressions without else branches are not yet supported!");
                 }
@@ -82,8 +82,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         }
         //If not constant, need to check both branches
         if (hasFalseBranch()) {
-            TypedExpr typedTrueBranch = ifTrue.check(checker, typeGenerics, expected);
-            TypedExpr typedFalseBranch = ifFalse.check(checker, typeGenerics, expected);
+            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, expected);
+            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, expected);
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, expected);
         } else {
             throw new IllegalStateException("If expressions without else branches are not yet supported!");

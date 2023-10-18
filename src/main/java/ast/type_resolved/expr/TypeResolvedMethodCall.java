@@ -28,10 +28,10 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, null);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, null, 0);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create the call
@@ -43,10 +43,10 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, expected);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, expected, 0);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Get the typed method call

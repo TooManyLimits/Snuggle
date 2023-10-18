@@ -1,5 +1,7 @@
 package ast.type_resolved.def.type;
 
+import ast.typed.def.method.MethodDef;
+import ast.typed.def.method.SnuggleMethodDef;
 import builtin_types.types.ObjType;
 import exceptions.CompilationException;
 import ast.passes.GenericVerifier;
@@ -38,11 +40,12 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
             newName.delete(newName.length() - 2, newName.length());
             newName.append(">");
         }
-        return new ClassDef(
-                loc, index, newName.toString(),
-                supertype == null ? checker.pool().getBasicBuiltin(ObjType.INSTANCE) : checker.pool().getOrInstantiateType(supertype, generics),
-                ListUtils.map(methods, m -> m.instantiateType(index, checker, generics))
-        );
+
+        Type currentType = new Type.Basic(index);
+        Type instantiatedSupertype = supertype == null ? checker.pool().getBasicBuiltin(ObjType.INSTANCE) : checker.pool().getOrInstantiateType(supertype, generics);
+        List<SnuggleMethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(currentType, checker, generics));
+
+        return new ClassDef(loc, index, newName.toString(), instantiatedSupertype, typeInstantiatedMethods);
     }
 
 }

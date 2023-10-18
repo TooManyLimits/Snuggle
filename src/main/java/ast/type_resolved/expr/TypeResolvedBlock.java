@@ -25,21 +25,21 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //empty block {} just evaluates to unit
         if (exprs.size() == 0)
             return new TypedLiteral(loc, Unit.INSTANCE, checker.pool().getBasicBuiltin(UnitType.INSTANCE));
 
         //Otherwise, map all exprs to inferred exprs, in a pushed checker env
         checker.push();
-        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(checker, typeGenerics));
+        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(currentType, checker, typeGenerics));
         checker.pop();
         //Result type is the type of the last expr in the block
         return new TypedBlock(loc, inferredExprs, inferredExprs.get(inferredExprs.size() - 1).type());
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Empty block case
         if (exprs.size() == 0) {
             if (!checker.pool().getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected, checker.pool()))
@@ -52,9 +52,9 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
         checker.push();
         for (int i = 0; i < exprs.size(); i++) {
             if (i == exprs.size() - 1)
-                typedExprs.add(exprs.get(i).check(checker, typeGenerics, expected));
+                typedExprs.add(exprs.get(i).check(currentType, checker, typeGenerics, expected));
             else
-                typedExprs.add(exprs.get(i).infer(checker, typeGenerics));
+                typedExprs.add(exprs.get(i).infer(currentType, checker, typeGenerics));
         }
         checker.pop();
         return new TypedBlock(loc, typedExprs, expected);

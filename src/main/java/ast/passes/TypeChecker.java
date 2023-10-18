@@ -88,9 +88,11 @@ public class TypeChecker {
      * @param typeGenerics The instantiating generic types that are passed to TypedExpr's check() and infer() methods.
      * @param isCallStatic Whether the call was made statically.
      * @param expectedReturnType The type which the best method must return. If null, there's no restriction on the return type.
+     * @param superLookupDepth The number of superclass levels up to look. If 0, then looks at all methods, including inherited ones.
+     *                         If this number is greater than the number of actual supertypes, throws an error.
      */
 
-    public BestMethodInfo getBestMethod(Loc loc, Type receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<Type> typeGenerics, boolean isCallStatic, Type expectedReturnType) throws CompilationException {
+    public BestMethodInfo getBestMethod(Loc loc, Type currentType, Type receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<Type> typeGenerics, boolean isCallStatic, Type expectedReturnType, int superLookupDepth) throws CompilationException {
         //First step: find a list of potentially matching methods we can call.
 
         List<MethodDef> matchingMethods = new ArrayList<>();
@@ -105,8 +107,26 @@ public class TypeChecker {
         TypeCheckingException onlyCheckError = null;
         List<MethodDef> thrownOutDueToWrongReturnType = null;
 
-        //Loop over all methods in the receiver type
-        for (MethodDef def : pool().getTypeDef(receiverType).getAllMethods(pool())) {
+        //Get the list of methods to look through:
+        boolean isSuperLookup = superLookupDepth > 0;
+        List<? extends MethodDef> methodsToCheck;
+        if (isSuperLookup) {
+            int remainingLookupDepth = superLookupDepth;
+            TypeDef cur = pool().getTypeDef(receiverType);
+            while (remainingLookupDepth > 0) {
+                receiverType = cur.trueSupertype();
+                if (receiverType == null)
+                    throw new NoSuitableMethodException("Cannot look up " + superLookupDepth + " levels into supertypes; only " + (superLookupDepth - remainingLookupDepth) + " exist.", loc);
+                cur = pool().getTypeDef(receiverType);
+                remainingLookupDepth--;
+            }
+            methodsToCheck = cur.getMethods();
+        } else {
+            methodsToCheck = pool().getTypeDef(receiverType).getAllMethods(pool());
+        }
+
+        //Loop over all these methods:
+        for (MethodDef def : methodsToCheck) {
             //Filter out ones which clearly don't match
             if (!def.name().equals(methodName)) continue; //Name doesn't match
             if (def.isStatic() != isCallStatic) continue; //static vs non-static
@@ -146,7 +166,7 @@ public class TypeChecker {
                             continue;
                         }
                         //We haven't checked this arg with this type yet, so do it now:
-                        typedArg = args.get(i).check(this, typeGenerics, expectedParamType);
+                        typedArg = args.get(i).check(currentType, this, typeGenerics, expectedParamType);
                         //If that didn't throw an exception, then add it to the cache
                         checkCache.get(i).put(expectedParamType, typedArg);
                     }
@@ -178,7 +198,7 @@ public class TypeChecker {
             //If there are multiple matching methods, try choosing the most specific one.
             //If there is no most specific one, the following errors.
             int bestIndex = tryChoosingMostSpecific(loc, methodName, matchingMethods);
-            return new BestMethodInfo(matchingMethods.get(bestIndex), matchingMethodsTypedArgs.get(bestIndex));
+            return new BestMethodInfo(receiverType, matchingMethods.get(bestIndex), matchingMethodsTypedArgs.get(bestIndex));
         }
 
         //No methods matched:
@@ -196,7 +216,7 @@ public class TypeChecker {
                         //Iterate over the expected params and check() them all
                         for (int i = 0; i < thrownOut.paramTypes().size(); i++) {
                             Type expectedParamType = thrownOut.paramTypes().get(i);
-                            args.get(i).check(this, typeGenerics, expectedParamType);
+                            args.get(i).check(currentType, this, typeGenerics, expectedParamType);
                         }
                     } catch (TypeCheckingException e) {
                         continue;
@@ -209,23 +229,25 @@ public class TypeChecker {
                     String expectedTypeName = expectedReturnType.name(pool());
                     previouslyMatchingReturnTypes.delete(previouslyMatchingReturnTypes.length() - 2, previouslyMatchingReturnTypes.length());
                     throw new TypeCheckingException("Expected method \"" + methodName + "\" to return " + expectedTypeName + ", but only found options " + previouslyMatchingReturnTypes, loc);
-                } else {
-                    if (methodName.equals("new"))
-                        throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
-                    else
-                        throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" for provided args", loc);
                 }
             }
+            if (methodName.equals("new")) {
+                if (isSuperLookup)
+                    throw new NoSuitableMethodException("Unable to find suitable super() constructor for provided args", loc);
+                else
+                    throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
+            } else
+                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" for provided args", loc);
         }
 
         //Exactly one method must have matched:
-        return new BestMethodInfo(matchingMethods.get(0), matchingMethodsTypedArgs.get(0));
+        return new BestMethodInfo(receiverType, matchingMethods.get(0), matchingMethodsTypedArgs.get(0));
     }
 
     //Holds the result of getBestMethod().
     //Contains all the information needed for the caller; particularly
     //the method def that was chosen as well as the type-checked arguments.
-    public record BestMethodInfo(MethodDef methodDef, List<TypedExpr> typedArgs) {}
+    public record BestMethodInfo(Type receiverType, MethodDef methodDef, List<TypedExpr> typedArgs) {}
 
     /**
      * Attempt to choose the most specific method from the given list of methods.

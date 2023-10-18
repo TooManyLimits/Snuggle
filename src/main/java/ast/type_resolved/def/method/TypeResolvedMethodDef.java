@@ -13,6 +13,6 @@ public interface TypeResolvedMethodDef {
      * Note that this only instantiates *TYPE* generics,
      * NOT *METHOD* generics!
      */
-    MethodDef instantiateType(int typeIndex, TypeChecker checker, List<Type> generics) throws CompilationException;
+    MethodDef instantiateType(Type currentType, TypeChecker checker, List<Type> generics) throws CompilationException;
 
 }

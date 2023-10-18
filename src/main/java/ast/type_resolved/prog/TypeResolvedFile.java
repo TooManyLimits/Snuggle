@@ -15,8 +15,8 @@ public record TypeResolvedFile(String name, List<TypeResolvedImport> imports, Li
     public TypedFile type(TypeChecker checker) throws CompilationException {
         return new TypedFile(
                 name,
-                ListUtils.map(imports, e -> (TypedImport) e.infer(checker, List.of())),
-                ListUtils.map(code, e -> e.infer(checker, List.of()))
+                ListUtils.map(imports, e -> (TypedImport) e.infer(null, checker, List.of())),
+                ListUtils.map(code, e -> e.infer(null, checker, List.of()))
         );
     }
 

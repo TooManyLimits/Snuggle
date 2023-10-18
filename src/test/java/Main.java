@@ -6,18 +6,18 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) {
-        testOverloads();
+        testExtension();
     }
 
     private static void testExtension() {
         test("""
                 class A {
-                    fn new();
+                    fn new() super()
                     fn get(): i32 5
                 }
                 class B: A {
-                    fn new();
-                    //fn get(): i32 10
+                    fn new() super()
+                    fn get(): i32 10
                 }
                 
                 System.print(new A().get())

@@ -27,16 +27,16 @@ public record TypeResolvedConstructor(Loc loc, ResolvedType type, List<TypeResol
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //Lookup the best method
         Type t = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, t, "new", args, List.of(), typeGenerics, false, checker.pool().getBasicBuiltin(UnitType.INSTANCE));
+        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, t, "new", args, List.of(), typeGenerics, false, checker.pool().getBasicBuiltin(UnitType.INSTANCE), 0);
         return new TypedConstructor(loc, t, best.methodDef(), best.typedArgs());
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
-        TypedExpr inferred = infer(checker, typeGenerics);
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+        TypedExpr inferred = infer(currentType, checker, typeGenerics);
         if (!inferred.type().isSubtype(expected, checker.pool()))
             throw new TypeCheckingException("Expected type " + expected.name(checker.pool()) + ", got " + inferred.type().name(checker.pool()), loc);
         return inferred;

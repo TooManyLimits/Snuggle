@@ -22,26 +22,26 @@ public record TypeResolvedWhile(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //Check cond is a bool
-        TypedExpr checkedCond = cond.check(checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
         //Infer the body
-        TypedExpr inferredBody = body.infer(checker, typeGenerics);
+        TypedExpr inferredBody = body.infer(currentType, checker, typeGenerics);
         //Create an Option<> around the body's inferred type
         Type optionalType = checker.pool().getGenericBuiltin(OptionType.INSTANCE, List.of(inferredBody.type()));
         return new TypedWhile(loc, checkedCond, inferredBody, optionalType);
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Check cond is a bool
-        TypedExpr checkedCond = cond.check(checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
         //Ensure that the expected type is an Option
         if (checker.pool().getTypeDef(expected) instanceof BuiltinTypeDef b && b.builtin() == OptionType.INSTANCE) {
             //It was an Option, so grab its inner nested type
             Type expectedBodyType = b.generics().get(0);
             //And check() the body for that type
-            TypedExpr typedBody = body.check(checker, typeGenerics, expectedBodyType);
+            TypedExpr typedBody = body.check(currentType, checker, typeGenerics, expectedBodyType);
             //Return the result
             return new TypedWhile(loc, checkedCond, typedBody, expected);
         } else {

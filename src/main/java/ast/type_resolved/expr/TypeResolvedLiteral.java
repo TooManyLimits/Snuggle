@@ -30,14 +30,14 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
     }
 
     @Override
-    public TypedLiteral infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedLiteral infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         Object newValue = (value instanceof IntLiteralData data) ? data.value() : value;
         return new TypedLiteral(loc, newValue, checker.pool().getOrInstantiateType(resolved, List.of()));
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
-        TypedLiteral e = infer(checker, typeGenerics);
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+        TypedLiteral e = infer(currentType, checker, typeGenerics);
         Type intLiteralType = checker.pool().getBasicBuiltin(IntLiteralType.INSTANCE);
         if (e.type().equals(intLiteralType)) {
             //Check int
@@ -47,40 +47,22 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
             if (expected.equals(intLiteralType))
                 return e;
 
-//            //Expected other int type?
-//            if ((checkInteger(checker, IntegerType.I8, value, expected))  ||
-//                (checkInteger(checker, IntegerType.I16, value, expected)) ||
-//                (checkInteger(checker, IntegerType.I32, value, expected)) ||
-//                (checkInteger(checker, IntegerType.I64, value, expected)) ||
-//                (checkInteger(checker, IntegerType.U8, value, expected))  ||
-//                (checkInteger(checker, IntegerType.U16, value, expected)) ||
-//                (checkInteger(checker, IntegerType.U32, value, expected)) ||
-//                (checkInteger(checker, IntegerType.U64, value, expected)))
+            //Expected other int type?
             for (IntegerType t : IntegerType.ALL_INT_TYPES)
                 if (checker.pool().getBasicBuiltin(t).equals(expected))
                     return new TypedLiteral(e.loc(), value, expected);
 
+            //Expected float type?
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
                 if (checker.pool().getBasicBuiltin(t).equals(expected))
                     return new TypedLiteral(e.loc(), new BigDecimal(value), expected);
 
-            //Didn't expect any of those integral types? Error
+            //Didn't expect any of those numeric types? Error
             throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got int literal", loc);
         }
         if (!e.type().isSubtype(expected, checker.pool()))
             throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got " + e.type().name(checker.pool()), loc);
         return e;
-    }
-
-    private boolean checkInteger(TypeChecker checker, IntegerType type, BigInteger value, Type expected) throws CompilationException {
-        if (checker.pool().getBasicBuiltin(type).equals(expected)) {
-            //If it's expected, if this value fits in the needed range, return true. Otherwise error.
-            if (!type.fits(value))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but integer literal " + value + " is out of range. (" + type.min + " to " + type.max + ")", loc);
-            return true;
-        }
-        //If not expected, do nothing
-        return false;
     }
 
 }

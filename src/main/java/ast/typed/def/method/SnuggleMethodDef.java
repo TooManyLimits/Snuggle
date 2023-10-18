@@ -45,10 +45,11 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
         writer.visitCode();
 
         //Handle special constructor calls
-        if (isConstructor()) {
-            writer.visitIntInsn(Opcodes.ALOAD, 0);
-            writer.visitMethodInsn(Opcodes.INVOKESPECIAL, org.objectweb.asm.Type.getInternalName(Object.class), "<init>", "()V", false);
-        }
+//        if (isConstructor()) {
+//            writer.visitIntInsn(Opcodes.ALOAD, 0);
+//            String supertypeName = compiler.getTypeDef(compiler.getTypeDef(thisType).trueSupertype()).getRuntimeName();
+//            writer.visitMethodInsn(Opcodes.INVOKESPECIAL, supertypeName, "<init>", "()V", false);
+//        }
 
         ScopeHelper scope = new ScopeHelper();
         if (!isStatic) //non-static methods have "this" as their first local

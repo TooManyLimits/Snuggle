@@ -24,10 +24,10 @@ public record TypeResolvedDeclaration(Loc loc, String name, ResolvedType annotat
     }
 
     @Override
-    public TypedDeclaration infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedDeclaration infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         if (annotatedType == null) {
             //Infer rhs
-            TypedExpr typedRhs = rhs.infer(checker, typeGenerics);
+            TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics);
             //Ensure rhs isn't an un-storable value (e.g. a literal).
             //This following method errors if a storable type can't be found.
             Type rhsType = checker.pool().getTypeDef(typedRhs.type()).toStorable(typedRhs.type(), typedRhs.loc(), checker.pool());
@@ -39,14 +39,14 @@ public record TypeResolvedDeclaration(Loc loc, String name, ResolvedType annotat
         } else {
             Type instantiatedAnnotatedType = checker.pool().getOrInstantiateType(annotatedType, typeGenerics);
             //Check rhs
-            TypedExpr typedRhs = rhs.check(checker, typeGenerics, instantiatedAnnotatedType);
+            TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, instantiatedAnnotatedType);
             checker.declare(loc, name, instantiatedAnnotatedType);
             return new TypedDeclaration(loc, name, instantiatedAnnotatedType, typedRhs);
         }
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         throw new ParsingException("Invalid declaration location for variable \"" + name + "\"", loc);
 //        throw new IllegalStateException("Error: Attempt to check() a declaration. This should be impossible - Bug in compiler, please report!");
     }

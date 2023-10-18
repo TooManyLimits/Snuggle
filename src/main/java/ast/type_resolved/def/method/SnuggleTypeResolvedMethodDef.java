@@ -27,16 +27,16 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean isStatic, String nam
         body.verifyGenericArgCounts(verifier);
     }
 
-    public SnuggleMethodDef instantiateType(int typeIndex, TypeChecker checker, List<Type> generics) throws CompilationException {
+    public SnuggleMethodDef instantiateType(Type currentType, TypeChecker checker, List<Type> generics) throws CompilationException {
         List<Type> newParamTypes = ListUtils.map(paramTypes, t -> checker.pool().getOrInstantiateType(t, generics));
         Type newReturnType = checker.pool().getOrInstantiateType(returnType, generics);
         //TypedBody must be computed *after* we know all the method signatures and such
         LateInit<TypedExpr, CompilationException> typedBody = new LateInit<>(() -> {
             checker.push();
-            checker.declare(loc, "this", new Type.Basic(typeIndex));
+            checker.declare(loc, "this", currentType);
             for (int i = 0; i < newParamTypes.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(i));
-            TypedExpr res = body.check(checker, generics, newReturnType);
+            TypedExpr res = body.check(currentType, checker, generics, newReturnType);
             checker.pop();
             return res;
         });

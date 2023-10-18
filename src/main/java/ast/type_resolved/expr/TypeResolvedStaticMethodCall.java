@@ -29,10 +29,10 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr infer(TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
         //Lookup best method
         Type receiverType = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, receiverType, methodName, args, genericArgs, typeGenerics, true, null);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, null, 0);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -44,10 +44,10 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr check(TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         //Lookup best method
         Type receiverType = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, receiverType, methodName, args, genericArgs, typeGenerics, true, expected);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, expected, 0);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

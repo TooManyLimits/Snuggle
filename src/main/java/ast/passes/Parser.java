@@ -294,7 +294,11 @@ public class Parser {
                         throw new IllegalStateException("Fields are not yet implemented");
                     }
                 }
-                case LEFT_PAREN -> lhs = new ParsedMethodCall(loc, lhs, "invoke", List.of(), parseArguments(classGenerics, methodGenerics));
+                case LEFT_PAREN -> {
+                    //super() is super.new(), while anythingElse() is anythingElse.invoke().
+                    String methodName = (lhs instanceof ParsedSuper) ? "new" : "invoke";
+                    lhs = new ParsedMethodCall(loc, lhs, methodName, List.of(), parseArguments(classGenerics, methodGenerics));
+                }
                 case LEFT_SQUARE -> {
                     throw new IllegalStateException("Indexing is not yet implemented");
                 }
@@ -439,6 +443,7 @@ public class Parser {
             //Identifiers
             case IDENTIFIER -> new ParsedVariable(lexer.last().loc(), lexer.last().string());
             case THIS -> new ParsedVariable(lexer.last().loc(), "this");
+            case SUPER -> new ParsedSuper(lexer.last().loc(), (Integer) lexer.last().value());
 
             //Control flow
             case IF -> parseIf(classGenerics, methodGenerics);
