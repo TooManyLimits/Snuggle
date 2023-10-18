@@ -14,10 +14,10 @@ import java.util.List;
 public class NameHelper {
 
     //Helpers to generate certain strings given from a number.
-    public static String getRuntimeClassName(int instanceId) { return "SnuggleGenerated_" + instanceId + "_Runtime"; }
-    public static String getFilesClassName(int instanceId) { return "SnuggleGenerated_" + instanceId + "_Files"; }
+    public static String getRuntimeClassName(int instanceId) { return "snuggle/SnuggleGenerated_" + instanceId + "_Runtime"; }
+    public static String getFilesClassName(int instanceId) { return "snuggle/SnuggleGenerated_" + instanceId + "_Files"; }
 
-    public static String getSnuggleClassName(int index) { return "SnuggleGeneratedClass_" + index + ""; }
+    public static String getSnuggleClassName(int index) { return "snuggle/SnuggleGeneratedClass_" + index + ""; }
 
     public static String getImportMethodName(int fileId) { return "snuggleGeneratedImportMethod_" + fileId; }
     public static String getImportFieldName(int fileId) { return "snuggleGeneratedImportField_" + fileId; }
@@ -44,11 +44,12 @@ public class NameHelper {
         int access = Opcodes.ACC_PUBLIC;
         String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
         writer.visit(version, access, name, null, supertypeName, interfacesMapped);
+
         return writer;
     }
 
     public static ClassWriter generateClassWriter(String name, Class<?>... interfaces) {
-        return generateClassWriter(name, org.objectweb.asm.Type.getInternalName(Object.class), interfaces);
+        return generateClassWriter(name, "java/lang/Object", interfaces);
     }
 
 }

@@ -1,12 +1,13 @@
 import builtin_types.BuiltinTypes;
 import util.CompileAll;
 
+import java.io.File;
 import java.util.Map;
 
 public class Main {
 
-    public static void main(String[] args) {
-        testExtension();
+    public static void main(String[] args) throws Exception {
+        
     }
 
     private static void testExtension() {
@@ -358,7 +359,7 @@ public class Main {
 
     private static void test(String main) {
         try {
-            CompileAll.compileAll(new BuiltinTypes(), Map.of("main", main)).run();
+            CompileAll.compileAllToInstance(new BuiltinTypes(), Map.of("main", main)).run();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -366,7 +367,7 @@ public class Main {
 
     private static void test(BuiltinTypes types, String main) {
         try {
-            CompileAll.compileAll(types, Map.of("main", main)).run();
+            CompileAll.compileAllToInstance(types, Map.of("main", main)).run();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

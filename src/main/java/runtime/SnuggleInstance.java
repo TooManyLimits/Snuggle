@@ -1,10 +1,6 @@
 package runtime;
 
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.TraceClassVisitor;
-
-import java.io.PrintWriter;
-import java.util.List;
+import compile.Compiler;
 
 /**
  * An instance of some compiled Snuggle code.
@@ -18,16 +14,15 @@ public class SnuggleInstance {
     //The class loader that holds all the classes for this instance
     private InstanceLoader loader;
 
-    public SnuggleInstance(byte[] runtimeBytes, List<byte[]> otherClasses) {
+    public SnuggleInstance(Compiler.CompileResult compileResult) {
         loader = new InstanceLoader();
         try {
-            runtime = loader.<SnuggleRuntime>defineClass(runtimeBytes).getConstructor().newInstance();
-            new ClassReader(runtimeBytes).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
-            for (byte[] otherClass : otherClasses) {
-                loader.defineClass(otherClass);
-                new ClassReader(otherClass).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+            runtime = loader.<SnuggleRuntime>defineClass(compileResult.runtime().bytes()).getConstructor().newInstance();
+            //new ClassReader(compileResult.runtime()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
+            for (Compiler.CompiledClass otherClass : compileResult.otherClasses()) {
+                loader.defineClass(otherClass.bytes());
+                //new ClassReader(otherClass).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             }
-
         } catch (Exception impossible) {
             throw new IllegalStateException("Runtime always has default constructor, bug in compiler, please report!");
         }

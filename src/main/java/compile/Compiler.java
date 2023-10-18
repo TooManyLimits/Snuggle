@@ -10,13 +10,19 @@ import exceptions.CompilationException;
 import org.objectweb.asm.*;
 import runtime.SnuggleInstance;
 import runtime.SnuggleRuntime;
+import util.ListUtils;
 
-import java.io.PrintStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 /**
  * Compile a TypedAST into an actual runnable program!
@@ -31,10 +37,29 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Compiler {
 
     //Static method to do conversion
-    public static SnuggleInstance compile(TypedAST ast) throws CompilationException {
-        Compiler c = new Compiler(ast);
-        return c.compile();
+    public static SnuggleInstance compileToInstance(TypedAST ast) throws CompilationException {
+        return new SnuggleInstance(new Compiler(ast).compile());
     }
+
+    public static void compileToJar(TypedAST ast, File targetFile) throws CompilationException, IOException {
+        CompileResult res = new Compiler(ast).compile();
+
+        FileOutputStream fos = new FileOutputStream(targetFile);
+        Manifest manifest = new Manifest();
+        JarOutputStream jos = new JarOutputStream(fos, manifest);
+        JarEntry snuggle = new JarEntry("snuggle/");
+        jos.putNextEntry(snuggle);
+        jos.closeEntry();
+
+        for (CompiledClass compiled : ListUtils.join(List.of(List.of(res.runtime), res.otherClasses))) {
+            JarEntry e = new JarEntry(compiled.name() + ".class");
+            jos.putNextEntry(e);
+            jos.write(compiled.bytes());
+            jos.closeEntry();
+        }
+        jos.close();
+    }
+
 
     //Keep instances separate
     public static final AtomicInteger NEXT_ID = new AtomicInteger();
@@ -62,9 +87,12 @@ public class Compiler {
         throw new IllegalStateException("Compiler cannot get type def of generic type? Bug in compiler, please report!");
     }
 
-    private SnuggleInstance compile() throws CompilationException {
+    public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses) { }
+    public record CompiledClass(String name, byte[] bytes) {}
+
+    private CompileResult compile() throws CompilationException {
         //All classes other than the central "Runtime" class go here.
-        List<byte[]> classes = new ArrayList<>();
+        List<CompiledClass> classes = new ArrayList<>();
 
         //Compile every typedef (that needs compiling)
         for (TypeDef anyTypeDef : ast.typeDefs()) {
@@ -72,20 +100,21 @@ public class Compiler {
             if (!(anyTypeDef instanceof SnuggleTypeDef typeDef)) continue;
             //Compile the TypeDef
             byte[] compiled = typeDef.compile(this);
-            classes.add(compiled);
+            classes.add(new CompiledClass(typeDef.getRuntimeName(), compiled));
         }
 
         //Create the Files class
-        ClassWriter filesWriter = NameHelper.generateClassWriter(NameHelper.getFilesClassName(this.instanceId));
+        String filesClassName = NameHelper.getFilesClassName(this.instanceId);
+        ClassWriter filesWriter = NameHelper.generateClassWriter(filesClassName);
         for (TypedFile file : ast.files().values())
             compileFile(filesWriter, file);
         filesWriter.visitEnd();
-        classes.add(filesWriter.toByteArray());
+        classes.add(new CompiledClass(filesClassName, filesWriter.toByteArray()));
 
         //Create the Runtime class. All it needs to do is import main.
-        byte[] runtime = createRuntime();
+        CompiledClass runtime = createRuntime();
 
-        return new SnuggleInstance(runtime, classes);
+        return new CompileResult(runtime, classes);
     }
 
     private void compileFile(ClassWriter filesWriter, TypedFile file) throws CompilationException {
@@ -124,8 +153,9 @@ public class Compiler {
         methodVisitor.visitEnd();
     }
 
-    private byte[] createRuntime() throws CompilationException {
-        ClassWriter runtimeWriter = NameHelper.generateClassWriter(NameHelper.getRuntimeClassName(this.instanceId), SnuggleRuntime.class);
+    private CompiledClass createRuntime() throws CompilationException {
+        String name = NameHelper.getRuntimeClassName(this.instanceId);
+        ClassWriter runtimeWriter = NameHelper.generateClassWriter(name, SnuggleRuntime.class);
 
         //Add necessary methods
         MethodVisitor runMethod = runtimeWriter.visitMethod(
@@ -162,6 +192,6 @@ public class Compiler {
         defaultConstructor.visitMaxs(0, 0); //Auto compute
         defaultConstructor.visitEnd();
         runtimeWriter.visitEnd();
-        return runtimeWriter.toByteArray();
+        return new CompiledClass(name, runtimeWriter.toByteArray());
     }
 }
