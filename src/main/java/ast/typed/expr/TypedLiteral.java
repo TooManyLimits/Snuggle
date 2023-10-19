@@ -73,6 +73,8 @@ public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr 
         } else if (obj == Unit.INSTANCE) {
             String unit = org.objectweb.asm.Type.getInternalName(Unit.class);
             visitor.visitFieldInsn(Opcodes.GETSTATIC, unit, "INSTANCE", "L" + unit + ";");
+        } else if (obj instanceof Boolean b) {
+            visitor.visitInsn(b ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         } else {
             throw new IllegalStateException("Unrecognized literal obj type: " + obj.getClass().getName() + ". Bug in compiler, please report!");
         }

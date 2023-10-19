@@ -68,7 +68,7 @@ public class TypeChecker {
         //the end of the list.
         List<TypeDef> checkedTypeDefs = checker.pool().getFinalTypeDefs();
         for (int i = 0; i < checkedTypeDefs.size(); i++)
-            checkedTypeDefs.get(i).checkMethodBodies();
+            checkedTypeDefs.get(i).checkCode();
         //Return the result
         return new TypedAST(checkedTypeDefs, typedFiles);
     }

@@ -6,6 +6,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.types.BoolType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
+import compile.BytecodeHelper;
 import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.CompilationException;
@@ -21,16 +22,7 @@ public record TypedDeclaration(Loc loc, String name, Type type, TypedExpr rhs) i
         rhs.compile(compiler, env, visitor);
 
         //Dup the result value
-        if (compiler.getTypeDef(type) instanceof BuiltinTypeDef b) {
-            if (b.builtin() instanceof IntegerType i && i.bits == 64)
-                visitor.visitInsn(Opcodes.DUP2);
-            else if (b.builtin() instanceof FloatType f && f.bits == 64)
-                visitor.visitInsn(Opcodes.DUP2);
-            else
-                visitor.visitInsn(Opcodes.DUP);
-        } else {
-            visitor.visitInsn(Opcodes.DUP);
-        }
+        BytecodeHelper.dup(compiler.getTypeDef(type), visitor, 0);
 
         //Store
         int index = env.declare(loc, compiler, name, type);

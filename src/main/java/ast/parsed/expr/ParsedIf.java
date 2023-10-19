@@ -10,6 +10,6 @@ public record ParsedIf(Loc loc, ParsedExpr cond, ParsedExpr ifTrue, ParsedExpr i
 
     @Override
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {
-        return new TypeResolvedIf(loc, cond.resolve(resolver), ifTrue.resolve(resolver), ifFalse.resolve(resolver));
+        return new TypeResolvedIf(loc, cond.resolve(resolver), ifTrue.resolve(resolver), ifFalse == null ? null : ifFalse.resolve(resolver));
     }
 }

@@ -7,12 +7,133 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testMoreIntMath();
+        testChaCha21();
+    }
+
+    private static void testI2L() {
+        test("""
+                var x: i32 = 10
+                var y: i64 = System.i2l(x)
+                System.print(y)
+                
+                """);
+    }
+
+    private static void testList() {
+        test("""
+                class List<T> {
+                    var backing: Array<T> = new Array<T>(5)
+                    var size: u32 = 0
+                    fn new() super()
+                    fn push(elem: T) {
+                        this.backing.set(this.size, elem)
+                        this.size = this.size + 1;
+                        if this.size == this.backing.len() {
+                            var newBacking = new Array<T>(this.size * 2);
+                            var i: u32 = 0
+                            while i < this.backing.len() {
+                                newBacking.set(i, this.backing.get(i))
+                                i = i + 1
+                            }
+                            this.backing = newBacking;
+                        } else {}
+                    }
+                    fn get(index: u32): T this.backing.get(index)
+                    fn size(): u32 this.size
+                    fn backingSize(): u32 this.backing.len()
+                }
+                
+                var a = new List<u32>()
+                a.push(1)
+                a.push(3)
+                a.push(5)
+                a.push(2)
+                a.push(7)
+                a.push(4)
+                
+                var i: u32 = 0
+                while i < a.backingSize() {
+                    System.print(a.get(i))
+                    i = i + 1
+                }
+                
+                """);
+    }
+
+    private static void testFields() {
+        test("""
+                class A {
+                    var x: i32 = 11
+                    fn new() {
+                        super()
+                        //this.x = 11;
+                    }
+                    pub fn get(): i32 this.x = this.x - 1
+                }
+                System.print(new A().get())
+                System.print(new A().get())
+                var a = new A()
+                System.print(a.get())
+                System.print(a.get())
+                System.print(a.get())
+                System.print(a.get())
+                System.print(a.get())
+                """);
     }
 
     private static void testChaCha20() {
-
+        test("""
+                class Thing {
+                    fn new() super()
+                    fn addOneToAll(x: Array<i32>) {
+                        var i: u32 = 0;
+                        while i < x.len() {
+                            x.set(i, x.get(i) + 1)
+                            i = i + 1
+                        };
+                    }
+                    fn reduceQuick(x: Array<i32>) {
+                        var temp = new Array<i32>(10)
+                        var carry: i32 = 19;
+                                    
+                        var index: u32 = 0;
+                        while index < 10 {
+                            carry = carry + x.get(index);
+                            temp.set(index, carry & 67108863);
+                            carry = carry / 67108864;
+                            index = index + 1;
+                        }
+                                    
+                        var mask: i32 = -{temp.get(9) / 2097152 & 1};
+                        temp.set(9, temp.get(9) & 2097151);
+                        index = 0;
+                        while index < 10 {
+                            x.set(index, x.get(index) & ~mask | temp.get(index) & mask);
+                            index = index + 1;
+                        };
+                    }
+                }
+                var arr = new Array<i32>(10)
+                arr.set(0, 980736265)
+                arr.set(1, 385596859)
+                arr.set(2, 559296360)
+                arr.set(3, 1073258648)
+                arr.set(4, 1624787745)
+                arr.set(5, 990138740)
+                arr.set(6, 1176178535)
+                arr.set(7, 1745964209)
+                arr.set(8, 1591302209)
+                arr.set(9, 1675809972)
+                new Thing().reduceQuick(arr)
+                var i: u32 = 0
+                while i < 10 {
+                    System.print(arr.get(i))
+                    i = i + 1
+                }
+                """);
     }
+
+
 
     private static void testArrays() {
         test("""
@@ -379,6 +500,305 @@ public class Main {
                 System.print(aple.snug())
                 aple.doSilly()
                 """);
+    }
+
+    private static void testChaCha21() throws Exception {
+        CompileAll.compileAllToJar(new File("curve25519.jar"), new BuiltinTypes(), Map.of("main",
+                """
+                class Curve25519 {
+                                
+                    fn reduceQuick(x: Array<i32>): unit {
+                        var temp: Array<i32> = new Array<i32>(10);
+                        var carry: i32 = 19;
+                        var index: i32 = 0;
+                        while index < 10 {
+                            carry = carry + x.get(index);
+                            temp.set(index, carry & 67108863);
+                            carry = carry / 67108864;
+                            index = index + 1;
+                        };
+                        var mask: i32 = -{ System.shr(temp.get(9), 21) & 1 };
+                        temp.set(9, temp.get(9) & 2097151);
+                        index = 0;
+                        while index < 10 {
+                            var value: i32 = x.get(index) & ~mask | temp.get(index) & mask;
+                            x.set(index, value);
+                            index = index + 1;
+                        };
+                    }
+                                
+                    fn reduce(result: Array<i32>, x: Array<i32>, size: i32): unit {
+                        var index: i32 = 0;
+                        var carry: i32 = 0;
+                        var limb: i32 = System.shr(x.get(9), 21);
+                        x.set(9, x.get(9) & 2097151);
+                        while index < size {
+                            limb = limb + { x.get(10 + index) * 32 };
+                            carry = carry + { { limb & 67108863 } * 19 + x.get(index) };
+                            x.set(index, carry & 67108863);
+                            limb = limb / 67108864;
+                            carry = carry / 67108864;
+                            index = index + 1;
+                        };
+                        if size < 10 {
+                            index = size;
+                            while index < 10 {
+                                carry = carry + x.get(index);
+                                x.set(index, carry & 67108863);
+                                carry = carry / 67108864;
+                                index = index + 1;
+                            };
+                        } else {};
+                        carry = { System.shr(x.get(9), 21) } * 19;
+                        x.set(9, x.get(9) & 2097151);
+                        index = 0;
+                        while index < 10 {
+                            carry = carry + x.get(index);
+                            result.set(index, carry & 67108863);
+                            carry = carry / 67108864;
+                            index = index + 1;
+                        };
+                        this.reduceQuick(result);
+                    }
+                                
+                    fn multiply(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
+                        var v: i64 = System.i2l(x.get(0));
+                        var temp: Array<i64> = new Array<i64>(20);
+                        var i: i32 = 0;
+                        while i < 10 {
+                            temp.set(i, v * System.i2l(y.get(i)));
+                            i = i + 1;
+                        };
+                        i = 1;
+                        while i < 10 {
+                            v = System.i2l(x.get(i));
+                            var j: i32 = 0;
+                            while j < 9 {
+                                temp.set(i + j, temp.get(i + j) + v * System.i2l(y.get(j)));
+                                j = j + 1;
+                            };
+                            temp.set(i + 9, v * System.i2l(y.get(9)));
+                            i = i + 1;
+                        };
+                        v = temp.get(0);
+                        var temp2: Array<i32> = new Array<i32>(20);
+                        temp2.set(0, System.l2i(v & 67108863));
+                        i = 1;
+                        while i < 20 {
+                            v = { System.shr(v, 26) } + temp.get(i);
+                            temp2.set(i, System.l2i(v & 67108863));
+                            i = i + 1;
+                        };
+                        this.reduce(result, temp2, 10);
+                    }
+                                
+                    fn square(result: Array<i32>, x: Array<i32>): unit {
+                        this.multiply(result, x, x);
+                    }
+                                
+                    fn mulA24(result: Array<i32>, x: Array<i32>): unit {
+                        var a24: i64 = 121665;
+                        var carry: i64 = 0;
+                        var temp: Array<i32> = new Array<i32>(20);
+                        var index: i32 = 0;
+                        while index < 10 {
+                            carry = carry + a24 * System.i2l(x.get(index));
+                            temp.set(index, System.l2i(carry & 67108863));
+                            carry = carry / 67108864;
+                            index = index + 1;
+                        };
+                        temp.set(10, System.l2i(carry & 67108863));
+                        this.reduce(result, temp, 1);
+                    }
+                                
+                    fn add(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
+                        var carry: i32 = x.get(0) + y.get(0);
+                        result.set(0, carry & 67108863);
+                        var index: i32 = 1;
+                        while index < 10 {
+                            carry = { System.shr(carry, 26) } + x.get(index) + y.get(index);
+                            result.set(index, carry & 67108863);
+                            index = index + 1;
+                        };
+                        this.reduceQuick(result);
+                    }
+                                
+                    fn sub(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
+                        var borrow: i32 = 0;
+                        var index: i32 = 0;
+                        while index < 10 {
+                            borrow = x.get(index) - y.get(index) - { System.shr(borrow, 26) & 1 };
+                            result.set(index, borrow & 67108863);
+                            index = index + 1;
+                        };
+                        borrow = result.get(0) - { -{ System.shr(borrow, 26) & 1 } & 19 };
+                        result.set(0, borrow & 67108863);
+                        index = 1;
+                        while index < 10 {
+                            borrow = result.get(index) - { System.shr(borrow, 26) & 1 };
+                            result.set(index, borrow & 67108863);
+                            index = index + 1;
+                        };
+                        result.set(9, result.get(9) & 2097151);
+                    }
+                                
+                    fn swap(condition: i32, x: Array<i32>, y: Array<i32>): unit {
+                        condition = -condition;
+                        var index: i32 = 0;
+                        while index < 10 {
+                            var dummy: i32 = condition & { x.get(index) ^ y.get(index) };
+                            x.set(index, x.get(index) ^ dummy);
+                            y.set(index, y.get(index) ^ dummy);
+                            index = index + 1;
+                        };
+                    }
+                                
+                    fn pow250(result: Array<i32>, x: Array<i32>): unit {
+                        var A: Array<i32> = new Array<i32>(10);
+                        this.square(A, x);
+                        var j: i32 = 0;
+                        while j < 9 {
+                            this.square(A, A);
+                            j = j + 1;
+                        };
+                        this.multiply(result, A, x);
+                        var i: i32 = 0;
+                        while i < 23 {
+                            j = 0;
+                            while j < 10 {
+                                this.square(A, A);
+                                j = j + 1;
+                            };
+                            this.multiply(result, result, A);
+                            i = i + 1;
+                        };
+                        this.square(A, result);
+                        this.multiply(result, result, A);
+                        j = 0;
+                        while j < 8 {
+                            this.square(A, A);
+                            this.multiply(result, result, A);
+                            j = j + 1;
+                        };
+                    }
+                                
+                    fn modInv(result: Array<i32>, x: Array<i32>): unit {
+                        this.pow250(result, x);
+                        this.square(result, result);
+                        this.square(result, result);
+                        this.multiply(result, result, x);
+                        this.square(result, result);
+                        this.square(result, result);
+                        this.multiply(result, result, x);
+                        this.square(result, result);
+                        this.multiply(result, result, x);
+                    }
+                                
+                    fn curve25519(result: Array<i8>, privateKey: Array<i8>, hasPublicKey: bool, publicKey: Array<i8>): unit {
+                        var x_1: Array<i32> = new Array<i32>(10);
+                        var x_2: Array<i32> = new Array<i32>(10);
+                        var x_3: Array<i32> = new Array<i32>(10);
+                        var z_2: Array<i32> = new Array<i32>(10);
+                        var z_3: Array<i32> = new Array<i32>(10);
+                        var A: Array<i32> = new Array<i32>(10);
+                        var B: Array<i32> = new Array<i32>(10);
+                        var C: Array<i32> = new Array<i32>(10);
+                        var D: Array<i32> = new Array<i32>(10);
+                        var E: Array<i32> = new Array<i32>(10);
+                        var AA: Array<i32> = new Array<i32>(10);
+                        var BB: Array<i32> = new Array<i32>(10);
+                        var DA: Array<i32> = new Array<i32>(10);
+                        var CB: Array<i32> = new Array<i32>(10);
+                        if hasPublicKey {
+                            var index: i32 = 0;
+                            while index < 32 {
+                                var bit: i32 = index * 8 % 26;
+                                var word: i32 = index * 8 / 26;
+                                var value: i32 = System.b2i(publicKey.get(index)) & 255;
+                                if bit <= 18 {
+                                    x_1.set(word, x_1.get(word) | System.shl(value, bit));
+                                } else {
+                                    x_1.set(word, x_1.get(word) | System.shl(value, bit));
+                                    x_1.set(word, x_1.get(word) & 67108863);
+                                    x_1.set(word + 1, x_1.get(word + 1) | System.shr(value, 26 - bit));
+                                };
+                                index = index + 1;
+                            };
+                            this.reduceQuick(x_1);
+                            this.reduceQuick(x_1);
+                        } else {
+                            x_1.set(0, 9);
+                        };
+                        x_2.set(0, 1);
+                        var i: i32 = 0;
+                        while i < 10 {
+                            x_3.set(i, x_1.get(i));
+                            i = i + 1;
+                        };
+                        z_3.set(0, 1);
+                        var sposn: i32 = 31;
+                        var sbit: i32 = 6;
+                        var svalue: i32 = System.b2i(privateKey.get(sposn)) | 64;
+                        var swap: i32 = 0;
+                        var goOn: bool = true;
+                        while goOn {
+                            var select: i32 = System.shr(svalue, sbit) & 1;
+                            swap = swap ^ select;
+                            this.swap(swap, x_2, x_3);
+                            this.swap(swap, z_2, z_3);
+                            swap = select;
+                            this.add(A, x_2, z_2);
+                            this.square(AA, A);
+                            this.sub(B, x_2, z_2);
+                            this.square(BB, B);
+                            this.sub(E, AA, BB);
+                            this.add(C, x_3, z_3);
+                            this.sub(D, x_3, z_3);
+                            this.multiply(DA, D, A);
+                            this.multiply(CB, C, B);
+                            this.add(x_3, DA, CB);
+                            this.square(x_3, x_3);
+                            this.sub(z_3, DA, CB);
+                            this.square(z_3, z_3);
+                            this.multiply(z_3, z_3, x_1);
+                            this.multiply(x_2, AA, BB);
+                            this.mulA24(z_2, E);
+                            this.add(z_2, z_2, AA);
+                            this.multiply(z_2, z_2, E);
+                            if sbit > 0 {
+                                sbit = sbit - 1;
+                            } else if sposn == 0 {
+                                goOn = false;
+                            } else if sposn == 1 {
+                                svalue = System.b2i(privateKey.get(0)) & 248;
+                                sposn = 0;
+                                sbit = 7;
+                            } else {
+                                sposn = sposn - 1;
+                                svalue = System.b2i(privateKey.get(sposn));
+                                sbit = 7;
+                            };;;
+                        };
+                        this.swap(swap, x_2, x_3);
+                        this.swap(swap, z_2, z_3);
+                        this.modInv(z_3, z_2);
+                        this.multiply(x_2, x_2, z_3);
+                        var index: i32 = 0;
+                        while index < 32 {
+                            var bit: i32 = index * 8 % 26;
+                            var word: i32 = index * 8 / 26;
+                            if bit <= 18 {
+                                result.set(index, System.i2b(System.shr(x_2.get(word), bit)));
+                            } else {
+                                result.set(index, System.i2b(System.shr(x_2.get(word), bit) | System.shl(x_2.get(word + 1), 26 - bit)));
+                            };
+                            index = index + 1;
+                        };
+                    }
+                    fn new() super()
+                }
+                new Curve25519()
+                """));
     }
 
     private static void test(String main) {

@@ -37,6 +37,13 @@ public class NameHelper {
         throw new IllegalStateException("Should not be trying to get generated methodName of generic method? Bug in compiler, please report!");
     }
 
+    public static String getFieldName(String name, Type type) {
+        StringBuilder s = new StringBuilder("snuggle_generated_field_");
+        if (type instanceof Type.Basic b)
+            return s.append(b.index()).append("_name_").append(name).toString();
+        throw new IllegalStateException("Should not be trying to get generated methodName of generic method? Bug in compiler, please report!");
+    }
+
     //Helper to generate and set up a class writer with the given parameters
     public static ClassWriter generateClassWriter(String name, String supertypeName, Class<?>... interfaces) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);

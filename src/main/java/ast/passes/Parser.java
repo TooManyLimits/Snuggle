@@ -1,12 +1,14 @@
 package ast.passes;
 
 import ast.parsed.ParsedType;
+import ast.parsed.def.field.SnuggleParsedFieldDef;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
 import ast.parsed.def.type.ParsedClassDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.*;
 import ast.parsed.prog.ParsedAST;
 import ast.parsed.prog.ParsedFile;
+import ast.typed.Type;
 import exceptions.CompilationException;
 import exceptions.ParsingException;
 import lexing.Lexer;
@@ -96,16 +98,19 @@ public class Parser {
             throw new ParsingException("Cannot use generic annotatedType as supertype", className.loc());
         Loc leftCurlyLoc = lexer.expect(LEFT_CURLY, "Expected left curly brace to begin class definition", className.loc()).loc();
         ArrayList<SnuggleParsedMethodDef> methods = new ArrayList<>();
+        ArrayList<SnuggleParsedFieldDef> fields = new ArrayList<>();
         while (!lexer.consume(RIGHT_CURLY)) {
             if (lexer.check(EOF))
                 throw new ParsingException("Unmatched class definition curly brace {", leftCurlyLoc);
             boolean pubMember = lexer.consume(PUB);
             if (lexer.consume(FN))
                 methods.add(parseMethod(pubMember, typeGenerics));
+            else if (lexer.consume(VAR))
+                fields.add(parseField(pubMember, typeGenerics));
             else
                 throw new ParsingException("Expected method def, found " + lexer.peek().type(), lexer.peek().loc());
         }
-        return new ParsedClassDef(className.loc(), pub, className.string(), typeGenerics.size(), (ParsedType.Basic) superType, methods);
+        return new ParsedClassDef(className.loc(), pub, className.string(), typeGenerics.size(), (ParsedType.Basic) superType, methods, fields);
     }
 
     //"fn" was already consumed
@@ -167,6 +172,19 @@ public class Parser {
     }
 
     private record ParsedParam(String name, ParsedType type) {}
+
+    //"var" was already consumed
+    private SnuggleParsedFieldDef parseField(boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
+        Loc varLoc = lexer.last().loc();
+        Token fieldName = lexer.expect(IDENTIFIER, "Expected field name after \"var\", but got " + lexer.peek().type());
+        Token colon = lexer.expect(COLON, "Expected type annotation for field " + fieldName.string(), fieldName.loc());
+        ParsedType annotatedType = parseType(colon, typeGenerics, List.of());
+        ParsedExpr initializer = null;
+        if (lexer.consume(ASSIGN))
+            initializer = parseExpr(typeGenerics, List.of(), false);
+        //TODO: Make static possible. Currently always false.
+        return new SnuggleParsedFieldDef(varLoc.merge(lexer.last().loc()), pub, false, fieldName.string(), annotatedType, initializer);
+    }
 
     /**
      *
@@ -289,9 +307,8 @@ public class Parser {
                         lhs = new ParsedMethodCall(callLoc, lhs, name.string(), typeArgs, args);
                     } else {
                         if (typeArgs.size() > 0)
-                            throw new ParsingException("Fields cannot accept generic parameters: field \"" + name.string() + "\"", name.loc());
+                            throw new ParsingException("Field accesses cannot accept generic parameters: field \"" + name.string() + "\"", name.loc());
                         lhs = new ParsedFieldAccess(Loc.merge(lhs.loc(), name.loc()), lhs, name.string());
-                        throw new IllegalStateException("Fields are not yet implemented");
                     }
                 }
                 case LEFT_PAREN -> {

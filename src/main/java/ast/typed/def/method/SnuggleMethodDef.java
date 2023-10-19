@@ -1,7 +1,9 @@
 package ast.typed.def.method;
 
 import ast.typed.Type;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.BuiltinTypeDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
 import ast.typed.expr.TypedStaticMethodCall;
@@ -40,8 +42,7 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
     public void compile(Type thisType, Compiler compiler, ClassWriter classWriter) throws CompilationException {
 
         if (numGenerics != 0) {
-
-            return;
+            throw new IllegalStateException("No method generics yet");
         }
 
         MethodVisitor writer = classWriter.visitMethod(Opcodes.ACC_PUBLIC, getGeneratedName(), getDescriptor(compiler), null, null);
@@ -50,11 +51,12 @@ public record SnuggleMethodDef(Loc loc, boolean isStatic, String name, int numGe
         writer.visitCode();
 
         //Handle special constructor calls
-//        if (isConstructor()) {
-//            writer.visitIntInsn(Opcodes.ALOAD, 0);
-//            String supertypeName = compiler.getTypeDef(compiler.getTypeDef(thisType).trueSupertype()).getRuntimeName();
-//            writer.visitMethodInsn(Opcodes.INVOKESPECIAL, supertypeName, "<init>", "()V", false);
-//        }
+        if (isConstructor()) {
+            //Initialize fields
+            List<? extends FieldDef> fields = compiler.getTypeDef(thisType).getFields();
+            for (FieldDef field : fields)
+                field.compileInit(thisType, compiler, writer);
+        }
 
         ScopeHelper scope = new ScopeHelper();
         if (!isStatic) //non-static methods have "this" as their first local

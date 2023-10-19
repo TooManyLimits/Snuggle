@@ -1,6 +1,10 @@
 package compile;
 
+import ast.typed.def.type.BuiltinTypeDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.types.UnitType;
+import builtin_types.types.numbers.FloatType;
+import builtin_types.types.numbers.IntegerType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -27,6 +31,34 @@ public class BytecodeHelper {
         visitor.visitLdcInsn(0xff);
         visitor.visitInsn(Opcodes.IAND);
     }
+
+    //Dup a value on the stack, and optionally send it down
+    public static void dup(TypeDef typeDef, MethodVisitor visitor, int slotsToSendDown) {
+        int dup2Op = switch (slotsToSendDown) {
+            case 0 -> Opcodes.DUP2;
+            case 1 -> Opcodes.DUP2_X1;
+            case 2 -> Opcodes.DUP2_X2;
+            default -> throw new IllegalStateException("SlotsToSendDown must be 0, 1, or 2");
+        };
+        int dupOp = switch (slotsToSendDown) {
+            case 0 -> Opcodes.DUP;
+            case 1 -> Opcodes.DUP_X1;
+            case 2 -> Opcodes.DUP_X2;
+            default -> throw new IllegalStateException("SlotsToSendDown must be 0, 1, or 2");
+        };
+
+        if (typeDef instanceof BuiltinTypeDef b) {
+            if (b.builtin() instanceof IntegerType i && i.bits == 64)
+                visitor.visitInsn(dup2Op);
+            else if (b.builtin() instanceof FloatType f && f.bits == 64)
+                visitor.visitInsn(dup2Op);
+            else
+                visitor.visitInsn(dupOp);
+        } else {
+            visitor.visitInsn(dupOp);
+        }
+    }
+
 
 
     //long, int --> int, long

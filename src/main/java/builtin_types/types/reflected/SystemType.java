@@ -11,6 +11,17 @@ public class SystemType {
     @SnuggleBlacklist
     public static final BuiltinType INSTANCE = new ReflectedBuiltin(SystemType.class);
 
+    public static long i2l(int i) { return i; }
+    public static int l2i(long i) { return (int) i; }
+    public static byte i2b(int i) { return (byte) i; }
+    public static int b2i(byte i) { return i; }
+
+    public static int shl(int x, int bits) { return x << bits; }
+    public static int shr(int x, int bits) { return x >> bits; }
+    public static long shl(long x, int bits) { return x << bits; }
+    public static long shr(long x, int bits) { return x >> bits; }
+
+
     public static void print(byte b) { System.out.println(b); }
     @Rename("print")
     public static void print_2(@Unsigned byte b) { System.out.println(b & 0xFF); }

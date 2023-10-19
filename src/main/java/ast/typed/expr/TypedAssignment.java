@@ -5,6 +5,7 @@ import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
+import compile.BytecodeHelper;
 import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.CompilationException;
@@ -17,26 +18,25 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, Type type) 
     //Largely works similarly to TypedDeclaration.compile()
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        //First compile the rhs, pushing its result on the stack
-        rhs.compile(compiler, env, visitor);
-
-        //Dup the rhs value
-        if (compiler.getTypeDef(type) instanceof BuiltinTypeDef b) {
-            if (b.builtin() instanceof IntegerType i && i.bits == 64)
-                visitor.visitInsn(Opcodes.DUP2);
-            else if (b.builtin() instanceof FloatType f && f.bits == 64)
-                visitor.visitInsn(Opcodes.DUP2);
-            else
-                visitor.visitInsn(Opcodes.DUP);
-        } else {
-            visitor.visitInsn(Opcodes.DUP);
-        }
-
         //Store
-        if (lhs instanceof TypedVariable typedVariable) {
-            int index = env.lookup(loc, typedVariable.name());
+        if (lhs instanceof TypedVariable variable) {
+            //First compile the rhs, pushing its result on the stack
+            rhs.compile(compiler, env, visitor);
+            //Dup the rhs value
+            BytecodeHelper.dup(compiler.getTypeDef(type), visitor, 0);
+            //Set the variable
+            int index = env.lookup(loc, variable.name());
             TypeDef def = compiler.getTypeDef(type);
             TypedVariable.visitVariable(index, def, true, visitor);
+        } else if (lhs instanceof TypedFieldAccess fieldAccess) {
+            //Prepare for set by compiling the lhs of the field access
+            fieldAccess.compileForSet(compiler, env, visitor);
+            //Compile our rhs
+            rhs.compile(compiler, env, visitor);
+            //Dup our value down past the lhs
+            BytecodeHelper.dup(compiler.getTypeDef(type), visitor, 1);
+            //put field
+            fieldAccess.field().compileAccess(Opcodes.PUTFIELD, fieldAccess.lhs().type(), compiler, visitor);
         } else {
             throw new IllegalStateException("Attempting assignment to something other than var or field? Bug in compiler, please report!");
         }

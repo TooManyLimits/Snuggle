@@ -2,6 +2,7 @@ package ast.typed.def.type;
 
 import ast.passes.TypePool;
 import ast.typed.Type;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import exceptions.CompilationException;
@@ -28,8 +29,10 @@ public interface TypeDef {
     Type trueSupertype() throws CompilationException;
 
     List<? extends MethodDef> getMethods() throws CompilationException;
+    List<? extends FieldDef> getFields() throws CompilationException;
 
-    void checkMethodBodies() throws CompilationException;
+    //Check the bodies of methods as well as the initializers of fields
+    void checkCode() throws CompilationException;
 
     //The descriptor for this type
     String getDescriptor();

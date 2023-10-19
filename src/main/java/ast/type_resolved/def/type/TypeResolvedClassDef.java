@@ -1,5 +1,7 @@
 package ast.type_resolved.def.type;
 
+import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
+import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import builtin_types.types.ObjType;
@@ -15,7 +17,7 @@ import util.ListUtils;
 
 import java.util.List;
 
-public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, ResolvedType.Basic supertype, List<SnuggleTypeResolvedMethodDef> methods) implements TypeResolvedTypeDef {
+public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, ResolvedType.Basic supertype, List<SnuggleTypeResolvedMethodDef> methods, List<SnuggleTypeResolvedFieldDef> fields) implements TypeResolvedTypeDef {
 
     @Override
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {
@@ -26,6 +28,8 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
         //Verify each method
         for (SnuggleTypeResolvedMethodDef methodDef : methods)
             methodDef.verifyGenericCounts(verifier);
+        for (SnuggleTypeResolvedFieldDef fieldDef : fields)
+            fieldDef.verifyGenericCounts(verifier);
     }
 
     @Override
@@ -44,8 +48,9 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
         Type currentType = new Type.Basic(index);
         Type instantiatedSupertype = supertype == null ? checker.pool().getBasicBuiltin(ObjType.INSTANCE) : checker.pool().getOrInstantiateType(supertype, generics);
         List<SnuggleMethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(currentType, checker, generics));
+        List<SnuggleFieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
 
-        return new ClassDef(loc, index, newName.toString(), instantiatedSupertype, typeInstantiatedMethods);
+        return new ClassDef(loc, index, newName.toString(), instantiatedSupertype, typeInstantiatedMethods, typeInstantiatedFields);
     }
 
 }

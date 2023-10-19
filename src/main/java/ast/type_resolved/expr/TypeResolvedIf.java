@@ -18,7 +18,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
         cond.verifyGenericArgCounts(verifier);
         ifTrue.verifyGenericArgCounts(verifier);
-        ifFalse.verifyGenericArgCounts(verifier);
+        if (hasFalseBranch())
+            ifFalse.verifyGenericArgCounts(verifier);
     }
 
     @Override

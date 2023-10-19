@@ -2,6 +2,8 @@ package ast.typed.def.type;
 
 import ast.passes.TypePool;
 import ast.typed.Type;
+import ast.typed.def.field.FieldDef;
+import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import compile.Compiler;
@@ -15,7 +17,7 @@ import java.util.List;
 /**
  * InstantiationLoc is the location where this TypeDef was instantiated. Useful for error reporting.
  */
-public record ClassDef(Loc loc, int index, String name, Type supertype, List<SnuggleMethodDef> methods) implements SnuggleTypeDef {
+public record ClassDef(Loc loc, int index, String name, Type supertype, List<SnuggleMethodDef> methods, List<SnuggleFieldDef> fields) implements SnuggleTypeDef {
 
     @Override
     public Type toStorable(Type thisType, Loc loc, TypePool pool) {
@@ -38,16 +40,21 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
     }
 
     @Override
-    public void checkMethodBodies() throws CompilationException {
+    public void checkCode() throws CompilationException {
         for (SnuggleMethodDef def : methods)
-            if (def.numGenerics() == 0)
-                def.body().get();
+            def.body().get();
+        for (SnuggleFieldDef def : fields)
+            if (def.initializer() != null)
+                def.initializer().get();
     }
 
     @Override
     public List<? extends MethodDef> getMethods() {
         return methods;
     }
+
+    @Override
+    public List<? extends FieldDef> getFields() throws CompilationException { return fields; }
 
     @Override
     public byte[] compile(Compiler compiler) throws CompilationException {
@@ -57,9 +64,11 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
         ClassWriter writer = NameHelper.generateClassWriter(NameHelper.getSnuggleClassName(index), supertypeName);
         Type thisType = new Type.Basic(index);
         //Write all the methods
+        for (SnuggleFieldDef fieldDef : fields)
+            fieldDef.compile(thisType, compiler, writer);
         for (SnuggleMethodDef methodDef : methods)
-            if (methodDef.numGenerics() == 0)
-                methodDef.compile(thisType, compiler, writer);
+            methodDef.compile(thisType, compiler, writer);
+        //End class writer and return bytes
         writer.visitEnd();
         return writer.toByteArray();
     }

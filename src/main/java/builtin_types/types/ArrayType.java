@@ -27,7 +27,8 @@ public class ArrayType implements BuiltinType {
 
     @Override
     public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type u32 = pool.getBasicBuiltin(IntegerType.U32);
+//        Type u32 = pool.getBasicBuiltin(IntegerType.U32);
+        Type u32 = pool.getBasicBuiltin(IntegerType.I32);
         Type unit = pool.getBasicBuiltin(UnitType.INSTANCE);
         Type elementType = generics.get(0);
         ArrayOpcodes opcodes = getOpcodes(pool.getTypeDef(elementType));

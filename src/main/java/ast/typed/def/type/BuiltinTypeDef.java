@@ -1,5 +1,6 @@
 package ast.typed.def.type;
 
+import ast.typed.def.field.FieldDef;
 import exceptions.CompilationException;
 import ast.passes.TypePool;
 import ast.typed.Type;
@@ -41,13 +42,18 @@ public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String 
     }
 
     @Override
-    public void checkMethodBodies() throws CompilationException {
+    public void checkCode() throws CompilationException {
         
     }
 
     @Override
     public List<? extends MethodDef> getMethods() throws CompilationException {
         return localizedMethods.get();
+    }
+
+    @Override
+    public List<? extends FieldDef> getFields() throws CompilationException {
+        throw new IllegalStateException("Builtin type fields not yet implemented");
     }
 
     @Override
