@@ -7,7 +7,11 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testArrays();
+        testMoreIntMath();
+    }
+
+    private static void testChaCha20() {
+
     }
 
     private static void testArrays() {
@@ -66,7 +70,7 @@ public class Main {
                 .reflect(TestReflectedClass.class);
         test(types, """
                 class Silly {
-                    fn new();
+                    fn new() super()
                     fn invoke() {
                         var x: i32 = 100
                         System.print(x)
@@ -86,7 +90,7 @@ public class Main {
     private static void testMultipleCallable() {
         test("""
                 class Test {
-                    fn new();
+                    fn new() super()
                     fn a(): i32 1
                     fn a(): i64 2
                     //try commenting out one of the b()
@@ -101,7 +105,7 @@ public class Main {
     private static void testMultipleReturn() {
         test("""
                 class Test {
-                    fn new();
+                    fn new() super()
                     fn a(): i32 1
                     fn a(): i64 2
                 }
@@ -228,7 +232,7 @@ public class Main {
     private static void testBlocks() {
         test("""
                 class Plural {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn doMultipleThings() {
                         var x: i32 = 1;
                         System.print(x);
@@ -257,7 +261,7 @@ public class Main {
     private static void testGeneric() {
         test("""
                 class Thing<T> {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn add1(x: T): T
                         x + 1
                 }
@@ -274,18 +278,24 @@ public class Main {
                 System.print(x)
                 System.print(x + 1)
                 System.print(128 + x)
+                
+                var y: u32 = 0;
+                y = y - 10; //-10 as a u32
+                System.print(y / 5)
+                var z: i32 = -10;
+                System.print(z / -5)
                 """);
     }
 
     private static void testI84() {
         test("""
                 class i84 {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn get(): i8 4
                 }
                 
                 class Other {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn meow(): i8 4
                         new i84()
                 }
@@ -298,7 +308,7 @@ public class Main {
     private static void testArgs() {
         test("""
                 class Behold {
-                    fn new();
+                    fn new() super()
                     fn arguments(a: i32, b: i16, c: i8)
                         System.print(c)
                 }
@@ -309,12 +319,12 @@ public class Main {
     private static void test2Classes() {
         test("""
                 class Thing {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn get5(): i32
                         1 + 1 + 1 + 1 + 1
                 }
                 class Thang {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn get5Again(thing: Thing): i32
                         thing.get5()
                 }
@@ -325,7 +335,7 @@ public class Main {
     private static void testThis() {
         test("""
                 class Thing {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn doTheFirstThing(): i32
                         1 + 2 * 3
                     pub fn doTheFirstThing(): i16
@@ -349,7 +359,7 @@ public class Main {
     private static void test1() {
         test("""
                 class Cutie {
-                    pub fn new();
+                    pub fn new() super()
                     pub fn meow(): i64 42
                     pub fn pat(): i32
                         1 + 2 * 3

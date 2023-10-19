@@ -105,14 +105,18 @@ public class IntegerType implements BuiltinType {
                 //IntelliJ is bugged, so it thinks these are errors; really they compile fine
                 DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16 -> v -> v.visitInsn(Opcodes.IDIV);
-                    case 32 -> v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
-                    case 64 -> v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "divideUnsigned", "(JJ)J", false);
+                    case 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
+                            v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
+                    case 64 -> signed ? v -> v.visitInsn(Opcodes.LDIV) :
+                            v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "divideUnsigned", "(JJ)J", false);
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
                 DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16 -> v -> v.visitInsn(Opcodes.IREM);
-                    case 32 -> v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "remainderUnsigned", "(II)I", false);
-                    case 64 -> v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "remainderUnsigned", "(JJ)J", false);
+                    case 32 -> signed ? v -> v.visitInsn(Opcodes.IREM) :
+                            v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "remainderUnsigned", "(II)I", false);
+                    case 64 -> signed ? v -> v.visitInsn(Opcodes.LREM) :
+                            v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "remainderUnsigned", "(JJ)J", false);
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
 

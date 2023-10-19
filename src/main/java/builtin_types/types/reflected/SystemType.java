@@ -24,6 +24,8 @@ public class SystemType {
     @Rename("print")
     public static void print_2(@Unsigned long l) { System.out.println(Long.toUnsignedString(l)); }
 
+    public static void print(boolean b) { System.out.println(b); }
+
 //    @SnuggleWhitelist
 //    public static void print(String s) { System.out.println(s); }
 

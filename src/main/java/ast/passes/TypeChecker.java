@@ -119,6 +119,7 @@ public class TypeChecker {
         }
 
         //Loop over all these methods:
+        outer:
         for (MethodDef def : methodsToCheck) {
             //Filter out ones which clearly don't match
             if (!def.name().equals(methodName)) continue; //Name doesn't match
@@ -156,7 +157,7 @@ public class TypeChecker {
                     if (typedArg == null) {
                         if (checkCache.get(i).containsKey(expectedParamType)) {
                             //We already tried calling check() on this, and it failed. Continue.
-                            continue;
+                            continue outer;
                         }
                         //We haven't checked this arg with this type yet, so do it now:
                         typedArg = args.get(i).check(currentType, this, typeGenerics, expectedParamType);
