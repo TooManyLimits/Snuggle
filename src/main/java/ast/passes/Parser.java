@@ -454,7 +454,8 @@ public class Parser {
 
             //Literals and objects
             case    INT_LITERAL,
-                    BOOL_LITERAL -> new ParsedLiteral(lexer.last().loc(), lexer.last().value());
+                    BOOL_LITERAL,
+                    STRING_LITERAL -> new ParsedLiteral(lexer.last().loc(), lexer.last().value());
             case NEW -> parseConstructor(classGenerics, methodGenerics);
 
             //Identifiers

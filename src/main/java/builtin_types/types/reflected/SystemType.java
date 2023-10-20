@@ -14,12 +14,15 @@ public class SystemType {
     public static long i2l(int i) { return i; }
     public static int l2i(long i) { return (int) i; }
     public static byte i2b(int i) { return (byte) i; }
+    public static byte l2b(long i) { return (byte) i; }
     public static int b2i(byte i) { return i; }
 
     public static int shl(int x, int bits) { return x << bits; }
     public static int shr(int x, int bits) { return x >> bits; }
     public static long shl(long x, int bits) { return x << bits; }
     public static long shr(long x, int bits) { return x >> bits; }
+    public static int ushr(int x, int bits) { return x >>> bits; }
+    public static long ushr(long x, int bits) { return x >>> bits; }
 
 
     public static void print(byte b) { System.out.println(b); }
@@ -36,6 +39,8 @@ public class SystemType {
     public static void print_2(@Unsigned long l) { System.out.println(Long.toUnsignedString(l)); }
 
     public static void print(boolean b) { System.out.println(b); }
+
+    public static void print(String s) { System.out.println(s); }
 
 //    @SnuggleWhitelist
 //    public static void print(String s) { System.out.println(s); }

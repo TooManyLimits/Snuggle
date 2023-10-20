@@ -8,6 +8,8 @@ import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
 import builtin_types.reflect.annotations.*;
 import builtin_types.types.BoolType;
+import builtin_types.types.ObjType;
+import builtin_types.types.StringType;
 import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
@@ -86,6 +88,7 @@ public class ReflectedMethod {
         Class<?> c = (Class<?>) type.getType();
         String className = c.getName().replace('.', '/');
         return switch (className) {
+            //Primitives
             case "boolean" -> basicBuiltin(BoolType.INSTANCE);
             case "byte" -> maybeUnsigned(type, IntegerType.I8, IntegerType.U8);
             case "short" -> maybeUnsigned(type, IntegerType.I16, IntegerType.U16);
@@ -95,6 +98,10 @@ public class ReflectedMethod {
             case "double" -> basicBuiltin(FloatType.F64);
             case "char" -> throw new IllegalArgumentException("Cannot reflect methods accepting char");
             case "void" -> basicBuiltin(UnitType.INSTANCE); //void becomes unit
+            //Builtin objects
+            case "java/lang/String" -> basicBuiltin(StringType.INSTANCE);
+            case "java/lang/Object" -> basicBuiltin(ObjType.INSTANCE);
+            //Default
             default -> pool -> pool.getReflectedBuiltin(c);
         };
     }
