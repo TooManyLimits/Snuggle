@@ -8,7 +8,8 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testMd5();
+        testFields();
+        testChaCha21();
     }
 
     private static void testI2L() {
@@ -503,7 +504,8 @@ public class Main {
     }
 
     private static void testChaCha21() throws Exception {
-        CompileAll.compileAllToJar(new File("curve25519.jar"), new BuiltinTypes(), Map.of("main",
+//        CompileAll.compileAllToJar(new File("curve25519.jar"), new BuiltinTypes(), Map.of("main",
+        test(
                 """
                             class Curve25519 {
                                                 
@@ -844,8 +846,7 @@ public class Main {
                                 fn new() super()
                             }
                             new Curve25519()
-                        """));
-            //);
+                        """);//);
     }
 
     private static void testMd5() throws Exception {

@@ -34,8 +34,8 @@ public class Lexer {
             //1-character operators and versions with = after
             //ex. + and +=, < and <=, ! and !=, = and ==, even though these are very different situations
             "[-+*/%&|^~=><!]=?" + "|" +
-            //Other punctuation, () [] {} . : ;
-            "[()\\[\\]{}.:;,]" + "|" +
+            //Other punctuation, () [] {} . : ; ?
+            "[()\\[\\]{}.:;,?]" + "|" +
             //Number literals
             "\\d+(?:\\.\\d+)?" + "|" +
             //Identifiers

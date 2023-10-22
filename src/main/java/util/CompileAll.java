@@ -34,7 +34,7 @@ public class CompileAll {
             lexers.put(file.getKey(), new Lexer(file.getKey(), file.getValue()));
         //2. Parse to ParsedAST
         ParsedAST parsedAST = Parser.parse(lexers);
-        System.out.println(parsedAST);
+//        System.out.println(parsedAST);
         //3. Resolve types to TypeResolvedAST
         TypeResolvedAST typeResolvedAST = TypeResolver.resolve(types, parsedAST);
         //4. Verify generics

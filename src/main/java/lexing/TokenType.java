@@ -57,9 +57,14 @@ public enum TokenType {
     EQUAL("=="),
     NOT_EQUAL("!="),
 
+    //Other binary
+    AS("as"),
+
     //Unary
     NOT("!"),
     BITWISE_NOT("~"),
+
+    QUESTION_MARK("?"),
 
     //Brackets
     LEFT_PAREN("("),

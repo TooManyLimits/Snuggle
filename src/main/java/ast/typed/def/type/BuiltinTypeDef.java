@@ -1,6 +1,9 @@
 package ast.typed.def.type;
 
 import ast.typed.def.field.FieldDef;
+import builtin_types.types.numbers.FloatType;
+import builtin_types.types.numbers.IntLiteralType;
+import builtin_types.types.numbers.IntegerType;
 import exceptions.CompilationException;
 import ast.passes.TypePool;
 import ast.typed.Type;
@@ -29,6 +32,13 @@ public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String 
         } catch (CompilationException e) {
             throw new IllegalStateException("Bug in setup for BuiltinType " + builtin.name() + ", failed to locate supertypes?");
         }
+    }
+
+    //Helper method for casting checks
+    public boolean isNumeric() {
+        return builtin == IntLiteralType.INSTANCE ||
+                builtin instanceof IntegerType ||
+                builtin instanceof FloatType;
     }
 
     @Override

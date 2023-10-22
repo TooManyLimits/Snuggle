@@ -93,7 +93,7 @@ public class Parser {
         //Parse generics and their bounds
         List<GenericDef> typeGenerics = parseGenerics();
         //Parse the supertype, if there is one (colon)
-        ParsedType superType = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, List.of()) : null;
+        ParsedType superType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, List.of()) : null;
         if (superType instanceof ParsedType.Generic) //Ensure supertype is not a generic (can't have class Funny<T>: T {...})
             throw new ParsingException("Cannot use generic annotatedType as supertype", className.loc());
         Loc leftCurlyLoc = lexer.expect(LEFT_CURLY, "Expected left curly brace to begin class definition", className.loc()).loc();
@@ -140,7 +140,7 @@ public class Parser {
 
         //TODO: Fix unit type
         //ParsedType returnType = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
-        ParsedType returnType = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : new ParsedType.Basic("unit", List.of());
+        ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : new ParsedType.Basic("unit", List.of());
 
         ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false);
         //TODO: Static methods, right now just always false
@@ -158,12 +158,12 @@ public class Parser {
 
         //Parse one at least, then continue parsing while we have commas
         String paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc()).string();
-        Token colonTok = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc());
-        params.add(new ParsedParam(paramName, parseType(colonTok, typeGenerics, methodGenerics)));
+        Loc colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc()).loc();
+        params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         while (lexer.consume(COMMA)) {
             paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc()).string();
-            colonTok = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc());
-            params.add(new ParsedParam(paramName, parseType(colonTok, typeGenerics, methodGenerics)));
+            colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc()).loc();
+            params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         }
         //Expect a closing paren
         lexer.expect(RIGHT_PAREN, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc());
@@ -177,8 +177,8 @@ public class Parser {
     private SnuggleParsedFieldDef parseField(boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
         Loc varLoc = lexer.last().loc();
         Token fieldName = lexer.expect(IDENTIFIER, "Expected field name after \"var\", but got " + lexer.peek().type());
-        Token colon = lexer.expect(COLON, "Expected type annotation for field " + fieldName.string(), fieldName.loc());
-        ParsedType annotatedType = parseType(colon, typeGenerics, List.of());
+        Loc colonLoc = lexer.expect(COLON, "Expected type annotation for field " + fieldName.string(), fieldName.loc()).loc();
+        ParsedType annotatedType = parseType(":", colonLoc, typeGenerics, List.of());
         ParsedExpr initializer = null;
         if (lexer.consume(ASSIGN))
             initializer = parseExpr(typeGenerics, List.of(), false);
@@ -213,7 +213,7 @@ public class Parser {
 
     private ParsedExpr parseBinary(int precedence, List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
         if (precedence >= TOK_TYPES.size())
-            return parseUnary(classGenerics, methodGenerics, canBeDeclaration);
+            return parseAs(classGenerics, methodGenerics, canBeDeclaration);
         ParsedExpr lhs = parseBinary(precedence + 1, classGenerics, methodGenerics, canBeDeclaration);
         int rhsPrecedence = RIGHT_ASSOCIATIVE.get(precedence) ? precedence : precedence + 1;
         while (lexer.consume(TOK_TYPES.get(precedence))) {
@@ -272,6 +272,19 @@ public class Parser {
 
         }
 
+        return lhs;
+    }
+
+    private ParsedExpr parseAs(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
+        ParsedExpr lhs = parseUnary(classGenerics, methodGenerics, canBeDeclaration);
+        while (lexer.consume(AS)) {
+            //Since this is a while loop, you can technically do "1 as i32 as u32 as f32".
+            //idk why you would, but you can, lol
+            Token as = lexer.last();
+            boolean isMaybe = lexer.consume(QUESTION_MARK);
+            ParsedType type = parseType(isMaybe ? "as?" : "as", isMaybe ? as.loc().merge(lexer.last().loc()) : as.loc(), classGenerics, methodGenerics);
+            lhs = new ParsedCast(lhs.loc().merge(lexer.last().loc()), lhs, isMaybe, type);
+        }
         return lhs;
     }
 
@@ -421,9 +434,9 @@ public class Parser {
         if (lexer.consume(LESS)) {
             Token less = lexer.last();
             ArrayList<ParsedType> result = new ArrayList<>();
-            result.add(parseType(less, classGenerics, methodGenerics));
+            result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
             while (lexer.consume(COMMA))
-                result.add(parseType(less, classGenerics, methodGenerics));
+                result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
             lexer.expect(GREATER, "Expected > to end generic annotatedType arguments list that began at " + less.loc());
             result.trimToSize();
             return result;
@@ -527,7 +540,7 @@ public class Parser {
         if (!canBeDeclaration)
             throw new ParsingException("Invalid declaration location for variable \"" + varName + "\"", varLoc);
 
-        ParsedType annotatedType = lexer.consume(COLON) ? parseType(lexer.last(), classGenerics, methodGenerics) : null;
+        ParsedType annotatedType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), classGenerics, methodGenerics) : null;
         lexer.expect(ASSIGN, "Expected '=' after variable \"" + varName + "\" at " + varLoc);
         ParsedExpr rhs = parseExpr(classGenerics, methodGenerics, true);
         return new ParsedDeclaration(Loc.merge(varLoc, rhs.loc()), varName, annotatedType, rhs);
@@ -535,7 +548,7 @@ public class Parser {
 
     private ParsedExpr parseConstructor(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc newLoc = lexer.last().loc();
-        ParsedType constructedType = parseType(lexer.last(), classGenerics, methodGenerics);
+        ParsedType constructedType = parseType("new", lexer.last().loc(), classGenerics, methodGenerics);
         lexer.expect(LEFT_PAREN, "Expected args for constructor of annotatedType " + constructedType, newLoc);
         List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
         Loc fullLoc = newLoc.merge(lexer.last().loc());
@@ -573,8 +586,8 @@ public class Parser {
      *
      */
 
-    private ParsedType parseType(Token startToken, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
-        String head = lexer.expect(IDENTIFIER, "Expected annotatedType after " + startToken.type().exactStrings[0], startToken.loc()).string();
+    private ParsedType parseType(String startTokString, Loc startTokLoc, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        String head = lexer.expect(IDENTIFIER, "Expected type after " + startTokString, startTokLoc).string();
 
         //If the annotatedType is a generic, return a generic TypeString
         //Search method generics first, as they're more recently defined,
@@ -590,9 +603,9 @@ public class Parser {
         if (lexer.consume(LESS)) {
             Loc lessLoc = lexer.last().loc();
             ArrayList<ParsedType> generics = new ArrayList<>();
-            generics.add(parseType(startToken, typeGenerics, methodGenerics));
+            generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
             while (lexer.consume(COMMA))
-                generics.add(parseType(startToken, typeGenerics, methodGenerics));
+                generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
             generics.trimToSize();
             lexer.expect(GREATER, "Expected > to end generics list", lessLoc);
             return new ParsedType.Basic(head, generics);
