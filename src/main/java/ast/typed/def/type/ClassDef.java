@@ -8,7 +8,7 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import compile.Compiler;
 import compile.NameHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.ClassWriter;
 

@@ -1,9 +1,7 @@
 package ast.type_resolved.expr;
 
-import ast.type_resolved.def.type.BuiltinTypeResolvedTypeDef;
-import ast.typed.def.type.BuiltinTypeDef;
 import builtin_types.types.numbers.FloatLiteralType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
@@ -13,7 +11,7 @@ import ast.typed.expr.TypedLiteral;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import util.IntLiteralData;
 

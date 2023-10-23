@@ -1,10 +1,13 @@
 package runtime;
 
 import compile.Compiler;
+import exceptions.runtime.SnuggleException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.PrintWriter;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An instance of some compiled Snuggle code.
@@ -17,28 +20,49 @@ public class SnuggleInstance {
 
     //The class loader that holds all the classes for this instance
     private InstanceLoader loader;
+    private ErrorHelper errorHelper;
+
 
     public SnuggleInstance(Compiler.CompileResult compileResult) {
         loader = new InstanceLoader();
+        errorHelper = new ErrorHelper(compileResult, loader);
         try {
             runtime = loader.<SnuggleRuntime>defineClass(compileResult.runtime().bytes()).getConstructor().newInstance();
-            new ClassReader(compileResult.runtime().bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             for (Compiler.CompiledClass otherClass : compileResult.otherClasses()) {
                 loader.defineClass(otherClass.bytes());
-                new ClassReader(otherClass.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG);
             }
+            //Comment out below line to not print bytecode
+//            compileResult.all().forEach(c -> new ClassReader(c.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG));
         } catch (Exception impossible) {
             throw new IllegalStateException("Runtime always has default constructor, bug in compiler, please report!");
         }
 
     }
 
-    public void run() {
-        runtime.run();
+    /**
+     * Runs the program. Any exceptions are processed to improve error messages,
+     * and then thrown back out to the caller for their own handling.
+     */
+    public void run() throws SnuggleException {
+        try {
+            runtime.run();
+        } catch (ClassCastException classCastException) {
+            throw errorHelper.translate(classCastException);
+        } catch (StackOverflowError stackOverflowError) {
+            throw errorHelper.translate(stackOverflowError);
+        }
     }
 
     //Just exposes a protected method for us
     private static class InstanceLoader extends ClassLoader {
+        private static final AtomicInteger nextId = new AtomicInteger();
+        public InstanceLoader() {
+            super(
+                    "SnuggleLoader" + nextId.getAndIncrement(),
+                    getSystemClassLoader()
+            );
+        }
+
         public <T> Class<T> defineClass(byte[] bytes) {
             return (Class<T>) defineClass(null, bytes, 0, bytes.length);
         }

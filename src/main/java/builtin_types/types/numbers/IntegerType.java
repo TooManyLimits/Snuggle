@@ -2,16 +2,12 @@ package builtin_types.types.numbers;
 
 import ast.passes.TypePool;
 import ast.typed.Type;
-import ast.typed.def.method.BytecodeMethodDef;
-import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
-import ast.typed.expr.TypedLiteral;
-import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
 import compile.BytecodeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -20,10 +16,7 @@ import util.ListUtils;
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.ListResourceBundle;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class IntegerType implements BuiltinType {
 
@@ -55,6 +48,8 @@ public class IntegerType implements BuiltinType {
         };
     }
 
+    //Static helpers
+
     public static BuiltinType fromIntData(IntLiteralData data) {
         if (!data.isSpecified())
             return IntLiteralType.INSTANCE;
@@ -66,6 +61,12 @@ public class IntegerType implements BuiltinType {
             default -> throw new IllegalStateException("Illegal bit count for int literal data? bits = " + data.bits());
         };
     }
+
+    //Casts a BigInteger to an unsigned version, with the specified number of bits
+    public static BigInteger toUnsigned(BigInteger bigInteger, int bits) {
+        return bigInteger.and(BigInteger.ONE.shiftLeft(bits).subtract(BigInteger.ONE));
+    }
+
 
     public boolean fits(BigInteger value) {
         return value.compareTo(min) >= 0 && value.compareTo(max) <= 0;
@@ -105,16 +106,14 @@ public class IntegerType implements BuiltinType {
                 DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
                 //IntelliJ is bugged, so it thinks these are errors; really they compile fine
                 DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, doOperationThenConvert(switch (bits) {
-                    case 8, 16 -> v -> v.visitInsn(Opcodes.IDIV);
-                    case 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
+                    case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "divideUnsigned", "(JJ)J", false);
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
                 DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, doOperationThenConvert(switch (bits) {
-                    case 8, 16 -> v -> v.visitInsn(Opcodes.IREM);
-                    case 32 -> signed ? v -> v.visitInsn(Opcodes.IREM) :
+                    case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IREM) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "remainderUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LREM) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "remainderUnsigned", "(JJ)J", false);

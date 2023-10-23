@@ -1,4 +1,4 @@
-package exceptions;
+package exceptions.compile_time;
 
 import lexing.Loc;
 

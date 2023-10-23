@@ -6,7 +6,7 @@ import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedImport;
 import ast.typed.prog.TypedAST;
 import ast.typed.prog.TypedFile;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.*;
 import runtime.SnuggleInstance;
 import runtime.SnuggleRuntime;
@@ -52,7 +52,7 @@ public class Compiler {
         jos.closeEntry();
 
         for (CompiledClass compiled : ListUtils.join(List.of(List.of(res.runtime), res.otherClasses))) {
-            JarEntry e = new JarEntry(compiled.name() + ".class");
+            JarEntry e = new JarEntry(compiled.mangledName() + ".class");
             jos.putNextEntry(e);
             jos.write(compiled.bytes());
             jos.closeEntry();
@@ -87,8 +87,15 @@ public class Compiler {
         throw new IllegalStateException("Compiler cannot get type def of generic type? Bug in compiler, please report!");
     }
 
-    public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses) { }
-    public record CompiledClass(String name, byte[] bytes) {}
+    public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses) {
+        public List<CompiledClass> all() {
+            ArrayList<CompiledClass> res = new ArrayList<>(otherClasses.size() + 1);
+            res.add(runtime);
+            res.addAll(otherClasses);
+            return res;
+        }
+    }
+    public record CompiledClass(String name, String mangledName, byte[] bytes) {}
 
     private CompileResult compile() throws CompilationException {
         //All classes other than the central "Runtime" class go here.
@@ -100,7 +107,9 @@ public class Compiler {
             if (!(anyTypeDef instanceof SnuggleTypeDef typeDef)) continue;
             //Compile the TypeDef
             byte[] compiled = typeDef.compile(this);
-            classes.add(new CompiledClass(typeDef.getRuntimeName(), compiled));
+            //Get the name
+            String name = typeDef.loc().fileName() + "/" + typeDef.name();
+            classes.add(new CompiledClass(name, typeDef.getRuntimeName(), compiled));
         }
 
         //Create the Files class
@@ -109,11 +118,10 @@ public class Compiler {
         for (TypedFile file : ast.files().values())
             compileFile(filesWriter, file);
         filesWriter.visitEnd();
-        classes.add(new CompiledClass(filesClassName, filesWriter.toByteArray()));
+        classes.add(new CompiledClass("Files", filesClassName, filesWriter.toByteArray()));
 
         //Create the Runtime class. All it needs to do is import main.
         CompiledClass runtime = createRuntime();
-
         return new CompileResult(runtime, classes);
     }
 
@@ -130,7 +138,7 @@ public class Compiler {
         //Create the method
         MethodVisitor methodVisitor = filesWriter.visitMethod(
                 Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                NameHelper.getImportMethodName(fileIndex),
+                NameHelper.getImportMethodName(fileIndex, file.name()),
                 "()V",
                 null,
                 null
@@ -172,7 +180,7 @@ public class Compiler {
         int fileId = fileIndicesByName.get("main");
         runMethod.visitInsn(Opcodes.ICONST_1);
         runMethod.visitFieldInsn(Opcodes.PUTSTATIC, filesClass, NameHelper.getImportFieldName(fileId), "Z");
-        runMethod.visitMethodInsn(Opcodes.INVOKESTATIC, filesClass, NameHelper.getImportMethodName(fileId), "()V", false);
+        runMethod.visitMethodInsn(Opcodes.INVOKESTATIC, filesClass, NameHelper.getImportMethodName(fileId, "main"), "()V", false);
         runMethod.visitInsn(Opcodes.RETURN);
         runMethod.visitMaxs(0, 0); //Auto compute
         runMethod.visitEnd();
@@ -192,6 +200,6 @@ public class Compiler {
         defaultConstructor.visitMaxs(0, 0); //Auto compute
         defaultConstructor.visitEnd();
         runtimeWriter.visitEnd();
-        return new CompiledClass(name, runtimeWriter.toByteArray());
+        return new CompiledClass("main", name, runtimeWriter.toByteArray());
     }
 }

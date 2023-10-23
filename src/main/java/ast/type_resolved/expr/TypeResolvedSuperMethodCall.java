@@ -7,9 +7,9 @@ import ast.typed.Type;
 import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedSuperMethodCall;
-import exceptions.CompilationException;
-import exceptions.GenericCountException;
-import exceptions.ParsingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.GenericCountException;
+import exceptions.compile_time.ParsingException;
 import lexing.Loc;
 
 import java.util.List;

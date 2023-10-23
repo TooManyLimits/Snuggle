@@ -6,9 +6,9 @@ import ast.typed.Type;
 import ast.typed.def.field.FieldDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedFieldAccess;
-import exceptions.CompilationException;
-import exceptions.TypeCheckingException;
-import exceptions.UndeclaredVariableException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
+import exceptions.compile_time.UndeclaredVariableException;
 import lexing.Loc;
 import util.ListUtils;
 

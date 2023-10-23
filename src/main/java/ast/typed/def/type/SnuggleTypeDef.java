@@ -1,7 +1,7 @@
 package ast.typed.def.type;
 
 import compile.Compiler;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 public interface SnuggleTypeDef extends TypeDef {

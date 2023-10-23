@@ -5,7 +5,14 @@ import java.math.BigInteger;
 import java.math.MathContext;
 
 //Denominator should never be negative or 0
-public record Fraction(BigInteger numerator, BigInteger denominator) {
+public class Fraction extends Number implements Comparable<Fraction> {
+
+    public final BigInteger numerator, denominator;
+
+    private Fraction(BigInteger numerator, BigInteger denominator) {
+        this.numerator = numerator;
+        this.denominator = denominator;
+    }
 
     /**
      * Creation
@@ -76,6 +83,26 @@ public record Fraction(BigInteger numerator, BigInteger denominator) {
      * Conversion
      */
 
+    @Override
+    public byte byteValue() {
+        return numerator.divide(denominator).byteValue();
+    }
+
+    @Override
+    public short shortValue() {
+        return numerator.divide(denominator).shortValue();
+    }
+
+    @Override
+    public int intValue() {
+        return numerator.divide(denominator).intValue();
+    }
+
+    @Override
+    public long longValue() {
+        return numerator.divide(denominator).longValue();
+    }
+
     public float floatValue() {
         MathContext context = new MathContext(10);
         return new BigDecimal(numerator).divide(new BigDecimal(denominator), context).floatValue();
@@ -85,5 +112,4 @@ public record Fraction(BigInteger numerator, BigInteger denominator) {
         MathContext context = new MathContext(20);
         return new BigDecimal(numerator).divide(new BigDecimal(denominator), context).doubleValue();
     }
-
 }

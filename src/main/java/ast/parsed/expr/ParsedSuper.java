@@ -2,7 +2,7 @@ package ast.parsed.expr;
 
 import ast.passes.TypeResolver;
 import ast.type_resolved.expr.TypeResolvedExpr;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 public record ParsedSuper(Loc loc) implements ParsedExpr {

@@ -1,6 +1,6 @@
 package ast.type_resolved.prog;
 
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypeChecker;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.type_resolved.expr.TypeResolvedImport;

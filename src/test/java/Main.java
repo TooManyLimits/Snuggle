@@ -8,7 +8,40 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testFloats();
+        testObjectCast();
+    }
+
+    private static void testStackOverflow() {
+        test("""
+                class death {
+                    fn new() super()
+                    fn get() this.get()
+                }
+                new death().get()
+                """);
+    }
+
+    private static void testObjectCast() {
+        test("""
+                class A {fn new() super()}
+                class B: A {fn new() super()}
+                
+                var a = new A();
+                var b = new B();
+                
+                System.print(b as A)
+                System.print(a as B) //error
+                """);
+    }
+
+    private static void testNumberCast() {
+        test("""
+                var x = 150i64
+                var y = x as u8
+                var z = x as f64 + 0.56
+                System.print(y)
+                System.print(z)
+                """);
     }
 
     private static void testFloats() {

@@ -1,6 +1,5 @@
 package ast.passes;
 
-import ast.parsed.ParsedType;
 import ast.parsed.def.type.BuiltinParsedTypeDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.ParsedImport;
@@ -13,10 +12,9 @@ import ast.type_resolved.prog.TypeResolvedFile;
 import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
 import builtin_types.reflect.ReflectedBuiltin;
-import exceptions.CompilationException;
-import exceptions.DuplicateNamesException;
-import exceptions.ImportException;
-import exceptions.UnknownTypeException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.DuplicateNamesException;
+import exceptions.compile_time.ImportException;
 import lexing.Loc;
 import util.ListUtils;
 import util.MapStack;

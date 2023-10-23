@@ -1,6 +1,6 @@
 package ast.type_resolved.def.method;
 
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypeChecker;
 import ast.typed.Type;
 import ast.typed.def.method.MethodDef;

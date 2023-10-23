@@ -5,10 +5,9 @@ import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.Type;
-import ast.typed.def.field.FieldDef;
 import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.expr.TypedExpr;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.LateInit;
 

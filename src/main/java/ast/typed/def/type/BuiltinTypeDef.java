@@ -1,10 +1,11 @@
 package ast.typed.def.type;
 
 import ast.typed.def.field.FieldDef;
+import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypePool;
 import ast.typed.Type;
 import ast.typed.def.method.MethodDef;
@@ -37,6 +38,7 @@ public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String 
     //Helper method for casting checks
     public boolean isNumeric() {
         return builtin == IntLiteralType.INSTANCE ||
+                builtin == FloatLiteralType.INSTANCE ||
                 builtin instanceof IntegerType ||
                 builtin instanceof FloatType;
     }

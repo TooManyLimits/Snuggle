@@ -1,7 +1,7 @@
 package builtin_types;
 
 import ast.typed.Type;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypePool;
 import ast.typed.def.method.MethodDef;
 import lexing.Loc;

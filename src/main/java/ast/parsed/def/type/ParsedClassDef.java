@@ -1,7 +1,7 @@
 package ast.parsed.def.type;
 
 import ast.parsed.def.field.SnuggleParsedFieldDef;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.parsed.ParsedType;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
 import ast.passes.TypeResolver;

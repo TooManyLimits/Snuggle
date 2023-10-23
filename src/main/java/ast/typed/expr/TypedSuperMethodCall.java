@@ -5,7 +5,7 @@ import ast.typed.def.method.MethodDef;
 import compile.BytecodeHelper;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -16,11 +16,16 @@ public record TypedSuperMethodCall(Loc loc, Type receiverType, MethodDef method,
 
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-//        visitor.visitVarInsn(Opcodes.ALOAD, 0); //Load "this" on the stack
-        for (TypedExpr arg : args)
-            arg.compile(compiler, env, visitor); //Push all args on the stack
+        boolean isConstructorCall = method.name().equals("new");
+        if (isConstructorCall) //Load "this" on the stack, if constructor
+            visitor.visitVarInsn(Opcodes.ALOAD, 0);
+
+        for (TypedExpr arg : args) //Push all args on the stack
+            arg.compile(compiler, env, visitor);
+
         method.compileCall(Opcodes.INVOKESPECIAL, receiverType, compiler, visitor); //Invoke special
-//        if (method.name().equals("new"))
-//            BytecodeHelper.pushUnit(visitor);
+
+        if (isConstructorCall) //Push unit, if constructor
+            BytecodeHelper.pushUnit(visitor);
     }
 }

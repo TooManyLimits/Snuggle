@@ -2,8 +2,8 @@ package ast.parsed;
 
 import ast.passes.TypeResolver;
 import ast.type_resolved.ResolvedType;
-import exceptions.CompilationException;
-import exceptions.UnknownTypeException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.UnknownTypeException;
 import lexing.Loc;
 import util.ListUtils;
 

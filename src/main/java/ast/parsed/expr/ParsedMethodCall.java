@@ -3,12 +3,11 @@ package ast.parsed.expr;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedStaticMethodCall;
 import ast.type_resolved.expr.TypeResolvedSuperMethodCall;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.parsed.ParsedType;
 import ast.passes.TypeResolver;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.type_resolved.expr.TypeResolvedMethodCall;
-import exceptions.GenericCountException;
 import lexing.Loc;
 import util.ListUtils;
 

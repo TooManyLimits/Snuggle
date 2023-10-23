@@ -8,14 +8,13 @@ import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
 import builtin_types.types.BoolType;
-import exceptions.CompilationException;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import util.Fraction;
 import util.ListUtils;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -162,7 +161,7 @@ public class FloatLiteralType implements BuiltinType {
                 cmpHelper.get("eq", (frac, f) -> frac.floatValue() == f, (frac, d) -> frac.doubleValue() == d, (frac1, frac2) -> frac1.compareTo(frac2) == 0),
 
                 generateUnary("neg", f -> -f.floatValue(), f -> -f.doubleValue(), Fraction::negate, mappedFloatLiteralType, mappedF32Type, mappedF64Type),
-                List.of(generateUnary("not", f -> f.numerator().equals(BigInteger.ZERO), mappedFloatLiteralType, mappedBoolType))
+                List.of(generateUnary("not", f -> f.numerator.equals(BigInteger.ZERO), mappedFloatLiteralType, mappedBoolType))
         ));
     }
 

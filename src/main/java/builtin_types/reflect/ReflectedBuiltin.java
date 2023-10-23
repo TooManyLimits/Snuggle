@@ -8,7 +8,7 @@ import builtin_types.reflect.annotations.SnuggleBlacklist;
 import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.types.ObjType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import util.ListUtils;
 import util.ThrowingFunction;
 

@@ -10,8 +10,7 @@ import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
-import compile.BytecodeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 

@@ -2,22 +2,20 @@ package ast.typed.expr;
 
 import ast.typed.Type;
 import ast.typed.def.type.BuiltinTypeDef;
-import ast.typed.def.type.TypeDef;
-import builtin_types.BuiltinType;
 import builtin_types.types.StringType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
+import compile.BytecodeHelper;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import runtime.Unit;
 import util.Fraction;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr {
@@ -92,8 +90,7 @@ public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr 
         } else if (obj instanceof Boolean b) {
             visitor.visitInsn(b ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         } else if (obj == Unit.INSTANCE) {
-            String unit = org.objectweb.asm.Type.getInternalName(Unit.class);
-            visitor.visitFieldInsn(Opcodes.GETSTATIC, unit, "INSTANCE", "L" + unit + ";");
+            BytecodeHelper.pushUnit(visitor);
         } else if (obj instanceof Float f) {
             if (f == 0)
                 visitor.visitInsn(Opcodes.FCONST_0);

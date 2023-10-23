@@ -5,8 +5,8 @@ import ast.passes.TypeChecker;
 import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedVariable;
-import exceptions.CompilationException;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 import java.util.List;

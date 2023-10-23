@@ -5,7 +5,7 @@ import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
 import ast.typed.expr.TypedStaticMethodCall;
 import compile.Compiler;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;

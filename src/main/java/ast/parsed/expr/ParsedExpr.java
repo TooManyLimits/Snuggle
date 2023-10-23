@@ -1,6 +1,6 @@
 package ast.parsed.expr;
 
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypeResolver;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import lexing.Loc;

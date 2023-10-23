@@ -3,12 +3,11 @@ package compile;
 import ast.typed.Type;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.BuiltinType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
-import exceptions.AlreadyDeclaredException;
-import exceptions.CompilationException;
-import exceptions.UndeclaredVariableException;
+import exceptions.compile_time.AlreadyDeclaredException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.UndeclaredVariableException;
 import lexing.Loc;
 import util.MapStack;
 

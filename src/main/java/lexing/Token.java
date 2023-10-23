@@ -1,7 +1,7 @@
 package lexing;
 
-import exceptions.CompilationException;
-import exceptions.LexingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.LexingException;
 import util.Fraction;
 import util.IntLiteralData;
 

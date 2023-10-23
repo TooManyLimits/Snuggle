@@ -1,12 +1,12 @@
 package ast.passes;
 
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.type_resolved.prog.TypeResolvedFile;
-import exceptions.GenericCountException;
+import exceptions.compile_time.GenericCountException;
 import lexing.Loc;
 
 import java.util.List;

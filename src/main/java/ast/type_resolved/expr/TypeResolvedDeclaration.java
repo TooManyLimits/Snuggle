@@ -7,9 +7,8 @@ import ast.typed.Type;
 import ast.typed.expr.TypedDeclaration;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
-import exceptions.CompilationException;
-import exceptions.ParsingException;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.ParsingException;
 import lexing.Loc;
 
 import java.util.List;

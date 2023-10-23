@@ -1,18 +1,13 @@
 package ast.typed.expr;
 
 import ast.typed.Type;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.BoolType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
 import compile.BytecodeHelper;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 public record TypedDeclaration(Loc loc, String name, Type type, TypedExpr rhs) implements TypedExpr {
 

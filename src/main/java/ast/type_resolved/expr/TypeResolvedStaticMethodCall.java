@@ -8,7 +8,7 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedStaticMethodCall;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;

@@ -2,7 +2,7 @@ package ast.parsed.def.field;
 
 import ast.passes.TypeResolver;
 import ast.type_resolved.def.field.TypeResolvedFieldDef;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 
 public interface ParsedFieldDef {
 

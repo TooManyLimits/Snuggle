@@ -4,7 +4,7 @@ import ast.typed.Type;
 import ast.typed.def.field.FieldDef;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;

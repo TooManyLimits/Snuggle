@@ -1,8 +1,8 @@
 package lexing;
 
-import exceptions.CompilationException;
-import exceptions.LexingException;
-import exceptions.ParsingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.LexingException;
+import exceptions.compile_time.ParsingException;
 
 import java.io.IOException;
 import java.io.PushbackReader;

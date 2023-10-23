@@ -7,11 +7,10 @@ import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import util.MapStack;
 
 public interface TypedExpr {
 

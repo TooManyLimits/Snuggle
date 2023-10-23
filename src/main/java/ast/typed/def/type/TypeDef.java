@@ -5,7 +5,7 @@ import ast.typed.Type;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.ListUtils;
 

@@ -2,7 +2,7 @@ package ast.typed.def.method;
 
 import ast.typed.expr.TypedStaticMethodCall;
 import compile.Compiler;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;

@@ -78,9 +78,10 @@ public class BytecodeHelper {
     }
 
     //Push unit on the stack
+    private static final String unitName = Type.getInternalName(Unit.class);
+    private static final String unitDescriptor = "L" + unitName + ";";
     public static void pushUnit(MethodVisitor visitor) {
-        String name = Type.getInternalName(Unit.class);
-        visitor.visitFieldInsn(Opcodes.GETSTATIC, name, "INSTANCE", "L" + name + ";");
+        visitor.visitFieldInsn(Opcodes.GETSTATIC, unitName, "INSTANCE", unitDescriptor);
     }
 
 }

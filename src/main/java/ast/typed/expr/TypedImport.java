@@ -4,7 +4,7 @@ import ast.typed.Type;
 import compile.Compiler;
 import compile.NameHelper;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -17,7 +17,7 @@ public record TypedImport(Loc loc, String fileName, Type type) implements TypedE
         String filesClass = NameHelper.getFilesClassName(compiler.instanceId);
         int fileId = compiler.fileIndicesByName.get(fileName);
         String fieldName = NameHelper.getImportFieldName(fileId);
-        String methodName = NameHelper.getImportMethodName(fileId);
+        String methodName = NameHelper.getImportMethodName(fileId, fileName);
 
         //If the import hasn't been called before, run the import, and set the field
         //to true indicating it's been called before.

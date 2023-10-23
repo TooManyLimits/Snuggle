@@ -5,7 +5,7 @@ import ast.typed.expr.TypedExpr;
 import compile.Compiler;
 import compile.NameHelper;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;

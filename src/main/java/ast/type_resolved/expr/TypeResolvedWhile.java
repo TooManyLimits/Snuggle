@@ -8,8 +8,8 @@ import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedWhile;
 import builtin_types.types.BoolType;
 import builtin_types.types.OptionType;
-import exceptions.CompilationException;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 import java.util.List;

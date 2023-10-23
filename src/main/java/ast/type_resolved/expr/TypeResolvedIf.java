@@ -7,7 +7,7 @@ import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedIf;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.types.BoolType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;

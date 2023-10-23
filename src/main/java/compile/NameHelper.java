@@ -14,12 +14,12 @@ import java.util.List;
 public class NameHelper {
 
     //Helpers to generate certain strings given from a number.
-    public static String getRuntimeClassName(int instanceId) { return "snuggle/SnuggleGenerated_" + instanceId + "_Runtime"; }
-    public static String getFilesClassName(int instanceId) { return "snuggle/SnuggleGenerated_" + instanceId + "_Files"; }
+    public static String getRuntimeClassName(int instanceId) { return "snuggle/SnuggleGeneratedClass_" + instanceId + "_Runtime"; }
+    public static String getFilesClassName(int instanceId) { return "snuggle/SnuggleGeneratedClass_" + instanceId + "_Files"; }
 
-    public static String getSnuggleClassName(int index) { return "snuggle/SnuggleGeneratedClass_" + index + ""; }
+    public static String getSnuggleClassName(int index) { return "snuggle/SnuggleGeneratedClass_" + index; }
 
-    public static String getImportMethodName(int fileId) { return "snuggleGeneratedImportMethod_" + fileId; }
+    public static String getImportMethodName(int fileId, String fileName) { return "snuggleGeneratedImportMethod_" + fileId + "_name_" + fileName; }
     public static String getImportFieldName(int fileId) { return "snuggleGeneratedImportField_" + fileId; }
 
     public static String getMethodName(String name, List<Type> paramTypes, Type returnType) {
@@ -41,7 +41,7 @@ public class NameHelper {
         StringBuilder s = new StringBuilder("snuggle_generated_field_");
         if (type instanceof Type.Basic b)
             return s.append(b.index()).append("_name_").append(name).toString();
-        throw new IllegalStateException("Should not be trying to get generated methodName of generic method? Bug in compiler, please report!");
+        throw new IllegalStateException("Should not be trying to get generated fieldName of generic field? Bug in compiler, please report!");
     }
 
     //Helper to generate and set up a class writer with the given parameters

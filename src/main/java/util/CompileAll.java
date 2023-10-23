@@ -9,7 +9,7 @@ import ast.type_resolved.prog.TypeResolvedAST;
 import ast.typed.prog.TypedAST;
 import builtin_types.BuiltinTypes;
 import compile.Compiler;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Lexer;
 import runtime.SnuggleInstance;
 

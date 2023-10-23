@@ -4,7 +4,7 @@ import ast.parsed.ParsedType;
 import ast.passes.TypeResolver;
 import ast.type_resolved.expr.TypeResolvedCast;
 import ast.type_resolved.expr.TypeResolvedExpr;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 public record ParsedCast(Loc loc, ParsedExpr lhs, boolean isMaybe, ParsedType type) implements ParsedExpr {

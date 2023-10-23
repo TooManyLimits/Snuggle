@@ -1,8 +1,7 @@
 package ast.passes;
 
-import builtin_types.BuiltinTypes;
 import builtin_types.reflect.ReflectedBuiltin;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.prog.TypeResolvedAST;

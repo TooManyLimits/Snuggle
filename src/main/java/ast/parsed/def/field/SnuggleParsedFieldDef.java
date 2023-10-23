@@ -4,7 +4,7 @@ import ast.parsed.ParsedType;
 import ast.parsed.expr.ParsedExpr;
 import ast.passes.TypeResolver;
 import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 //Note: initializer is nullable!

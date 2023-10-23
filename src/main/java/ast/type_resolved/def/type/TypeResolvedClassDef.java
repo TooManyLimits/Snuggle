@@ -2,10 +2,9 @@ package ast.type_resolved.def.type;
 
 import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
 import ast.typed.def.field.SnuggleFieldDef;
-import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import builtin_types.types.ObjType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;

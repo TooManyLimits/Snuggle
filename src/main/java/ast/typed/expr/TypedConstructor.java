@@ -7,7 +7,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.types.ArrayType;
 import compile.Compiler;
 import compile.ScopeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;

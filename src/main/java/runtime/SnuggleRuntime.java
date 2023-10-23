@@ -1,5 +1,7 @@
 package runtime;
 
+import exceptions.runtime.SnuggleException;
+
 /**
  * When we compile to JVM bytecode, what we ultimately want to produce is
  * a class that implements this. Calling its run() method will run the
@@ -7,7 +9,7 @@ package runtime;
  */
 public interface SnuggleRuntime {
     //Run the code
-    void run();
+    void run() throws SnuggleException;
 
 //    //Instruction cap
 //    void setInstructionCap(long cap);

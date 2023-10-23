@@ -5,7 +5,6 @@ import ast.typed.Type;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
-import builtin_types.BuiltinTypes;
 import builtin_types.reflect.annotations.*;
 import builtin_types.types.BoolType;
 import builtin_types.types.ObjType;
@@ -14,20 +13,17 @@ import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import compile.BytecodeHelper;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 import util.ThrowingFunction;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class ReflectedMethod {
 

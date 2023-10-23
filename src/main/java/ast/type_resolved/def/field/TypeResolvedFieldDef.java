@@ -3,7 +3,7 @@ package ast.type_resolved.def.field;
 import ast.passes.TypeChecker;
 import ast.typed.Type;
 import ast.typed.def.field.FieldDef;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 
 import java.util.List;
 

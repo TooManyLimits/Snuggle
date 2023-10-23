@@ -1,6 +1,6 @@
 package ast.parsed.def.method;
 
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypeResolver;
 import ast.type_resolved.def.method.TypeResolvedMethodDef;
 

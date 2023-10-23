@@ -1,18 +1,15 @@
 package builtin_types.types.numbers;
 
-import ast.passes.TypeChecker;
-import ast.type_resolved.expr.TypeResolvedLiteral;
-import ast.type_resolved.expr.TypeResolvedMethodCall;
 import ast.typed.expr.TypedMethodCall;
 import builtin_types.types.BoolType;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import ast.passes.TypePool;
 import ast.typed.Type;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.BuiltinType;
-import exceptions.TypeCheckingException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import util.ListUtils;
 

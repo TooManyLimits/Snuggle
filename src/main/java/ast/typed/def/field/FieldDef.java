@@ -2,7 +2,7 @@ package ast.typed.def.field;
 
 import ast.typed.Type;
 import compile.Compiler;
-import exceptions.CompilationException;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 
 public interface FieldDef {
