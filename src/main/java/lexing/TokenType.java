@@ -9,7 +9,7 @@ public enum TokenType {
     BOOL_LITERAL, //Boolean
     STRING_LITERAL, //String
     INT_LITERAL, //BigInteger
-    FLOAT_LITERAL, //BigDecimal
+    FLOAT_LITERAL, //Float, Double, or Fraction
 
     IDENTIFIER,
 

@@ -8,8 +8,17 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testFields();
-        testChaCha21();
+        testFloats();
+    }
+
+    private static void testFloats() {
+        test("""
+                var x: f64 = 0.1
+                var y: f64 = 0.2
+                System.print(x + y == 0.3) //false
+                System.print(0.1 + 0.2 == 0.3) //true
+                System.print(0.1f64 + 0.2 == 0.3) //false
+                """);
     }
 
     private static void testI2L() {

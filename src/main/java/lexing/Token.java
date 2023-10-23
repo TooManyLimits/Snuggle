@@ -2,6 +2,7 @@ package lexing;
 
 import exceptions.CompilationException;
 import exceptions.LexingException;
+import util.Fraction;
 import util.IntLiteralData;
 
 import java.math.BigInteger;
@@ -30,17 +31,34 @@ public record Token(Loc loc, TokenType type, Object value) {
             return BASIC_TOKENS.get(text).get(fileName, line, col);
 
         //Otherwise, check special cases:
-        //Long
-//        try {
-//            return new Token(line, TokenType.LITERAL, Long.parseLong(text));
-//        } catch (Exception ignored) {}
-
         if (Character.isDigit(text.charAt(0))) {
+
             //Floating point
-            if (text.indexOf('.') != -1)
-                return new Token(loc, TokenType.FLOAT_LITERAL, Double.parseDouble(text));
+            boolean floatAnnotated = text.indexOf('f') != -1;
+            if (floatAnnotated || text.indexOf('.') != -1) {
+                if (floatAnnotated) {
+                    String withoutEnding = text.substring(0, text.length() - 3);
+                    if (text.endsWith("f32"))
+                        return new Token(loc, TokenType.FLOAT_LITERAL, Float.parseFloat(withoutEnding));
+                    else if (text.endsWith("f64"))
+                        return new Token(loc, TokenType.FLOAT_LITERAL, Double.parseDouble(withoutEnding));
+                    else
+                        throw new IllegalStateException("Bug in lexer - only f32 and f64 expected, but got numeric token " + text);
+                } else {
+                    return new Token(loc, TokenType.FLOAT_LITERAL, Fraction.parseFraction(text));
+                }
+            }
+
             //Integer
-            return new Token(loc, TokenType.INT_LITERAL, new IntLiteralData(new BigInteger(text), false, 0));
+            int index = text.indexOf('i');
+            boolean signed = index != -1;
+            if (signed || (index = text.indexOf('u')) != -1) {
+                int bits = Integer.parseInt(text.substring(index + 1));
+                String actualContent = text.substring(0, index);
+                return new Token(loc, TokenType.INT_LITERAL, new IntLiteralData(new BigInteger(actualContent), signed, bits));
+            } else {
+                return new Token(loc, TokenType.INT_LITERAL, new IntLiteralData(new BigInteger(text), false, 0));
+            }
         }
 
         //Handle identifier

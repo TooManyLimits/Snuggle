@@ -231,7 +231,7 @@ public class TypeChecker {
                 else
                     throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
             } else
-                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" for provided args", loc);
+                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" on type \"" + receiverType.name(pool()) + "\" with provided args", loc);
         }
 
         //Exactly one method must have matched:

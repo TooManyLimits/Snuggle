@@ -10,6 +10,7 @@ import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
+import compile.BytecodeHelper;
 import exceptions.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -138,20 +139,20 @@ public class IntegerType implements BuiltinType {
                     };
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
-                DefineConstWithFallback.defineUnary("not", b -> b.equals(BigInteger.ZERO), boolType, doOperationThenConvert(v -> {
-                    Label pushTrue = new Label();
-                    Label end = new Label();
-                    if (bits == 64) {
-                        v.visitInsn(Opcodes.LCMP);
-                        v.visitInsn(Opcodes.ICONST_0);
-                    }
-                    v.visitJumpInsn(Opcodes.IFEQ, pushTrue);
-                    v.visitInsn(Opcodes.ICONST_0);
-                    v.visitJumpInsn(Opcodes.GOTO, end);
-                    v.visitLabel(pushTrue);
-                    v.visitInsn(Opcodes.ICONST_1);
-                    v.visitLabel(end);
-                })),
+//                DefineConstWithFallback.defineUnary("not", b -> b.equals(BigInteger.ZERO), boolType, doOperationThenConvert(v -> {
+//                    Label pushTrue = new Label();
+//                    Label end = new Label();
+//                    if (bits == 64) {
+//                        v.visitInsn(Opcodes.LCMP);
+//                        v.visitInsn(Opcodes.ICONST_0);
+//                    }
+//                    v.visitJumpInsn(Opcodes.IFEQ, pushTrue);
+//                    v.visitInsn(Opcodes.ICONST_0);
+//                    v.visitJumpInsn(Opcodes.GOTO, end);
+//                    v.visitLabel(pushTrue);
+//                    v.visitInsn(Opcodes.ICONST_1);
+//                    v.visitLabel(end);
+//                })),
 
                 //Comparisons
                 DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
@@ -203,8 +204,7 @@ public class IntegerType implements BuiltinType {
                     } else {
                         v.visitLdcInsn(Long.MIN_VALUE);
                         v.visitInsn(Opcodes.LADD);
-                        v.visitInsn(Opcodes.DUP2_X2);
-                        v.visitInsn(Opcodes.POP2);
+                        BytecodeHelper.swapBigBig(v);
                     }
                 }
             }

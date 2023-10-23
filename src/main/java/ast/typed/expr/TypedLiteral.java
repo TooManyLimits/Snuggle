@@ -5,6 +5,7 @@ import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.types.StringType;
+import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import compile.Compiler;
 import compile.ScopeHelper;
@@ -14,6 +15,7 @@ import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import runtime.Unit;
+import util.Fraction;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -35,6 +37,18 @@ public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr 
 
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
+        Object obj = obj();
+
+        //Convert fractions ahead of time to either double or float, to save code
+        if (obj instanceof Fraction f) {
+            if (compiler.getTypeDef(type) instanceof BuiltinTypeDef b && b.builtin() instanceof FloatType t)
+                obj = t.bits == 32 ? f.floatValue() : f.doubleValue();
+            else
+                throw new IllegalStateException("Literal obj is fraction, but type is not float type? Bug in compiler, please report!");
+        }
+
+        //Push the value on the stack!
+
         if (obj instanceof BigInteger v) {
             if (compiler.getTypeDef(type) instanceof BuiltinTypeDef b && b.builtin() instanceof IntegerType i) {
                 if (!i.fits(v))
@@ -61,7 +75,12 @@ public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr 
                     else
                         visitor.visitIntInsn(Opcodes.BIPUSH, v.byteValue());
                 } else {
-                    visitor.visitLdcInsn(v.longValue());
+                    if (v.equals(BigInteger.ZERO))
+                        visitor.visitInsn(Opcodes.LCONST_0);
+                    else if (v.equals(BigInteger.ONE))
+                        visitor.visitInsn(Opcodes.LCONST_1);
+                    else
+                        visitor.visitLdcInsn(v.longValue());
                 }
             } else
                 throw new IllegalStateException("Literal obj is big int, but type is not integer type? Bug in compiler, please report!");
@@ -70,11 +89,27 @@ public record TypedLiteral(Loc loc, Object obj, Type type) implements TypedExpr 
                 visitor.visitLdcInsn(s);
             else
                 throw new IllegalStateException("Literal obj is string, but type is not StringType? Bug in compiler, please report!");
+        } else if (obj instanceof Boolean b) {
+            visitor.visitInsn(b ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
         } else if (obj == Unit.INSTANCE) {
             String unit = org.objectweb.asm.Type.getInternalName(Unit.class);
             visitor.visitFieldInsn(Opcodes.GETSTATIC, unit, "INSTANCE", "L" + unit + ";");
-        } else if (obj instanceof Boolean b) {
-            visitor.visitInsn(b ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
+        } else if (obj instanceof Float f) {
+            if (f == 0)
+                visitor.visitInsn(Opcodes.FCONST_0);
+            else if (f == 1)
+                visitor.visitInsn(Opcodes.FCONST_1);
+            else if (f == 2)
+                visitor.visitInsn(Opcodes.FCONST_2);
+            else
+                visitor.visitLdcInsn(f);
+        } else if (obj instanceof Double d) {
+            if (d == 0)
+                visitor.visitInsn(Opcodes.DCONST_0);
+            else if (d == 1)
+                visitor.visitInsn(Opcodes.DCONST_1);
+            else
+                visitor.visitLdcInsn(d);
         } else {
             throw new IllegalStateException("Unrecognized literal obj type: " + obj.getClass().getName() + ". Bug in compiler, please report!");
         }

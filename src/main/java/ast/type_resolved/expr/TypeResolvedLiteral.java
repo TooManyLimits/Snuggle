@@ -2,6 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.type_resolved.def.type.BuiltinTypeResolvedTypeDef;
 import ast.typed.def.type.BuiltinTypeDef;
+import builtin_types.types.numbers.FloatLiteralType;
 import exceptions.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
@@ -39,6 +40,7 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
     public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
         TypedLiteral e = infer(currentType, checker, typeGenerics);
         Type intLiteralType = checker.pool().getBasicBuiltin(IntLiteralType.INSTANCE);
+        Type floatLiteralType = checker.pool().getBasicBuiltin(FloatLiteralType.INSTANCE);
         if (e.type().equals(intLiteralType)) {
             //Check int
             BigInteger value = (BigInteger) e.obj();
@@ -59,6 +61,14 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
 
             //Didn't expect any of those numeric types? Error
             throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got int literal", loc);
+        } else if (e.type().equals(floatLiteralType)) {
+            //Practically same structure as above IntLiteral version ^
+            if (expected.equals(floatLiteralType))
+                return e;
+            for (FloatType t : FloatType.ALL_FLOAT_TYPES)
+                if (checker.pool().getBasicBuiltin(t).equals(expected))
+                    return new TypedLiteral(e.loc(), value, expected);
+            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got float literal", loc);
         }
         if (!e.type().isSubtype(expected, checker.pool()))
             throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got " + e.type().name(checker.pool()), loc);

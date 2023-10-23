@@ -25,6 +25,9 @@ public class SystemType {
     public static long ushr(long x, int bits) { return x >>> bits; }
 
 
+
+    public static void print(float f) { System.out.println(f); }
+    public static void print(double d) { System.out.println(d); }
     public static void print(byte b) { System.out.println(b); }
     @Rename("print")
     public static void print_2(@Unsigned byte b) { System.out.println(b & 0xFF); }

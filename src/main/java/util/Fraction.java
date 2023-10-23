@@ -11,7 +11,7 @@ public record Fraction(BigInteger numerator, BigInteger denominator) {
      * Creation
      */
 
-    public static Fraction of(String str) {
+    public static Fraction parseFraction(String str) {
         int dotIndex = str.indexOf('.');
         if (dotIndex == -1) return new Fraction(new BigInteger(str), BigInteger.ONE);
         BigInteger numerator = new BigInteger(str.substring(0, dotIndex) + str.substring(dotIndex + 1));
@@ -45,6 +45,20 @@ public record Fraction(BigInteger numerator, BigInteger denominator) {
     public Fraction divide(Fraction other) {
         return reduce(numerator.multiply(other.denominator), denominator.multiply(other.numerator));
     }
+
+    public Fraction remainder(Fraction other) {
+        if (denominator.equals(other.denominator))
+            return reduce(numerator.remainder(other.numerator), denominator);
+        BigInteger newDenominator = denominator.multiply(other.denominator);
+        return reduce(numerator.multiply(other.denominator).remainder(other.numerator.multiply(denominator)), newDenominator);
+    }
+
+    public int compareTo(Fraction other) {
+        if (denominator.equals(other.denominator))
+            return numerator.compareTo(other.numerator);
+        return numerator.multiply(other.denominator).compareTo(other.numerator.multiply(denominator));
+    }
+
 
     public Fraction negate() {
         return new Fraction(numerator.negate(), denominator);

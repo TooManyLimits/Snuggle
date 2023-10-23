@@ -98,12 +98,12 @@ public class IntLiteralType implements BuiltinType {
     /**
      * Generate a unary ConstMethodDef with the given name and func
      */
-    private ConstMethodDef generateUnary(String name, Function<BigInteger, BigInteger> func, Type intLiteralType, Type returnType) {
+    private <T> ConstMethodDef generateUnary(String name, Function<BigInteger, T> func, Type intLiteralType, Type returnType) {
         return new ConstMethodDef(name, 0, false, List.of(), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(intLiteralType)) {
                 //Get the receiver value
                 BigInteger receiverValue = (BigInteger) typedReceiver.obj();
-                BigInteger resultValue = func.apply(receiverValue);
+                T resultValue = func.apply(receiverValue);
                 return new TypedLiteral(call.loc(), resultValue, returnType);
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
@@ -111,7 +111,7 @@ public class IntLiteralType implements BuiltinType {
         }, null);
     }
 
-    private List<ConstMethodDef> generateUnary(String name, Function<BigInteger, BigInteger> func, Type mappedIntLiteralType, List<Type> mappedIntTypes) {
+    private <T> List<ConstMethodDef> generateUnary(String name, Function<BigInteger, T> func, Type mappedIntLiteralType, List<Type> mappedIntTypes) {
         ArrayList<ConstMethodDef> list = new ArrayList<>();
         //Literal -> Literal
         list.add(generateUnary(name, func, mappedIntLiteralType, mappedIntLiteralType));
@@ -145,18 +145,8 @@ public class IntLiteralType implements BuiltinType {
                 generateComparison("eq", (a, b) -> a.compareTo(b) == 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
 
                 generateUnary("neg", BigInteger::negate, mappedIntLiteralType, mappedIntTypes),
-                generateUnary("bnot", BigInteger::not, mappedIntLiteralType, mappedIntTypes),
-                //not: Literal -> bool, can't generate the same way as generateUnary() does
-                List.of(new ConstMethodDef("not", 0, false, List.of(), mappedBoolType, call -> {
-                    if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(mappedIntLiteralType)) {
-                        //Get the receiver value
-                        BigInteger receiverValue = (BigInteger) typedReceiver.obj();
-                        boolean resultValue = receiverValue.equals(BigInteger.ZERO);
-                        return new TypedLiteral(call.loc(), resultValue, mappedBoolType);
-                    } else {
-                        throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
-                    }
-                }, null))
+                generateUnary("bnot", BigInteger::not, mappedIntLiteralType, mappedIntTypes)
+//                List.of(generateUnary("not", b -> b.equals(BigInteger.ZERO), mappedIntLiteralType, mappedBoolType))
         ));
     }
 

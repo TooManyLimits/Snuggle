@@ -2,6 +2,7 @@ package builtin_types;
 
 import builtin_types.reflect.ReflectedBuiltin;
 import builtin_types.types.*;
+import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
@@ -44,11 +45,11 @@ public class BuiltinTypes {
 
         addType(OptionType.INSTANCE);
         addType(ArrayType.INSTANCE);
+        addType(StringType.INSTANCE);
 
         addType(ObjType.INSTANCE);
         addType(UnitType.INSTANCE);
         addType(BoolType.INSTANCE);
-        addType(StringType.INSTANCE);
 
         addType(IntLiteralType.INSTANCE);
         addType(IntegerType.I8);
@@ -60,6 +61,7 @@ public class BuiltinTypes {
         addType(IntegerType.I64);
         addType(IntegerType.U64);
 
+        addType(FloatLiteralType.INSTANCE);
         addType(FloatType.F32);
         addType(FloatType.F64);
         return this;

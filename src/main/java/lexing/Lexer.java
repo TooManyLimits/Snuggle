@@ -37,7 +37,7 @@ public class Lexer {
             //Other punctuation, () [] {} . : ; ?
             "[()\\[\\]{}.:;,?]" + "|" +
             //Number literals
-            "\\d+(?:\\.\\d+)?" + "|" +
+            "\\d+(?:(\\.\\d+(?:f32|f64)?)|(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64)?)?" + "|" +
             //Identifiers
             "[a-zA-Z_]\\w*" + "|" +
             //String literals
