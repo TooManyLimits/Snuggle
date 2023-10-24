@@ -6,6 +6,7 @@ import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -16,8 +17,15 @@ public record TypedMethodCall(Loc loc, TypedExpr receiver, MethodDef method, Lis
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
         receiver.compile(compiler, env, visitor);
+
         for (TypedExpr arg : args)
             arg.compile(compiler, env, visitor);
+
+        //Visit the line number:
+        Label label = new Label();
+        visitor.visitLabel(label);
+        visitor.visitLineNumber(loc.startLine(), label);
+
         method.compileCall(Opcodes.INVOKEVIRTUAL, receiver.type(), compiler, visitor);
     }
 }

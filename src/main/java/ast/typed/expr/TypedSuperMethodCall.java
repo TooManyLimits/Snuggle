@@ -7,6 +7,7 @@ import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -22,6 +23,11 @@ public record TypedSuperMethodCall(Loc loc, Type receiverType, MethodDef method,
 
         for (TypedExpr arg : args) //Push all args on the stack
             arg.compile(compiler, env, visitor);
+
+        //Visit the line number:
+        Label label = new Label();
+        visitor.visitLabel(label);
+        visitor.visitLineNumber(loc.startLine(), label);
 
         method.compileCall(Opcodes.INVOKESPECIAL, receiverType, compiler, visitor); //Invoke special
 

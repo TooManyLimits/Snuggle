@@ -7,10 +7,10 @@ import ast.type_resolved.expr.TypeResolvedExpr;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
-public record ParsedCast(Loc loc, ParsedExpr lhs, boolean isMaybe, ParsedType type) implements ParsedExpr {
+public record ParsedCast(Loc loc, int tokenLine, ParsedExpr lhs, boolean isMaybe, ParsedType type) implements ParsedExpr {
 
     @Override
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {
-        return new TypeResolvedCast(loc, lhs.resolve(resolver), isMaybe, type.resolve(loc, resolver));
+        return new TypeResolvedCast(loc, tokenLine, lhs.resolve(resolver), isMaybe, type.resolve(loc, resolver));
     }
 }

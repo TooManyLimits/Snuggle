@@ -26,6 +26,8 @@ public class ErrorHelper {
         //Store un-mangled class names
         classUnmangleMap.put(result.runtime().mangledName(), result.runtime().name());
         result.otherClasses().forEach(c -> classUnmangleMap.put(c.mangledName(), c.name()));
+        //Also add the builtin unmangle map
+        classUnmangleMap.putAll(result.builtinMangleMap());
     }
 
     /**
@@ -85,13 +87,11 @@ public class ErrorHelper {
             result.add(new StackTraceElement(
                     unmangledClassName,
                     unmangleMethodName(elem.getMethodName()),
-                    fileName,
+                    fileName.equals("Files") ? "line" : fileName,
                     elem.getLineNumber()
             ));
         }
-        result.remove(result.size() - 1); //Remove last 2, which are unimportant
-        result.remove(result.size() - 1);
-        result.add(new StackTraceElement("Program", "main", "", -1));
+        result.remove(result.size() - 1); //Remove last, as its info is not important
 
         return result.toArray(new StackTraceElement[0]);
     }

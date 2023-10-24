@@ -8,7 +8,30 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testObjectCast();
+        testImports();
+    }
+
+    private static void testImports() {
+        test(Map.of(
+                "main",
+                """
+                        if 1 < 2 {
+                            import "cutie";
+                            new Cutie().good()
+                        } else;
+                        //new Cutie().good() //type check error, type Cutie doesn't exist here
+                        """,
+                "cutie",
+                """
+                        pub class Cutie {
+                            fn new() super()
+                            fn bad() System.print(new Obj() as Cutie)
+                            fn good() System.print("good cutie :D")
+                        }
+                        new Cutie().bad() //error!
+                        System.print("Cutie!")
+                        """
+        ));
     }
 
     private static void testStackOverflow() {
@@ -26,11 +49,24 @@ public class Main {
                 class A {fn new() super()}
                 class B: A {fn new() super()}
                 
+                class DoBad {
+                    fn new() super()
+                    fn thing() {
+                        System.print(new A() as B)
+                    }
+                    fn indirectThing() {
+                        this
+                            .
+                                thing
+                                    ()
+                    }
+                }
+                
                 var a = new A();
                 var b = new B();
                 
                 System.print(b as A)
-                System.print(a as B) //error
+                new DoBad().indirectThing() //error
                 """);
     }
 
@@ -1085,24 +1121,21 @@ public class Main {
     }
 
     private static void test(String main) {
-        try {
-            long before = System.nanoTime();
-            SnuggleInstance instance = CompileAll.compileAllToInstance(new BuiltinTypes(), Map.of("main", main));
-            long after = System.nanoTime();
-            System.out.println("Compilation took " + (after - before) / 1000000 + " ms");
-            before = after;
-            instance.run();
-            after = System.nanoTime();
-            System.out.println("Running took " + (after - before) / 1000000 + " ms");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        test(new BuiltinTypes(), Map.of("main", main));
     }
 
     private static void test(BuiltinTypes types, String main) {
+        test(types, Map.of("main", main));
+    }
+
+    private static void test(Map<String, String> files) {
+        test(new BuiltinTypes(), files);
+    }
+
+    private static void test(BuiltinTypes types, Map<String, String> files) {
         try {
             long before = System.nanoTime();
-            SnuggleInstance instance = CompileAll.compileAllToInstance(types, Map.of("main", main));
+            SnuggleInstance instance = CompileAll.compileAllToInstance(types, files);
             long after = System.nanoTime();
             System.out.println("Compilation took " + (after - before) / 1000000 + " ms");
             before = after;

@@ -10,15 +10,21 @@ import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-public record TypedCast(Loc loc, TypedExpr lhs, boolean isMaybe, Type type) implements TypedExpr {
+public record TypedCast(Loc loc, int tokenLine, TypedExpr lhs, boolean isMaybe, Type type) implements TypedExpr {
 
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
         //Load lhs on the stack first
         lhs.compile(compiler, env, visitor);
+
+        //Emit line number
+        Label label = new Label();
+        visitor.visitLabel(label);
+        visitor.visitLineNumber(loc.startLine(), label);
 
         //Get some info
         TypeDef myTypeDef = compiler.getTypeDef(type);

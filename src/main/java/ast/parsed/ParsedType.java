@@ -24,7 +24,7 @@ public sealed interface ParsedType {
             //Basic types; lookup their methodName
             Integer resolvedName = resolver.lookup(name);
             if (resolvedName == null)
-                throw new UnknownTypeException("Type \"" + this + "\" could not be found in the current scope.", loc);
+                throw new UnknownTypeException("Type \"" + name + "\" could not be found in the current scope.", loc);
             return new ResolvedType.Basic(resolvedName, ListUtils.map(generics, g -> g.resolve(loc, resolver)));
         }
     }

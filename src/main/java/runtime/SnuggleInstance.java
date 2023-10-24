@@ -32,7 +32,7 @@ public class SnuggleInstance {
                 loader.defineClass(otherClass.bytes());
             }
             //Comment out below line to not print bytecode
-//            compileResult.all().forEach(c -> new ClassReader(c.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG));
+            compileResult.all().forEach(c -> new ClassReader(c.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG));
         } catch (Exception impossible) {
             throw new IllegalStateException("Runtime always has default constructor, bug in compiler, please report!");
         }

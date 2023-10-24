@@ -171,7 +171,7 @@ public class TypeChecker {
                 //A type check failed, so this method def is not applicable.
                 //Note this information down and continue.
                 checkCache.get(i).put(expectedParamType, null);
-                if (!foundCheckError) {
+                if (!foundCheckError || onlyCheckError != null && e.getMessage().equals(onlyCheckError.getMessage())) {
                     foundCheckError = true;
                     onlyCheckError = e;
                 } else {

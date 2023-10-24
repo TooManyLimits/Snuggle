@@ -87,7 +87,7 @@ public class Compiler {
         throw new IllegalStateException("Compiler cannot get type def of generic type? Bug in compiler, please report!");
     }
 
-    public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses) {
+    public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses, Map<String, String> builtinMangleMap) {
         public List<CompiledClass> all() {
             ArrayList<CompiledClass> res = new ArrayList<>(otherClasses.size() + 1);
             res.add(runtime);
@@ -102,14 +102,19 @@ public class Compiler {
         List<CompiledClass> classes = new ArrayList<>();
 
         //Compile every typedef (that needs compiling)
+        //Also add unmangled names for non-snuggle classes.
+        Map<String, String> builtinMangleMap = new HashMap<>();
         for (TypeDef anyTypeDef : ast.typeDefs()) {
             //Only compile snuggle type defs, not built in ones
-            if (!(anyTypeDef instanceof SnuggleTypeDef typeDef)) continue;
-            //Compile the TypeDef
-            byte[] compiled = typeDef.compile(this);
-            //Get the name
-            String name = typeDef.loc().fileName() + "/" + typeDef.name();
-            classes.add(new CompiledClass(name, typeDef.getRuntimeName(), compiled));
+            if (!(anyTypeDef instanceof SnuggleTypeDef typeDef)) {
+                builtinMangleMap.put(anyTypeDef.getRuntimeName(), anyTypeDef.name());
+            } else {
+                //Compile the TypeDef
+                byte[] compiled = typeDef.compile(this);
+                //Get the name
+                String name = typeDef.loc().fileName() + "/" + typeDef.name();
+                classes.add(new CompiledClass(name, typeDef.getRuntimeName(), compiled));
+            }
         }
 
         //Create the Files class
@@ -122,7 +127,10 @@ public class Compiler {
 
         //Create the Runtime class. All it needs to do is import main.
         CompiledClass runtime = createRuntime();
-        return new CompileResult(runtime, classes);
+
+        //Get the mangle map
+
+        return new CompileResult(runtime, classes, builtinMangleMap);
     }
 
     private void compileFile(ClassWriter filesWriter, TypedFile file) throws CompilationException {

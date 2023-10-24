@@ -217,6 +217,7 @@ public class Parser {
         int rhsPrecedence = RIGHT_ASSOCIATIVE.get(precedence) ? precedence : precedence + 1;
         while (lexer.consume(TOK_TYPES.get(precedence))) {
             TokenType op = lexer.last().type();
+            Loc opLoc = lexer.last().loc();
 
             String methodName = switch (op) {
                 case PLUS -> "add";
@@ -246,28 +247,29 @@ public class Parser {
 
             //Special handling for and/or operations. They can't be method calls
             //because of short-circuiting.
-            if (op == AND || op == OR) {
-                String tempVarName = "$desugarShortCircuit";
-                ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
-                ParsedExpr ifFalse = rhs;
-                if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
-                lhs = new ParsedBlock(fullLoc, List.of(
-                        new ParsedDeclaration(fullLoc, tempVarName, new ParsedType.Basic("bool", List.of()), lhs),
-                        new ParsedIf(fullLoc,
-                                new ParsedVariable(fullLoc, tempVarName),
-                                ifTrue,
-                                ifFalse
-                        )
-                ));
-                continue;
-            }
+            //TODO: Remove
+//            if (op == AND || op == OR) {
+//                String tempVarName = "$desugarShortCircuit";
+//                ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
+//                ParsedExpr ifFalse = rhs;
+//                if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
+//                lhs = new ParsedBlock(fullLoc, List.of(
+//                        new ParsedDeclaration(fullLoc, tempVarName, new ParsedType.Basic("bool", List.of()), lhs),
+//                        new ParsedIf(fullLoc,
+//                                new ParsedVariable(fullLoc, tempVarName),
+//                                ifTrue,
+//                                ifFalse
+//                        )
+//                ));
+//                continue;
+//            }
 
             //Otherwise, operators are method calls
-            lhs = new ParsedMethodCall(fullLoc, lhs, methodName, List.of(), List.of(rhs));
+            lhs = new ParsedMethodCall(opLoc, lhs, methodName, List.of(), List.of(rhs));
 
             //Special !=
             if (op == NOT_EQUAL)
-                lhs = new ParsedMethodCall(lhs.loc(), lhs, "not", List.of(), List.of());
+                lhs = new ParsedMethodCall(opLoc, lhs, "not", List.of(), List.of());
 
         }
 
@@ -282,7 +284,7 @@ public class Parser {
             Token as = lexer.last();
             boolean isMaybe = lexer.consume(QUESTION_MARK);
             ParsedType type = parseType(isMaybe ? "as?" : "as", isMaybe ? as.loc().merge(lexer.last().loc()) : as.loc(), classGenerics, methodGenerics);
-            lhs = new ParsedCast(lhs.loc().merge(lexer.last().loc()), lhs, isMaybe, type);
+            lhs = new ParsedCast(lhs.loc().merge(lexer.last().loc()), as.loc().startLine(), lhs, isMaybe, type);
         }
         return lhs;
     }
@@ -297,8 +299,7 @@ public class Parser {
             };
             Loc operatorLoc = lexer.last().loc();
             ParsedExpr operand = parseUnary(classGenerics, methodGenerics, canBeDeclaration);
-            Loc fullLoc = Loc.merge(operatorLoc, operand.loc());
-            return new ParsedMethodCall(fullLoc, operand, methodName, List.of(), List.of());
+            return new ParsedMethodCall(operatorLoc, operand, methodName, List.of(), List.of());
         }
 
         return parseCall(classGenerics, methodGenerics, canBeDeclaration);
@@ -315,8 +316,7 @@ public class Parser {
                     List<ParsedType> typeArgs = parseTypeArguments(classGenerics, methodGenerics);
                     if (lexer.consume(LEFT_PAREN)) {
                         List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
-                        Loc callLoc = Loc.merge(lhs.loc(), lexer.last().loc());
-                        lhs = new ParsedMethodCall(callLoc, lhs, name.string(), typeArgs, args);
+                        lhs = new ParsedMethodCall(name.loc(), lhs, name.string(), typeArgs, args);
                     } else {
                         if (typeArgs.size() > 0)
                             throw new ParsingException("Field accesses cannot accept generic parameters: field \"" + name.string() + "\"", name.loc());
@@ -326,7 +326,9 @@ public class Parser {
                 case LEFT_PAREN -> {
                     //super() is super.new(), while anythingElse() is anythingElse.invoke().
                     String methodName = (lhs instanceof ParsedSuper) ? "new" : "invoke";
-                    lhs = new ParsedMethodCall(loc, lhs, methodName, List.of(), parseArguments(classGenerics, methodGenerics));
+                    List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
+                    Loc callLoc = (lhs instanceof ParsedSuper || lhs instanceof ParsedVariable) ? lhs.loc() : loc.merge(lexer.last().loc());
+                    lhs = new ParsedMethodCall(callLoc, lhs, methodName, List.of(), args);
                 }
                 case LEFT_SQUARE -> {
                     throw new IllegalStateException("Indexing is not yet implemented");
@@ -364,6 +366,8 @@ public class Parser {
 
                     //If the left was a field access, then we need to do some variable binding first.
                     if (lhs instanceof ParsedFieldAccess fieldAccess) {
+                        //TODO: Remove
+
                         //a.b += 5
                         //becomes
                         //{ var temp = a; temp.b = temp.b.plusEquals(5) }
@@ -401,6 +405,7 @@ public class Parser {
                                 )
                         ));
                     } else {
+                        //TODO: Remove
                         //Special short-circuiting handling
                         if (operator == OR_ASSIGN || operator == AND_ASSIGN)  {
                             ParsedExpr ifTrue = lhs;
@@ -414,7 +419,7 @@ public class Parser {
                             );
                         }
                         //It was a variable, so we can just call the method, and assign.
-                        rhs = new ParsedMethodCall(fullLoc, lhs, methodName, List.of(), List.of(rhs));
+                        rhs = new ParsedMethodCall(operatorLoc, lhs, methodName, List.of(), List.of(rhs));
                     }
                 }
                 //Merge the locations and create assignment

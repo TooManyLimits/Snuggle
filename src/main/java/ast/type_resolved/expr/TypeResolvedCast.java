@@ -20,7 +20,7 @@ import lexing.Loc;
 import java.math.BigInteger;
 import java.util.List;
 
-public record TypeResolvedCast(Loc loc, TypeResolvedExpr lhs, boolean isMaybe, ResolvedType type) implements TypeResolvedExpr {
+public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boolean isMaybe, ResolvedType type) implements TypeResolvedExpr {
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
@@ -61,7 +61,7 @@ public record TypeResolvedCast(Loc loc, TypeResolvedExpr lhs, boolean isMaybe, R
                 //then perform the cast at compile time for constant folding.
                 if (inferredLhs instanceof TypedLiteral literal)
                     return new TypedLiteral(loc, compileTimeCast(literal, b, checker.pool()), myType);
-                return new TypedCast(loc, inferredLhs, false, myType);
+                return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
             }
             //Lhs cannot be numeric, or else its typedef would have been a builtin
             throw new TypeCheckingException("Only numeric types can be casted to numeric types like " + myTypeDef.name() + ", but the expression has type " + lhsTypeDef.name(), loc);
@@ -78,7 +78,7 @@ public record TypeResolvedCast(Loc loc, TypeResolvedExpr lhs, boolean isMaybe, R
                 if (isMaybe)
                     throw new TypeCheckingException("The \"as?\" operator cannot be used to convert from subtype to supertype; the conversion will always succeed! Use regular \"as\" instead here.", loc);
                 //Otherwise, the cast is successful.
-                return new TypedCast(loc, inferredLhs, false, myType);
+                return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
             }
         } else {
             if (myType.isSubtype(inferredLhs.type(), checker.pool())) {
@@ -87,9 +87,9 @@ public record TypeResolvedCast(Loc loc, TypeResolvedExpr lhs, boolean isMaybe, R
                 if (isMaybe) {
                     //Create the type Option<myType> and return it
                     Type optionWrapped = checker.pool().getGenericBuiltin(OptionType.INSTANCE, List.of(myType));
-                    return new TypedCast(loc, inferredLhs, true, optionWrapped);
+                    return new TypedCast(loc, tokenLine, inferredLhs, true, optionWrapped);
                 } else {
-                    return new TypedCast(loc, inferredLhs, false, myType);
+                    return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
                 }
             } else {
                 //Case 2: Neither is a subtype of the other. Error.

@@ -14,6 +14,13 @@ public record TypedImport(Loc loc, String fileName, Type type) implements TypedE
 
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
+
+        //Visit the line number:
+        Label label = new Label();
+        visitor.visitLabel(label);
+        visitor.visitLineNumber(loc.startLine(), label);
+
+        //Get info
         String filesClass = NameHelper.getFilesClassName(compiler.instanceId);
         int fileId = compiler.fileIndicesByName.get(fileName);
         String fieldName = NameHelper.getImportFieldName(fileId);
