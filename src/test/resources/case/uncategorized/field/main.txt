@@ -1,0 +1,16 @@
+class A {
+    var x: i32 = 11
+    fn new() {
+        super()
+        //this.x = 11;
+    }
+    pub fn get(): i32 this.x = this.x - 1
+}
+System.print(new A().get())
+System.print(new A().get())
+var a = new A()
+System.print(a.get())
+System.print(a.get())
+System.print(a.get())
+System.print(a.get())
+System.print(a.get())

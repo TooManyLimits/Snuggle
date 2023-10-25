@@ -1,0 +1,192 @@
+class MD5 {
+
+    fn rotateLeft(i: i32, distance: i32): i32 {
+        { System.shl(i, distance) } | { System.ushr(i, -distance) }
+    }
+
+    fn computeMD5(message: Array<i8>): Array<i8> {
+        var SHIFT_AMTS: Array<i32> = new Array<i32>(16);
+        {
+            SHIFT_AMTS.set(0, 7);
+            SHIFT_AMTS.set(1, 12);
+            SHIFT_AMTS.set(2, 17);
+            SHIFT_AMTS.set(3, 22);
+            SHIFT_AMTS.set(4, 5);
+            SHIFT_AMTS.set(5, 9);
+            SHIFT_AMTS.set(6, 14);
+            SHIFT_AMTS.set(7, 20);
+            SHIFT_AMTS.set(8, 4);
+            SHIFT_AMTS.set(9, 11);
+            SHIFT_AMTS.set(10, 16);
+            SHIFT_AMTS.set(11, 23);
+            SHIFT_AMTS.set(12, 6);
+            SHIFT_AMTS.set(13, 10);
+            SHIFT_AMTS.set(14, 15);
+            SHIFT_AMTS.set(15, 21);
+        }
+        var TABLE_T: Array<i32> = new Array<i32>(64);
+        {
+            TABLE_T.set(0, -680876936);
+            TABLE_T.set(1, -389564586);
+            TABLE_T.set(2, 606105819);
+            TABLE_T.set(3, -1044525330);
+            TABLE_T.set(4, -176418897);
+            TABLE_T.set(5, 1200080426);
+            TABLE_T.set(6, -1473231341);
+            TABLE_T.set(7, -45705983);
+            TABLE_T.set(8, 1770035416);
+            TABLE_T.set(9, -1958414417);
+            TABLE_T.set(10, -42063);
+            TABLE_T.set(11, -1990404162);
+            TABLE_T.set(12, 1804603682);
+            TABLE_T.set(13, -40341101);
+            TABLE_T.set(14, -1502002290);
+            TABLE_T.set(15, 1236535329);
+            TABLE_T.set(16, -165796510);
+            TABLE_T.set(17, -1069501632);
+            TABLE_T.set(18, 643717713);
+            TABLE_T.set(19, -373897302);
+            TABLE_T.set(20, -701558691);
+            TABLE_T.set(21, 38016083);
+            TABLE_T.set(22, -660478335);
+            TABLE_T.set(23, -405537848);
+            TABLE_T.set(24, 568446438);
+            TABLE_T.set(25, -1019803690);
+            TABLE_T.set(26, -187363961);
+            TABLE_T.set(27, 1163531501);
+            TABLE_T.set(28, -1444681467);
+            TABLE_T.set(29, -51403784);
+            TABLE_T.set(30, 1735328473);
+            TABLE_T.set(31, -1926607734);
+            TABLE_T.set(32, -378558);
+            TABLE_T.set(33, -2022574463);
+            TABLE_T.set(34, 1839030562);
+            TABLE_T.set(35, -35309556);
+            TABLE_T.set(36, -1530992060);
+            TABLE_T.set(37, 1272893353);
+            TABLE_T.set(38, -155497632);
+            TABLE_T.set(39, -1094730640);
+            TABLE_T.set(40, 681279174);
+            TABLE_T.set(41, -358537222);
+            TABLE_T.set(42, -722521979);
+            TABLE_T.set(43, 76029189);
+            TABLE_T.set(44, -640364487);
+            TABLE_T.set(45, -421815835);
+            TABLE_T.set(46, 530742520);
+            TABLE_T.set(47, -995338651);
+            TABLE_T.set(48, -198630844);
+            TABLE_T.set(49, 1126891415);
+            TABLE_T.set(50, -1416354905);
+            TABLE_T.set(51, -57434055);
+            TABLE_T.set(52, 1700485571);
+            TABLE_T.set(53, -1894986606);
+            TABLE_T.set(54, -1051523);
+            TABLE_T.set(55, -2054922799);
+            TABLE_T.set(56, 1873313359);
+            TABLE_T.set(57, -30611744);
+            TABLE_T.set(58, -1560198380);
+            TABLE_T.set(59, 1309151649);
+            TABLE_T.set(60, -145523070);
+            TABLE_T.set(61, -1120210379);
+            TABLE_T.set(62, 718787259);
+            TABLE_T.set(63, -343485551);
+        }
+        var messageLenBytes: i32 = message.len();
+        var numBlocks: i32 = { System.ushr({ messageLenBytes + 8 }, 6) } + 1;
+        var totalLen: i32 = System.shl(numBlocks, 6);
+        var paddingBytes: Array<i8> = new Array<i8>(totalLen - messageLenBytes);
+        paddingBytes.set(0, System.i2b(128));
+        var messageLenBits: i64 = System.shl(System.i2l(messageLenBytes), 3);
+        {
+            var i: i32 = 0;
+
+            while i < 8 {
+                paddingBytes.set(paddingBytes.len() - 8 + i, System.l2b(messageLenBits));
+                messageLenBits = System.ushr(messageLenBits, 8);
+                i = i + 1;
+            };
+        }
+        var a: i32 = 1732584193;
+        var b: i32 = System.l2i(4023233417);
+        var c: i32 = System.l2i(2562383102);
+        var d: i32 = 271733878;
+        var buffer: Array<i32> = new Array<i32>(16);
+        {
+            var i: i32 = 0;
+
+            while i < numBlocks {
+                var index: i32 = System.shl(i, 6);
+                {
+                    var j: i32 = 0;
+
+                    while j < 64 {
+                        buffer.set(System.ushr(j, 2), { System.shl(System.b2i(if { index < messageLenBytes } message.get(index) else paddingBytes.get(index - messageLenBytes)), 24) } | { System.ushr(buffer.get(System.ushr(j, 2)), 8) });
+                        j = j + 1;
+                        index = index + 1;
+                    };
+                }
+                var originalA: i32 = a;
+                var originalB: i32 = b;
+                var originalC: i32 = c;
+                var originalD: i32 = d;
+                {
+                    var j: i32 = 0;
+
+                    while j < 64 {
+                        var div16: i32 = System.ushr(j, 4);
+                        var f: i32 = 0;
+                        var bufferIndex: i32 = j;
+                        if div16 == 0 {
+                            f = { b & c } | { ~b & d };
+                        } else if div16 == 1 {
+                            f = { b & d } | { c & ~d };
+                            bufferIndex = { bufferIndex * 5 + 1 } & 15;
+                        } else if div16 == 2 {
+                            f = b ^ c ^ d;
+                            bufferIndex = { bufferIndex * 3 + 5 } & 15;
+                        } else {
+                            f = c ^ { b | ~d };
+                            bufferIndex = { bufferIndex * 7 } & 15;
+                        };;;
+                        var temp: i32 = b + this.rotateLeft(a + f + buffer.get(bufferIndex) + TABLE_T.get(j), SHIFT_AMTS.get({ System.shl(div16, 2) } | { j & 3 }));
+                        a = d;
+                        d = c;
+                        c = b;
+                        b = temp;
+                        j = j + 1;
+                    };
+                }
+                a = a + originalA;
+                b = b + originalB;
+                c = c + originalC;
+                d = d + originalD;
+                i = i + 1;
+            };
+        }
+        var md5: Array<i8> = new Array<i8>(16);
+        var count: i32 = 0;
+        {
+            var i: i32 = 0;
+
+            while i < 4 {
+                var n: i32 = if { i == 0 } a else { if { i == 1 } b else { if { i == 2 } c else d } };
+                var j: i32 = 0;
+
+                while j < 4 {
+                    md5.set(count, System.i2b(n));
+                    count = count + 1;
+                    n = System.ushr(n, 8);
+                    j = j + 1;
+                };
+                i = i + 1;
+            };
+        }
+        md5
+    }
+    fn new() super()
+}
+
+var input: Array<i8> = Test.hex("f3a89dd6b9faa8cf295e138c688d693cc137c39c98c0a4af3c6b51e16963c8de") as Array<i8>;
+var output: Array<i8> = Test.hex("b4b0896660df2d61a736591879830fbb") as Array<i8>;
+
+Test.assertArrayEquals(output, new MD5().computeMD5(input));

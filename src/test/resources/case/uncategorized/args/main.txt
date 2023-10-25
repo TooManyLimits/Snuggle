@@ -1,0 +1,7 @@
+class Behold {
+    fn new() super()
+    fn arguments(a: i32, b: i16, c: i8)
+        System.print(c)
+}
+
+new Behold().arguments(1, 2, 3)

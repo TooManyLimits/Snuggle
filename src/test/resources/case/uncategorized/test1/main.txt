@@ -1,0 +1,20 @@
+class Cutie {
+    pub fn new() super()
+    pub fn meow(): i64 42
+    pub fn pat(): i32
+        1 + 2 * 3
+    pub fn pat(): i16
+        1 + 2 * 4
+    pub fn snug(): i64
+        1 - 2 + 3 - 4
+    pub fn doSilly() System.print(this.snug())
+}
+var a: i8 = 256 / 2 - 1
+var b: i32 = new Cutie().pat()
+var c: i16 = new Cutie().pat()
+var aple = new Cutie()
+System.print(a)
+System.print(b)
+System.print(c)
+System.print(aple.snug())
+aple.doSilly()

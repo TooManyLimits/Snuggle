@@ -1,0 +1,10 @@
+class Plural {
+    pub fn new() super()
+    pub fn doMultipleThings() {
+        var x: i32 = 1;
+        System.print(x);
+        System.print(x + 1);
+        //var y: i16 = 2 //errors, since the last expression in a block cannot be a declaration
+    }
+}
+new Plural().doMultipleThings()

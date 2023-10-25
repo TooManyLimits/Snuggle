@@ -1,0 +1,17 @@
+class Fib {
+    fn new() super()
+
+    fn fib(n: u32): u32 {
+        if n < 2 {
+            n
+        } else {
+            this.fib(n-1) + this.fib(n-2)
+        }
+    }
+}
+
+System.print(new Fib().fib(45))
+
+// var x: u32 = 0
+// while 45 >= x = x + 1
+//     System.print(new Fib().fib(x-1))

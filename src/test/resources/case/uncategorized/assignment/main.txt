@@ -1,0 +1,9 @@
+var x: i8 = 1;
+var y: i8 = 2;
+var z: i8 = 3;
+System.print(x)
+System.print(y)
+System.print(z = 4)
+System.print(z)
+x = y = z
+System.print(x + y + z)
