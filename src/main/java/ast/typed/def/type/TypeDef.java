@@ -43,6 +43,9 @@ public interface TypeDef {
     //Is this type extensible?
     boolean extensible();
 
+    //Is this a reference type?
+    boolean isReferenceType();
+
     //Gets all methods, including the true supertype's.
     default List<? extends MethodDef> getAllMethods(TypePool pool) throws CompilationException {
         Type trueSupertype = trueSupertype();

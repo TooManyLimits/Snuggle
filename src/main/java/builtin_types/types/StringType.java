@@ -45,4 +45,9 @@ public class StringType implements BuiltinType {
     public boolean extensible() {
         return false;
     }
+
+    @Override
+    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+        return true;
+    }
 }

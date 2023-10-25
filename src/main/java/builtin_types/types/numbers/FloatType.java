@@ -138,6 +138,11 @@ public class FloatType implements BuiltinType {
         return false;
     }
 
+    @Override
+    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+        return false;
+    }
+
     @FunctionalInterface
     private interface BinHelper {
         List<MethodDef> get(String name,

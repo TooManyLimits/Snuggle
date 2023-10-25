@@ -87,4 +87,9 @@ public record ClassDef(Loc loc, int index, String name, Type supertype, List<Snu
     public boolean extensible() {
         return true;
     }
+
+    @Override
+    public boolean isReferenceType() {
+        return true;
+    }
 }

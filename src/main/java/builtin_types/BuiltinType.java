@@ -63,8 +63,9 @@ public interface BuiltinType {
      */
     String getDescriptor(List<Type> generics, TypePool pool);
     String getRuntimeName(List<Type> generics, TypePool pool);
-
+    boolean isReferenceType(List<Type> generics, TypePool pool);
     boolean extensible();
+    default boolean hasSpecialConstructor(List<Type> generics, TypePool pool) { return false; }
 
     /**
      * Attempt to convert this type into a storable type.

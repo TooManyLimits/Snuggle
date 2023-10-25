@@ -8,7 +8,40 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testImports();
+        testIfOption();
+    }
+
+    private static void testIfOption() {
+        test("""
+                var x = if true "hi";
+                System.print(x.get())
+                
+                var z = 1i32
+                var a = while z < 4 {
+                    z = z + 1
+                    "something a little silly"
+                }
+                System.print(a.get())
+                
+                var b = while false "lol"
+                System.print(b.get("while loop never ran"))
+                
+                var y = if false "hi 2";
+                System.print(y.get("if expression didnt happen :<"))
+                """);
+    }
+
+    private static void testOption() {
+        test("""
+                var x = new String?()
+                var y = new String?("hi")
+                
+                //x.get() //error, x is empty
+                x.get("Silly custom error message") //error, x is empty
+                
+                System.print(y.get())
+                System.print(y.get("Could not get value to print"))
+                """);
     }
 
     private static void testImports() {

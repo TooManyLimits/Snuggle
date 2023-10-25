@@ -593,16 +593,18 @@ public class Parser {
 
     private ParsedType parseType(String startTokString, Loc startTokLoc, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         String head = lexer.expect(IDENTIFIER, "Expected type after " + startTokString, startTokLoc).string();
+        int numOptions = 0;
+        while (lexer.consume(QUESTION_MARK)) numOptions++;
 
         //If the annotatedType is a generic, return a generic TypeString
         //Search method generics first, as they're more recently defined,
         //and can shadow class generics
         int index = genericIndexOf(methodGenerics, head);
         if (index != -1)
-            return new ParsedType.Generic(index, true);
+            return wrapOptions(new ParsedType.Generic(index, true), numOptions);
         index = genericIndexOf(typeGenerics, head);
         if (index != -1)
-            return new ParsedType.Generic(index, false);
+            return wrapOptions(new ParsedType.Generic(index, false), numOptions);
 
         //Otherwise, return a Basic annotatedType
         if (lexer.consume(LESS)) {
@@ -613,9 +615,9 @@ public class Parser {
                 generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
             generics.trimToSize();
             lexer.expect(GREATER, "Expected > to end generics list", lessLoc);
-            return new ParsedType.Basic(head, generics);
+            return wrapOptions(new ParsedType.Basic(head, generics), numOptions);
         } else {
-            return new ParsedType.Basic(head, List.of());
+            return wrapOptions(new ParsedType.Basic(head, List.of()), numOptions);
         }
     }
 
@@ -634,6 +636,11 @@ public class Parser {
             if (genericDefs.get(i).name().equals(name))
                 return i;
         return -1;
+    }
+
+    private static ParsedType wrapOptions(ParsedType type, int numOptions) {
+        if (numOptions == 0) return type;
+        return new ParsedType.Basic("Option", List.of(wrapOptions(type, numOptions - 1)));
     }
 
     private List<GenericDef> parseGenerics() throws CompilationException {

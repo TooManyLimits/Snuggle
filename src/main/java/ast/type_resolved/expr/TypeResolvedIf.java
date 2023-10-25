@@ -2,6 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
+import ast.type_resolved.TypeCheckingHelper;
 import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedIf;
@@ -32,17 +33,19 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         //If the condition is a constant bool, we can do special handling and choose the branch at compile time
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
             if (b) {
-                if (hasFalseBranch())
-                    return ifTrue.infer(currentType, checker, typeGenerics);
-                else {
-                    throw new IllegalStateException("If expressions without else branches are not yet supported!");
-                }
+                //Infer the true branch. If there's an else branch, return it as-is.
+                TypedExpr inferredTrueBranch = ifTrue.infer(currentType, checker, typeGenerics);
+                if (hasFalseBranch()) return inferredTrueBranch;
+                //If there's no false branch, need to wrap this value in an Option<>.
+                return TypeCheckingHelper.wrapInOption(loc, inferredTrueBranch, checker);
             } else {
+                //If this has a false branch, return its inferred value:
                 if (hasFalseBranch())
                     return ifFalse.infer(currentType, checker, typeGenerics);
-                else {
-                    throw new IllegalStateException("If expressions without else branches are not yet supported!");
-                }
+                //Otherwise, if there's no false branch, need to return an empty Option<>.
+                //Need to know the generic for the option, so infer the ifTrue branch and grab its type.
+                Type trueType = ifTrue.infer(currentType, checker, typeGenerics).type();
+                return TypeCheckingHelper.getEmptyOption(loc, trueType, checker);
             }
         }
 

@@ -52,6 +52,11 @@ public class ErrorHelper {
         return result;
     }
 
+    public SnuggleException translate(SnuggleException e) {
+        e.setStackTrace(translate(e.getStackTrace()));
+        return e;
+    }
+
 
     private String unmangleClass(String mangled) {
         mangled = mangled.replace('.', '/');

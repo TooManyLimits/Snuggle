@@ -50,6 +50,8 @@ public class SnuggleInstance {
             throw errorHelper.translate(classCastException);
         } catch (StackOverflowError stackOverflowError) {
             throw errorHelper.translate(stackOverflowError);
+        } catch (SnuggleException snuggleException) {
+            throw errorHelper.translate(snuggleException);
         }
     }
 

@@ -96,6 +96,11 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
+    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+        return true;
+    }
+
+    @Override
     public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
         return ListUtils.map(reflectedMethods, m -> m.get(pool));
     }

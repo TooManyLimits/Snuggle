@@ -35,6 +35,8 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
                 builtin.genericName(generics, checker.pool()),
                 builtin.getDescriptor(generics, checker.pool()),
                 builtin.getRuntimeName(generics, checker.pool()),
+                builtin.isReferenceType(generics, checker.pool()),
+                builtin.hasSpecialConstructor(generics, checker.pool()),
                 generics,
                 index,
                 new LateInit<>(() -> builtin.getMethods(generics, checker.pool())),

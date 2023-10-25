@@ -40,4 +40,9 @@ public class UnitType implements BuiltinType {
     public boolean extensible() {
         return false;
     }
+
+    @Override
+    public boolean isReferenceType(List<ast.typed.Type> generics, TypePool pool) {
+        return true;
+    }
 }

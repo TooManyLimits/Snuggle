@@ -203,6 +203,10 @@ public class FloatLiteralType implements BuiltinType {
         return false;
     }
 
+    @Override
+    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+        return false;
+    }
 
     //Helpers for cleaner syntax in getMethods()
     @FunctionalInterface

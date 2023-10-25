@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Set;
 
 public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String generifiedDescriptor,
-                             String generifiedRuntimeName, List<Type> generics, int index,
+                             String generifiedRuntimeName, boolean isReferenceType, boolean hasSpecialConstructor, List<Type> generics, int index,
                              LateInit<List<? extends MethodDef>, CompilationException> localizedMethods,
                              LateInit<Set<Type>, CompilationException> localizedSupertypes,
                              LateInit<Type, CompilationException> localizedTrueSupertype) implements TypeDef {

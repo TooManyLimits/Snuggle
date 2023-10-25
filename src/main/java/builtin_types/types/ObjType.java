@@ -44,4 +44,9 @@ public class ObjType implements BuiltinType {
                         v.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false))
         );
     }
+
+    @Override
+    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+        return true;
+    }
 }

@@ -5,6 +5,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
+import exceptions.runtime.SnuggleException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -59,6 +60,46 @@ public class BytecodeHelper {
         }
     }
 
+    //Pop an element from the stack
+    public static void pop(TypeDef typeDef, MethodVisitor visitor) {
+        //If output was a double or long, pop 2 slots
+        if (typeDef instanceof BuiltinTypeDef b) {
+            if (b.builtin() instanceof IntegerType i) {
+                if (i.bits == 64) {
+                    visitor.visitInsn(Opcodes.POP2);
+                    return;
+                }
+            } else if (b.builtin() instanceof FloatType f) {
+                if (f.bits == 64) {
+                    visitor.visitInsn(Opcodes.POP2);
+                    return;
+                }
+            }
+        }
+        //Otherwise, just pop 1
+        visitor.visitInsn(Opcodes.POP);
+    }
+
+    public static void pushNone(TypeDef innerType, MethodVisitor visitor) {
+        if (innerType.isReferenceType()) {
+            visitor.visitInsn(Opcodes.ACONST_NULL);
+        } else {
+            throw new IllegalStateException("Optional non-reference types not yet implemented");
+        }
+    }
+
+    public static void createObject(MethodVisitor v, Class<?> classToCreate, Object... args) {
+        String className = Type.getInternalName(classToCreate);
+        v.visitTypeInsn(Opcodes.NEW, className);
+        v.visitInsn(Opcodes.DUP);
+        StringBuilder descriptor = new StringBuilder("(");
+        for (var arg : args) {
+            v.visitLdcInsn(arg);
+            descriptor.append("L").append(Type.getInternalName(arg.getClass())).append(";");
+        }
+        descriptor.append(")V");
+        v.visitMethodInsn(Opcodes.INVOKESPECIAL, className, "<init>", descriptor.toString(), false);
+    }
 
 
     //long, int --> int, long

@@ -9,6 +9,7 @@ import compile.Compiler;
 import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -19,11 +20,17 @@ public record TypedConstructor(Loc loc, Type type, MethodDef method, List<TypedE
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
         TypeDef def = compiler.getTypeDef(type);
-        if (def instanceof BuiltinTypeDef b && b.builtin() == ArrayType.INSTANCE) {
-            //Arrays have special constructors
+
+        //Visit the line number:
+        Label label = new Label();
+        visitor.visitLabel(label);
+        visitor.visitLineNumber(loc.startLine(), label);
+
+        if (def instanceof BuiltinTypeDef b && b.hasSpecialConstructor()) {
+            //Some types have special constructors
             for (TypedExpr arg : args)
                 arg.compile(compiler, env, visitor);
-            //Args don't matter for array constructor, except visitor
+            //Args shouldn't matter for special constructor, except the visitor
             method.compileCall(0, null, null, visitor);
         } else {
             //Otherwise, it's as usual
