@@ -24,7 +24,7 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
         if (supertype != null)
             verifier.verifyType(supertype, loc);
 
-        //Verify each method
+        //Verify each method and field
         for (SnuggleTypeResolvedMethodDef methodDef : methods)
             methodDef.verifyGenericCounts(verifier);
         for (SnuggleTypeResolvedFieldDef fieldDef : fields)
@@ -33,23 +33,11 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
 
     @Override
     public ClassDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException {
-        StringBuilder newName = new StringBuilder(name);
-        if (generics.size() > 0) {
-            newName.append("<");
-            for (Type t : generics) {
-                newName.append(checker.pool().getTypeDef(t).name());
-                newName.append(", ");
-            }
-            newName.delete(newName.length() - 2, newName.length());
-            newName.append(">");
-        }
-
         Type currentType = new Type.Basic(index);
         Type instantiatedSupertype = supertype == null ? checker.pool().getBasicBuiltin(ObjType.INSTANCE) : checker.pool().getOrInstantiateType(supertype, generics);
         List<SnuggleMethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(currentType, checker, generics));
         List<SnuggleFieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
-
-        return new ClassDef(loc, index, newName.toString(), instantiatedSupertype, typeInstantiatedMethods, typeInstantiatedFields);
+        return new ClassDef(loc, index, instantiateName(checker, generics), instantiatedSupertype, typeInstantiatedMethods, typeInstantiatedFields);
     }
 
 }

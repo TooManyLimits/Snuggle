@@ -4,6 +4,7 @@ import ast.parsed.ParsedType;
 import ast.parsed.def.field.SnuggleParsedFieldDef;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
 import ast.parsed.def.type.ParsedClassDef;
+import ast.parsed.def.type.ParsedStructDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.*;
 import ast.parsed.prog.ParsedAST;
@@ -69,10 +70,10 @@ public class Parser {
             imports.add(parseImport());
         //Parse types
         List<ParsedTypeDef> parsedTypeDefs = new ArrayList<>();
-        while (lexer.check(PUB, CLASS)) {
+        while (lexer.check(PUB, CLASS, STRUCT)) {
             boolean pub = lexer.consume(PUB);
-            if (lexer.consume(CLASS))
-                parsedTypeDefs.add(parseClass(pub));
+            if (lexer.consume(CLASS, STRUCT))
+                parsedTypeDefs.add(parseClassOrStruct(lexer.last().type() == CLASS, pub));
             else
                 throw new ParsingException("Expected annotatedType def, found " + lexer.peek().type(), lexer.peek().loc());
         }
@@ -85,17 +86,24 @@ public class Parser {
         return new ParsedFile(fileName, imports, parsedTypeDefs, code);
     }
 
-    //The "class" token was just consumed
-    private ParsedTypeDef parseClass(boolean pub) throws CompilationException {
-        //Get class methodName
-        Token className = lexer.expect(IDENTIFIER, "Expected class methodName after \"class\", but got " + lexer.peek().type());
+    //The "class"/"struct" token was just consumed
+    private ParsedTypeDef parseClassOrStruct(boolean isClass, boolean pub) throws CompilationException {
+        //Get type name
+        String typeTypeString = isClass ? "class" : "struct";
+        Token typeName = lexer.expect(IDENTIFIER, "Expected " + typeTypeString + " name after \"" + typeTypeString + "\", but got " + lexer.peek().type(), lexer.last().loc());
         //Parse generics and their bounds
         List<GenericDef> typeGenerics = parseGenerics();
         //Parse the supertype, if there is one (colon)
-        ParsedType superType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, List.of()) : null;
+        ParsedType superType = null;
+        if (lexer.consume(COLON)) {
+            if (isClass)
+                superType = parseType(":", lexer.last().loc(), typeGenerics, List.of());
+            else
+                throw new ParsingException("Unexpected token COLON - structs cannot have a supertype!", lexer.last().loc());
+        }
         if (superType instanceof ParsedType.Generic) //Ensure supertype is not a generic (can't have class Funny<T>: T {...})
-            throw new ParsingException("Cannot use generic annotatedType as supertype", className.loc());
-        Loc leftCurlyLoc = lexer.expect(LEFT_CURLY, "Expected left curly brace to begin class definition", className.loc()).loc();
+            throw new ParsingException("Cannot use generic annotatedType as supertype", typeName.loc());
+        Loc leftCurlyLoc = lexer.expect(LEFT_CURLY, "Expected left curly brace to begin class definition", typeName.loc()).loc();
         ArrayList<SnuggleParsedMethodDef> methods = new ArrayList<>();
         ArrayList<SnuggleParsedFieldDef> fields = new ArrayList<>();
         while (!lexer.consume(RIGHT_CURLY)) {
@@ -109,7 +117,10 @@ public class Parser {
             else
                 throw new ParsingException("Expected method def, found " + lexer.peek().type(), lexer.peek().loc());
         }
-        return new ParsedClassDef(className.loc(), pub, className.string(), typeGenerics.size(), (ParsedType.Basic) superType, methods, fields);
+        if (isClass)
+            return new ParsedClassDef(typeName.loc(), pub, typeName.string(), typeGenerics.size(), (ParsedType.Basic) superType, methods, fields);
+        else
+            return new ParsedStructDef(typeName.loc(), pub, typeName.string(), typeGenerics.size(), methods, fields);
     }
 
     //"fn" was already consumed

@@ -22,4 +22,19 @@ public interface TypeResolvedTypeDef {
      */
     TypeDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException;
 
+
+    default String instantiateName(TypeChecker checker, List<Type> generics) throws CompilationException {
+        StringBuilder newName = new StringBuilder(name());
+        if (generics.size() > 0) {
+            newName.append("<");
+            for (Type t : generics) {
+                newName.append(checker.pool().getTypeDef(t).name());
+                newName.append(", ");
+            }
+            newName.delete(newName.length() - 2, newName.length());
+            newName.append(">");
+        }
+        return newName.toString();
+    }
+
 }
