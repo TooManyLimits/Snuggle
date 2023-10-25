@@ -21,6 +21,10 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    public static void assertEquals(int expected, int actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
     public static void assertEquals(long expected, long actual) {
         Assertions.assertEquals(expected, actual);
     }

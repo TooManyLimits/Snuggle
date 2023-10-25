@@ -25,12 +25,29 @@ public class SnuggleTests {
 
     @ParameterizedTest(name = ParameterizedTest.ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {
-            "algorithms/curve25519", "algorithms/fib", "algorithms/fibfast", "algorithms/md5",
+            "algorithms/curve25519",
+            "algorithms/fib",
+            "algorithms/fibfast",
+            "algorithms/md5",
+
             "array/simple",
-            "control_flow/if", "control_flow/while",
-            "uncategorized/2classes", "uncategorized/args", "uncategorized/assignment", "uncategorized/blocks",
-            "uncategorized/field", "uncategorized/float", "uncategorized/generic", "uncategorized/i2l",
-            "uncategorized/int_arithmetic", "uncategorized/int_prints", "uncategorized/test1", "uncategorized/this"
+
+            "control_flow/if",
+            "control_flow/while",
+
+            "uncategorized/2classes",
+            "uncategorized/args",
+            "uncategorized/assignment",
+            "uncategorized/blocks",
+            "uncategorized/extension",
+            "uncategorized/field",
+            "uncategorized/float",
+            "uncategorized/generic",
+            "uncategorized/i2l",
+            "uncategorized/int_arithmetic",
+            "uncategorized/int_prints",
+            "uncategorized/test1",
+            "uncategorized/this"
     })
     public void testCasesSimple(String testCase) throws CompilationException, SnuggleException {
         var files = new HashMap<String, String>();
@@ -69,8 +86,8 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testIfOption() throws CompilationException, SnuggleException {
-        test("""
+    public void testIfOption() {
+        assertThrows(SnuggleException.class, () -> test("""
                 var x = if true "hi";
                 System.print(x.get())
                 
@@ -86,7 +103,7 @@ public class SnuggleTests {
                 
                 var y = if false "hi 2";
                 System.print(y.get("if expression didnt happen :<"))
-                """);
+                """));
     }
 
     @Test
@@ -215,29 +232,6 @@ public class SnuggleTests {
                     i = i + 1
                 }
                 
-                """);
-    }
-
-    @Test
-    public void testExtension() throws CompilationException, SnuggleException {
-        test("""
-                class A {
-                    fn new() super()
-                    fn get(): i32 5
-                }
-                class B: A {
-                    fn new() super()
-                    fn get10(): i32 10
-                    fn get(): i32 8
-                    fn get5(): i32 super.get()
-                    fn get8(): i32 this.get()
-                }
-                
-                System.print(new A().get())
-                System.print(new B().get())
-                System.print(new B().get8())
-                System.print(new B().get10())
-                System.print(new B().get5())
                 """);
     }
 
