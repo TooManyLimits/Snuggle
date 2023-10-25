@@ -1,3 +1,4 @@
+import builtin_types.reflect.annotations.Rename;
 import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.reflect.annotations.Unsigned;
@@ -21,6 +22,7 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    @Rename("assertEquals")
     public static void assertEqualsU(@Unsigned byte expected, @Unsigned byte actual) {
         Assertions.assertEquals(expected, actual);
     }
@@ -33,6 +35,7 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    @Rename("assertEquals")
     public static void assertEqualsU(@Unsigned int expected, @Unsigned int actual) {
         Assertions.assertEquals(expected, actual);
     }
@@ -41,6 +44,7 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    @Rename("assertEquals")
     public static void assertEqualsU(@Unsigned long expected, @Unsigned long actual) {
         Assertions.assertEquals(expected, actual);
     }

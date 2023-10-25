@@ -5,5 +5,5 @@ class Thing<T> {
 }
 var x = new Thing<u8>().add1(255)
 var y = new Thing<i8>().add1(127)
-Test.assertEqualsU(0, x)
+Test.assertEquals(0, x)
 Test.assertEquals(-128, y)
