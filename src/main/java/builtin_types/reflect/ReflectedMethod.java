@@ -42,7 +42,7 @@ public class ReflectedMethod {
         Rename rename = method.getAnnotation(Rename.class);
         name = rename == null ? origName : rename.value();
         owner = org.objectweb.asm.Type.getInternalName(method.getDeclaringClass());
-        descriptor = ReflectionUtils.getDescriptor(List.of(method.getParameterTypes()), method.getReturnType());
+        descriptor = org.objectweb.asm.Type.getMethodDescriptor(method);
 
         paramTypeGetters = ListUtils.map(List.of(method.getAnnotatedParameterTypes()), ReflectedMethod::getTypeGetter);
         returnTypeGetter = getTypeGetter(method.getAnnotatedReturnType());

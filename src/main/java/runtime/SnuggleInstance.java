@@ -6,7 +6,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 import java.io.PrintWriter;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -26,13 +25,12 @@ public class SnuggleInstance {
     public SnuggleInstance(Compiler.CompileResult compileResult) {
         loader = new InstanceLoader();
         errorHelper = new ErrorHelper(compileResult, loader);
+
         try {
-            runtime = loader.<SnuggleRuntime>defineClass(compileResult.runtime().bytes()).getConstructor().newInstance();
             for (Compiler.CompiledClass otherClass : compileResult.otherClasses()) {
                 loader.defineClass(otherClass.bytes());
             }
-            //Comment out below line to not print bytecode
-            compileResult.all().forEach(c -> new ClassReader(c.bytes()).accept(new TraceClassVisitor(new PrintWriter(System.out)), ClassReader.SKIP_DEBUG));
+            runtime = (SnuggleRuntime) loader.defineClass(compileResult.runtime().bytes()).getConstructor().newInstance();
         } catch (Exception impossible) {
             throw new IllegalStateException("Runtime always has default constructor, bug in compiler, please report!");
         }
@@ -58,16 +56,16 @@ public class SnuggleInstance {
     //Just exposes a protected method for us
     private static class InstanceLoader extends ClassLoader {
         private static final AtomicInteger nextId = new AtomicInteger();
-        public InstanceLoader() {
+        private InstanceLoader() {
             super(
                     "SnuggleLoader" + nextId.getAndIncrement(),
                     getSystemClassLoader()
             );
         }
 
-        public <T> Class<T> defineClass(byte[] bytes) {
-            return (Class<T>) defineClass(null, bytes, 0, bytes.length);
+        private Class<?> defineClass(byte[] bytes) {
+            new ClassReader(bytes).accept(new TraceClassVisitor(new PrintWriter(System.err)), ClassReader.SKIP_DEBUG);
+            return defineClass(null, bytes, 0, bytes.length);
         }
     }
-
 }
