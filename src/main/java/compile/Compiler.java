@@ -88,12 +88,6 @@ public class Compiler {
     }
 
     public record CompileResult(CompiledClass runtime, List<CompiledClass> otherClasses, Map<String, String> builtinMangleMap) {
-        public List<CompiledClass> all() {
-            ArrayList<CompiledClass> res = new ArrayList<>(otherClasses.size() + 1);
-            res.add(runtime);
-            res.addAll(otherClasses);
-            return res;
-        }
     }
     public record CompiledClass(String name, String mangledName, byte[] bytes) {}
 

@@ -1,0 +1,13 @@
+var x: i32 = if 2 > 1
+    0
+else
+    5
+Test.assertEquals(0, x)
+
+var y: i32 = if 5 < 2 {
+    true //Condition is constant false, so it doesn't bother type-checking this branch
+} else {
+    10
+}
+
+Test.assertEquals(10, y)

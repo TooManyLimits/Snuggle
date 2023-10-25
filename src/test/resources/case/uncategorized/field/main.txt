@@ -1,0 +1,16 @@
+class A {
+    var x: i32 = 11
+    fn new() {
+        super()
+        //this.x = 11;
+    }
+    pub fn get(): i32 this.x = this.x - 1
+}
+Test.assertEquals(10, new A().get())
+Test.assertEquals(10, new A().get())
+var a = new A()
+Test.assertEquals(10, a.get())
+Test.assertEquals(9, a.get())
+Test.assertEquals(8, a.get())
+Test.assertEquals(7, a.get())
+Test.assertEquals(6, a.get())

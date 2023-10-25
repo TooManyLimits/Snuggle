@@ -1,0 +1,19 @@
+class Thing {
+    pub fn new() super()
+    pub fn doTheFirstThing(): i32
+        1 + 2 * 3
+    pub fn doTheFirstThing(): i16
+        1 + 2 * 4
+    pub fn doTheSecondThing(): i64
+        1 - 2 + 3 - 4
+    pub fn doYetAnotherThing() System.print(this.doTheSecondThing())
+}
+var a: i8 = 256 / 2 - 1
+var b: i32 = new Thing().doTheFirstThing()
+var c: i16 = new Thing().doTheFirstThing()
+var thing = new Thing()
+System.print(a)
+System.print(b)
+System.print(c)
+System.print(thing.doTheSecondThing())
+thing.doYetAnotherThing()

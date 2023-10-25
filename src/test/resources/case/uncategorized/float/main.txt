@@ -1,0 +1,5 @@
+var x: f64 = 0.1
+var y: f64 = 0.2
+Test.assertFalse(x + y == 0.3)
+Test.assertTrue(0.1 + 0.2 == 0.3)
+Test.assertFalse(0.1f64 + 0.2 == 0.3)

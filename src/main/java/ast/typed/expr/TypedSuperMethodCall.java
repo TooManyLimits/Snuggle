@@ -18,8 +18,7 @@ public record TypedSuperMethodCall(Loc loc, Type receiverType, MethodDef method,
     @Override
     public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
         boolean isConstructorCall = method.name().equals("new");
-        if (isConstructorCall) //Load "this" on the stack, if constructor
-            visitor.visitVarInsn(Opcodes.ALOAD, 0);
+        visitor.visitVarInsn(Opcodes.ALOAD, 0);
 
         for (TypedExpr arg : args) //Push all args on the stack
             arg.compile(compiler, env, visitor);

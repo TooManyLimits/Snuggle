@@ -1,0 +1,10 @@
+class Behold {
+    fn new() super()
+    fn arguments(a: i32, b: i16, c: i8) {
+        Test.assertEquals(1, a)
+        Test.assertEquals(2, b)
+        Test.assertEquals(3, c)
+    }
+}
+
+new Behold().arguments(1, 2, 3)

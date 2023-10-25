@@ -1,0 +1,12 @@
+class Thing {
+    pub fn new() super()
+    pub fn get5(): i32
+        1 + 1 + 1 + 1 + 1
+}
+class Thang {
+    pub fn new() super()
+    pub fn get5Again(thing: Thing): i32
+        thing.get5()
+}
+
+Test.assertEquals(5, new Thang().get5Again(new Thing()))

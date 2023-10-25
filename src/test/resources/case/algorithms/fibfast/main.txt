@@ -1,0 +1,16 @@
+var series: Array<i64> = new Array<i64>(93);
+series.set(1, 1);
+
+var i: i32 = 1;
+
+while { i = i + 1 } <= 92 {
+    series.set(i, series.get(i - 1) + series.get(i - 2));
+}
+
+Test.assertEquals(0, series.get(0))
+Test.assertEquals(1, series.get(1))
+Test.assertEquals(1, series.get(2))
+Test.assertEquals(2, series.get(3))
+Test.assertEquals(3, series.get(4))
+Test.assertEquals(5, series.get(5))
+Test.assertEquals(7540113804746346429, series.get(92))

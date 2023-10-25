@@ -1,0 +1,27 @@
+var x: i32 = 2147483647;
+x = x + 2;
+var y: u32 = 2147483647;
+y = y + 2;
+
+var z: i64 = 9223372036854775807;
+z = z + 2;
+var w: u64 = 9223372036854775807;
+w = w + 2;
+Test.assertEquals(-2147483647, x)
+Test.assertEquals(2147483649, y)
+Test.assertEquals(-9223372036854775807, z)
+Test.assertEquals(9223372036854775809, w)
+
+var a: u32 = 4294967295
+a = a + 1
+Test.assertEquals(0, a)
+a = a - 1
+Test.assertEquals(4294967295, a)
+
+var b: i32 = -1
+var c: u32 = 0
+c = c - 1;
+Test.assertEquals(1, b * b)
+Test.assertEquals(1, c * c)
+Test.assertEquals(0, b / 10)
+Test.assertEquals(429496729, c / 10)

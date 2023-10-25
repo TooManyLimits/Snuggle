@@ -161,7 +161,7 @@ public class ArrayType implements BuiltinType {
 
     @Override
     public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
+        return getDescriptor(generics, pool);
     }
 
     @Override

@@ -1,0 +1,9 @@
+class Thing<T> {
+    pub fn new() super()
+    pub fn add1(x: T): T
+        x + 1
+}
+var x = new Thing<u8>().add1(255)
+var y = new Thing<i8>().add1(127)
+Test.assertEquals(0, x)
+Test.assertEquals(-128, y)

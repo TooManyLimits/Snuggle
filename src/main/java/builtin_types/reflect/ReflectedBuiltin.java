@@ -35,7 +35,7 @@ public class ReflectedBuiltin implements BuiltinType {
         this.reflectedClass = reflectedClass;
         this.name = typeAnnotation.name();
         this.nameable = typeAnnotation.nameable();
-        this.descriptor = typeAnnotation.descriptor().isEmpty() ? ReflectionUtils.getDescriptor(reflectedClass) : typeAnnotation.descriptor();
+        this.descriptor = typeAnnotation.descriptor().isEmpty() ? org.objectweb.asm.Type.getDescriptor(reflectedClass) : typeAnnotation.descriptor();
         this.runtimeName = descriptor.substring(1, descriptor.length() - 1);
         //Get supertypeGetter
         Class<?> supertype = typeAnnotation.forceSupertype() ? typeAnnotation.supertype() : reflectedClass.getSuperclass();

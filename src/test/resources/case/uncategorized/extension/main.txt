@@ -1,0 +1,17 @@
+class A {
+    fn new() super()
+    fn get(): i32 5
+}
+class B: A {
+    fn new() super()
+    fn get10(): i32 10
+    fn get(): i32 8
+    fn get5(): i32 super.get()
+    fn get8(): i32 this.get()
+}
+
+Test.assertEquals(5, new A().get())
+Test.assertEquals(8, new B().get())
+Test.assertEquals(8, new B().get8())
+Test.assertEquals(10, new B().get10())
+Test.assertEquals(5, new B().get5())

@@ -17,8 +17,7 @@ import java.util.*;
  */
 public class BuiltinTypes {
 
-    //Because no IdentityHashSet exists
-    private final IdentityHashMap<BuiltinType, Void> registeredTypes = new IdentityHashMap<>();
+    private final Set<BuiltinType> registeredTypes = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public BuiltinTypes() {
         //By default, adds in all the standard types.
@@ -26,7 +25,7 @@ public class BuiltinTypes {
     }
 
     public BuiltinTypes addType(BuiltinType builtinType) {
-        registeredTypes.put(builtinType, null);
+        registeredTypes.add(builtinType);
         return this;
     }
 
@@ -68,7 +67,7 @@ public class BuiltinTypes {
     }
 
     public Collection<BuiltinType> getAll() {
-        return registeredTypes.keySet();
+        return registeredTypes;
     }
 
 }
