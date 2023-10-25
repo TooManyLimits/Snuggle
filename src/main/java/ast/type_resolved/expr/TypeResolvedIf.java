@@ -4,11 +4,15 @@ import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.TypeCheckingHelper;
 import ast.typed.Type;
+import ast.typed.def.type.BuiltinTypeDef;
+import ast.typed.expr.TypedConstructor;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedIf;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.types.BoolType;
+import builtin_types.types.OptionType;
 import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 import java.util.List;
@@ -70,27 +74,59 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
         //Check if constant
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
+
+            //If there's an else branch, check the chosen branch is as expected, and return it.
+            if (hasFalseBranch())
+                return (b ? ifTrue : ifFalse).check(currentType, checker, typeGenerics, expected);
+
+            //Otherwise, we need to make sure that the expected type is, in fact, an Option.
+            if (!(checker.pool().getTypeDef(expected) instanceof BuiltinTypeDef expectedBuiltin))
+                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            if (!(expectedBuiltin.builtin() == OptionType.INSTANCE))
+                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            //Once we know it is, get the inner type of the option.
+            Type innerType = expectedBuiltin.generics().get(0);
+
+            TypedConstructor constructor; //output
             if (b) {
-                if (hasFalseBranch())
-                    return ifTrue.check(currentType, checker, typeGenerics, expected);
-                else {
-                    throw new IllegalStateException("If expressions without else branches are not yet supported!");
-                }
+                //If there's no else branch, ensure that the true branch is the inner type of the option.
+                TypedExpr checkedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, innerType);
+                //And then wrap the result in an option.
+                constructor = TypeCheckingHelper.wrapInOption(loc, checkedTrueBranch, checker);
             } else {
-                if (hasFalseBranch())
-                    return ifFalse.check(currentType, checker, typeGenerics, expected);
-                else {
-                    throw new IllegalStateException("If expressions without else branches are not yet supported!");
-                }
+                //If there's no else branch, return an empty Option of the desired type.
+                //Don't bother checking the ifTrue branch.
+                constructor = TypeCheckingHelper.getEmptyOption(loc, innerType, checker);
             }
+
+            //Finally, ensure this option is what was wanted.
+            if (!constructor.type().isSubtype(expected, checker.pool()))
+                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression resulted in " + constructor.type().name(checker.pool()), loc);
+            return constructor;
         }
+
         //If not constant, need to check both branches
         if (hasFalseBranch()) {
             TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, expected);
             TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, expected);
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, expected);
         } else {
-            throw new IllegalStateException("If expressions without else branches are not yet supported!");
+            //If there's only one branch, only check it for the inner type.
+            //Make sure that the expected type is an Option:
+            if (!(checker.pool().getTypeDef(expected) instanceof BuiltinTypeDef expectedBuiltin))
+                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            if (!(expectedBuiltin.builtin() == OptionType.INSTANCE))
+                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            //Once we know it is, get the inner type of the option
+            Type innerType = expectedBuiltin.generics().get(0);
+            //Check the true branch for the inner type of the option
+            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, innerType);
+            //Wrap the true branch in an option constructor
+            TypedConstructor wrappedTrueBranch = TypeCheckingHelper.wrapInOption(loc, typedTrueBranch, checker);
+            //And generate an else branch, which is just an empty option constructor
+            TypedConstructor generatedFalseBranch = TypeCheckingHelper.getEmptyOption(loc, innerType, checker);
+            //And return a TypedIf for this situation
+            return new TypedIf(loc, typedCond, wrappedTrueBranch, generatedFalseBranch, expected);
         }
     }
 }

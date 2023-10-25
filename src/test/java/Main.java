@@ -8,7 +8,13 @@ import java.util.Map;
 public class Main {
 
     public static void main(String[] args) throws Exception {
-        testIfOption();
+        testJank();
+    }
+
+    private static void testJank() {
+        test("""
+                var x: String? = if false;
+                """);
     }
 
     private static void testIfOption() {
@@ -23,6 +29,9 @@ public class Main {
                 }
                 System.print(a.get())
                 
+                var f: String??? = if true if true if true "triple get :3"
+                System.print(f.get().get().get())
+                
                 var b = while false "lol"
                 System.print(b.get("while loop never ran"))
                 
@@ -36,7 +45,7 @@ public class Main {
                 var x = new String?()
                 var y = new String?("hi")
                 
-                //x.get() //error, x is empty
+                x.get() //error, x is empty
                 x.get("Silly custom error message") //error, x is empty
                 
                 System.print(y.get())
