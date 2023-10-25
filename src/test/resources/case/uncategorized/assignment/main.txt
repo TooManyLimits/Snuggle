@@ -1,9 +1,9 @@
 var x: i8 = 1;
 var y: i8 = 2;
 var z: i8 = 3;
-System.print(x)
-System.print(y)
-System.print(z = 4)
-System.print(z)
+Test.assertEquals(1, x)
+Test.assertEquals(2, y)
+Test.assertEquals(4, z = 4)
+Test.assertEquals(4, z)
 x = y = z
-System.print(x + y + z)
+Test.assertEquals(12, x + y + z)

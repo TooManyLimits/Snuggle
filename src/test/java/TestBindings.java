@@ -17,7 +17,15 @@ public class TestBindings {
         Assertions.assertFalse(condition);
     }
 
-    public static void assertEquals(@Unsigned byte expected, @Unsigned byte actual) {
+    public static void assertEquals(byte expected, byte actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
+    public static void assertEqualsU(@Unsigned byte expected, @Unsigned byte actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
+    public static void assertEquals(short expected, short actual) {
         Assertions.assertEquals(expected, actual);
     }
 
@@ -25,7 +33,15 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    public static void assertEqualsU(@Unsigned int expected, @Unsigned int actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
     public static void assertEquals(long expected, long actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
+    public static void assertEqualsU(@Unsigned long expected, @Unsigned long actual) {
         Assertions.assertEquals(expected, actual);
     }
 

@@ -8,4 +8,5 @@ class Thang {
     pub fn get5Again(thing: Thing): i32
         thing.get5()
 }
-System.print(new Thang().get5Again(new Thing()))
+
+Test.assertEquals(5, new Thang().get5Again(new Thing()))

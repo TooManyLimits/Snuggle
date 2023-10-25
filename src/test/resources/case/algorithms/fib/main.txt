@@ -10,7 +10,7 @@ class Fib {
     }
 }
 
-System.print(new Fib().fib(45))
+Test.assertEqualsU(1134903170, new Fib().fib(45))
 
 // var x: u32 = 0
 // while 45 >= x = x + 1

@@ -1,4 +1,4 @@
 var x = new Array<i32>(5)
 x.set(3, 10)
 x.set(1, 4)
-System.print(x.get(3))
+Test.assertEquals(10, x.get(3))

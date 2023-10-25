@@ -1,10 +1,10 @@
 var x: u8 = 128
-System.print(x)
-System.print(x + 1)
-System.print(128 + x)
+Test.assertEqualsU(128, x)
+Test.assertEqualsU(129, x + 1)
+Test.assertEqualsU(0, 128 + x)
 
 var y: u32 = 0;
 y = y - 10; //-10 as a u32
-System.print(y / 5)
+Test.assertEqualsU(858993457, y / 5)
 var z: i32 = -10;
-System.print(z / -5)
+Test.assertEquals(2, z / -5)

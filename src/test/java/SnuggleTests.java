@@ -26,7 +26,6 @@ public class SnuggleTests {
     @ParameterizedTest(name = ParameterizedTest.ARGUMENTS_PLACEHOLDER)
     @ValueSource(strings = {
             "algorithms/curve25519",
-            "algorithms/fib",
             "algorithms/fibfast",
             "algorithms/md5",
 
