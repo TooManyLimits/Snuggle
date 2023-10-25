@@ -7,7 +7,7 @@ import java.util.HexFormat;
 
 @SnuggleType(name = "Test")
 @SnuggleWhitelist
-public class TestHarness {
+public class TestBindings {
 
     public static void assertTrue(boolean condition) {
         Assertions.assertTrue(condition);

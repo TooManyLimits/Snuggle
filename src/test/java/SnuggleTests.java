@@ -381,7 +381,7 @@ public class SnuggleTests {
     }
 
     public void test(BuiltinTypes types, Map<String, String> files) throws CompilationException, SnuggleException {
-        types.reflect(TestHarness.class);
+        types.reflect(TestBindings.class);
 
         try {
             var before = System.nanoTime();
