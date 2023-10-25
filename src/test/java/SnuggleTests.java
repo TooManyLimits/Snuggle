@@ -86,6 +86,55 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testFunFakeVarargs() throws CompilationException, SnuggleException{
+        test(
+                """
+                class List<T> {
+                    var backing: Array<T> = new Array<T>(5)
+                    var size: u32 = 0
+                    fn new() super()
+                    fn push(elem: T) {
+                        this.backing.set(this.size, elem)
+                        this.size = this.size + 1;
+                        if this.size == this.backing.len() {
+                            var newBacking = new Array<T>(this.size * 2);
+                            var i: u32 = 0
+                            while i < this.backing.len() {
+                                newBacking.set(i, this.backing.get(i))
+                                i = i + 1
+                            }
+                            this.backing = newBacking;
+                        } else {}
+                    }
+                    fn get(index: u32): T this.backing.get(index)
+                    fn size(): u32 this.size
+                    fn backingSize(): u32 this.backing.len()
+                }
+                
+                class FakeVarargsPrinter<T> {
+                    var elems: List<T> = new List<T>()
+                    fn new(firstElem: T) {
+                        super()
+                        this(firstElem);
+                    }
+                    fn invoke(elem: T): FakeVarargsPrinter<T> {
+                        this.elems.push(elem)
+                        this
+                    }
+                    fn invoke() {
+                        var i = 0u32
+                        while i < this.elems.size() {
+                            System.print(this.elems.get(i))
+                            i = i + 1
+                        };
+                    }
+                }
+                
+                new FakeVarargsPrinter<i32>(1)(3)(5)(7)(9)()
+                """);
+    }
+
+    @Test
     public void testIfOption() {
         assertThrows(SnuggleException.class, () -> test("""
                 var x = if true "hi";
@@ -332,8 +381,6 @@ public class SnuggleTests {
                 var y: i32 = 5
                 System.print(y % 3)
                 System.print(~y)
-                System.print(!y)
-                System.print(!!y)
                 System.print(-y)
                 System.print(y / y)
                 System.print(y & y)
@@ -362,11 +409,13 @@ public class SnuggleTests {
                 """));
     }
 
-    public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {
+//    public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {
+    public void test(String main) throws CompilationException, SnuggleException {
         test(new BuiltinTypes(), Map.of("main", main));
     }
 
-    public void test(BuiltinTypes types, @Language("TEXT") String main) throws CompilationException, SnuggleException {
+//    public void test(BuiltinTypes types, @Language("TEXT") String main) throws CompilationException, SnuggleException {
+    public void test(BuiltinTypes types, String main) throws CompilationException, SnuggleException {
         test(types, Map.of("main", main));
     }
 

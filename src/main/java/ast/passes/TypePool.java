@@ -33,28 +33,34 @@ public class TypePool {
 
     private final List<TypeDef> instantiatedTypeDefs = new ArrayList<>();
 
-    private final Map<ResolvedType.Basic, Type> cache = new HashMap<>();
+    private final Map<Integer, Map<List<Type>, Type>> cache = new HashMap<>();
     private final Map<Type, ResolvedType.Basic> cacheInverse = new HashMap<>();
 
     //Fetch a annotatedType from the cache, or compute it if it doesn't exist yet
     public Type getOrInstantiateType(ResolvedType resolvedType, List<Type> typeGenerics) throws CompilationException {
         if (resolvedType instanceof ResolvedType.Basic basic) {
             //Get from cache if present
-            Type t = cache.get(basic);
-            if (t != null) return t;
-
-            //For basic types: first compute the generics, then instantiate the annotatedType def. Finally store in cache.
             List<Type> convertedGenerics = ListUtils.map(basic.generics(), g -> this.getOrInstantiateType(g, typeGenerics));
+            Map<List<Type>, Type> tMap = cache.get(basic.index());
+            if (tMap != null) {
+                Type t = tMap.get(convertedGenerics);
+                if (t != null)
+                    return t;
+            }
+
+            //For basic types: instantiate the annotatedType def. Finally store in cache.
 
             //Little bit of playing around in order to avoid recursion issues giving the same index to multiple types
             int index = instantiatedTypeDefs.size();
             instantiatedTypeDefs.add(null);
+            //Add to the cache before instantiating it, to avoid stack overflow when a generic class references itself
+            Type resultType = new Type.Basic(index);
+            cache.computeIfAbsent(basic.index(), x -> new HashMap<>()).put(convertedGenerics, resultType);
+            cacheInverse.put(resultType, basic);
+            //Instantiate the type
             TypeDef instantiated = startingTypeDefs.get(basic.index()).instantiate(index, this.checker, convertedGenerics);
             instantiatedTypeDefs.set(index, instantiated);
-
-            Type resultType = new Type.Basic(index);
-            cache.put(basic, resultType);
-            cacheInverse.put(resultType, basic);
+            //And return
             return resultType;
         } else if (resolvedType instanceof ResolvedType.Generic generic) {
             //For generics, method generics should stay generic, while annotatedType generics should be flattened
