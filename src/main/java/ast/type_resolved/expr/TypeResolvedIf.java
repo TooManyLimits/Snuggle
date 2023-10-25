@@ -59,7 +59,9 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
             TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, typedTrueBranch.type());
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, typedTrueBranch.type());
         } else {
-            throw new IllegalStateException("If expressions without else branches are not yet supported!");
+            TypedExpr wrappedTrueBranch = TypeCheckingHelper.wrapInOption(loc, typedTrueBranch, checker);
+            TypedExpr generatedFalseBranch = TypeCheckingHelper.getEmptyOption(loc, typedTrueBranch.type(), checker);
+            return new TypedIf(loc, typedCond, wrappedTrueBranch, generatedFalseBranch, wrappedTrueBranch.type());
         }
     }
 

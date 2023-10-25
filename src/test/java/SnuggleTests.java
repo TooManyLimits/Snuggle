@@ -104,7 +104,7 @@ public class SnuggleTests {
                                 i = i + 1
                             }
                             this.backing = newBacking;
-                        } else {}
+                        };
                     }
                     fn get(index: u32): T this.backing.get(index)
                     fn size(): u32 this.size
