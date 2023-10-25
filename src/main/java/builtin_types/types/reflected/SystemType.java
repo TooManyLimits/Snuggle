@@ -18,10 +18,16 @@ public class SystemType {
     public static int b2i(byte i) { return i; }
 
     public static int shl(int x, int bits) { return x << bits; }
+    @Rename("shl")
+    public static int shl_u2(int x, @Unsigned int bits) { return x << bits; }
     public static int shr(int x, int bits) { return x >> bits; }
+    @Rename("shr")
+    public static int shr_u2(int x, @Unsigned int bits) { return x >> bits; }
     public static long shl(long x, int bits) { return x << bits; }
     public static long shr(long x, int bits) { return x >> bits; }
     public static int ushr(int x, int bits) { return x >>> bits; }
+    @Rename("ushr")
+    public static int ushr_u1(@Unsigned int x, int bits) { return x >>> bits; }
     public static long ushr(long x, int bits) { return x >>> bits; }
 
 

@@ -2,17 +2,17 @@ class Curve25519 {
 
     fn reduceQuick(x: Array<i32>): unit {
         var temp: Array<i32> = new Array<i32>(10);
-        var index: i32 = 0;
+        var index: u32 = 0;
         var carry: i32 = 19;
 
         while index < 10 {
             carry = carry + x.get(index);
             temp.set(index, carry & 67108863);
-            carry = System.shr(carry, 26);
+            carry = System.shr(carry, 26u32);
             index = index + 1;
         };
 
-        var mask: i32 = -{ System.shr(temp.get(9), 21) & 1 };
+        var mask: i32 = -{ System.shr(temp.get(9), 21u32) & 1 };
         temp.set(9, temp.get(9) & 2097151);
         index = 0;
 
@@ -22,18 +22,18 @@ class Curve25519 {
         };
     }
 
-    fn reduce(result: Array<i32>, x: Array<i32>, size: i32): unit {
-        var index: i32 = 0;
+    fn reduce(result: Array<i32>, x: Array<i32>, size: u32): unit {
+        var index: u32 = 0;
         var carry: i32 = 0;
-        var limb: i32 = System.shr(x.get(9), 21);
+        var limb: i32 = System.shr(x.get(9), 21u32);
         x.set(9, x.get(9) & 2097151);
 
         while index < size {
-            limb = limb + { System.shl(x.get(10 + index), 5) };
+            limb = limb + { System.shl(x.get(10 + index), 5i32) };
             carry = carry + { { limb & 67108863 } * 19 + x.get(index) };
             x.set(index, carry & 67108863);
-            limb = System.shr(limb, 26);
-            carry = System.shr(carry, 26);
+            limb = System.shr(limb, 26u32);
+            carry = System.shr(carry, 26u32);
             index = index + 1;
         };
         if size < 10 {
@@ -42,18 +42,18 @@ class Curve25519 {
             while index < 10 {
                 carry = carry + x.get(index);
                 x.set(index, carry & 67108863);
-                carry = System.shr(carry, 26);
+                carry = System.shr(carry, 26u32);
                 index = index + 1;
             };
         } else {};
-        carry = { System.shr(x.get(9), 21) } * 19;
+        carry = { System.shr(x.get(9), 21u32) } * 19;
         x.set(9, x.get(9) & 2097151);
         index = 0;
 
         while index < 10 {
             carry = carry + x.get(index);
             result.set(index, carry & 67108863);
-            carry = System.shr(carry, 26);
+            carry = System.shr(carry, 26u32);
             index = index + 1;
         };
 
@@ -62,8 +62,8 @@ class Curve25519 {
 
     fn multiply(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
         var temp: Array<i64> = new Array<i64>(20);
-        var i: i32 = 0;
-        var j: i32 = 0;
+        var i: u32 = 0;
+        var j: u32 = 0;
         var v: i64 = System.i2l(x.get(0));
         i = 0;
 
@@ -108,7 +108,7 @@ class Curve25519 {
     fn mulA24(result: Array<i32>, x: Array<i32>): unit {
         var a24: i64 = 121665;
         var carry: i64 = 0;
-        var index: i32 = 0;
+        var index: u32 = 0;
         var t2: Array<i32> = new Array<i32>(20);
 
         while index < 10 {
@@ -123,12 +123,12 @@ class Curve25519 {
     }
 
     fn add(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
-        var index: i32 = 1;
+        var index: u32 = 1;
         var carry: i32 = x.get(0) + y.get(0);
         result.set(0, carry & 67108863);
 
         while index < 10 {
-            carry = { System.shr(carry, 26) } + x.get(index) + y.get(index);
+            carry = { System.shr(carry, 26u32) } + x.get(index) + y.get(index);
             result.set(index, carry & 67108863);
             index = index + 1;
         };
@@ -137,21 +137,21 @@ class Curve25519 {
     }
 
     fn sub(result: Array<i32>, x: Array<i32>, y: Array<i32>): unit {
-        var index: i32 = 0;
+        var index: u32 = 0;
         var borrow: i32 = 0;
 
         while index < 10 {
-            borrow = x.get(index) - y.get(index) - { System.shr(borrow, 26) & 1 };
+            borrow = x.get(index) - y.get(index) - { System.shr(borrow, 26u32) & 1 };
             result.set(index, borrow & 67108863);
             index = index + 1;
         };
 
-        borrow = result.get(0) - { -{ System.shr(borrow, 26) & 1 } & 19 };
+        borrow = result.get(0) - { -{ System.shr(borrow, 26u32) & 1 } & 19 };
         result.set(0, borrow & 67108863);
         index = 1;
 
         while index < 10 {
-            borrow = result.get(index) - { System.shr(borrow, 26) & 1 };
+            borrow = result.get(index) - { System.shr(borrow, 26u32) & 1 };
             result.set(index, borrow & 67108863);
             index = index + 1;
         };
@@ -162,7 +162,7 @@ class Curve25519 {
     fn swap(select: i32, x: Array<i32>, y: Array<i32>): unit {
         select = -select;
         {
-            var index: i32 = 0;
+            var index: u32 = 0;
 
             while index < 10 {
                 var dummy: i32 = select & { x.get(index) ^ y.get(index) };
@@ -223,7 +223,7 @@ class Curve25519 {
     }
 
     fn curve25519(result: Array<i8>, privateKey: Array<i8>, hasPublicKey: bool, publicKey: Array<i8>): unit {
-        var i: i32 = 0;
+        var i: u32 = 0;
         var x_1: Array<i32> = new Array<i32>(10);
         var x_2: Array<i32> = new Array<i32>(10);
         var x_3: Array<i32> = new Array<i32>(10);
@@ -242,8 +242,8 @@ class Curve25519 {
             i = 0;
 
             while i < 32 {
-                var bit: i32 = i * 8 % 26;
-                var word: i32 = i * 8 / 26;
+                var bit: u32 = i * 8 % 26;
+                var word: u32 = i * 8 / 26;
                 var value: i32 = System.b2i(publicKey.get(i)) & 255;
                 if bit <= 18 {
                     x_1.set(word, x_1.get(word) | { System.shl(value, bit) });
@@ -269,7 +269,7 @@ class Curve25519 {
         };
 
         z_3.set(0, 1);
-        var sposn: i32 = 31;
+        var sposn: u32 = 31;
         var sbit: i32 = 6;
         var svalue: i32 = System.b2i(privateKey.get(sposn)) | 64;
         var swap: i32 = 0;
@@ -317,11 +317,11 @@ class Curve25519 {
         this.modInv(z_3, z_2);
         this.multiply(x_2, x_2, z_3);
         {
-            var index: i32 = 0;
+            var index: u32 = 0;
 
             while index < 32 {
-                var bit: i32 = index * 8 % 26;
-                var word: i32 = index * 8 / 26;
+                var bit: u32 = index * 8 % 26;
+                var word: u32 = index * 8 / 26;
                 if bit <= 18 {
                     result.set(index, System.i2b(System.shr(x_2.get(word), bit)));
                 } else {

@@ -84,7 +84,8 @@ public class BytecodeHelper {
         if (innerType.isReferenceType()) {
             visitor.visitInsn(Opcodes.ACONST_NULL);
         } else {
-            throw new IllegalStateException("Optional non-reference types not yet implemented");
+            visitor.visitInsn(Opcodes.ICONST_0); //TODO: Make this actually work
+            //throw new IllegalStateException("Optional non-reference types not yet implemented");
         }
     }
 

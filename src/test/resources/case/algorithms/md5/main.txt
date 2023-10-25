@@ -91,14 +91,14 @@ class MD5 {
             TABLE_T.set(62, 718787259);
             TABLE_T.set(63, -343485551);
         }
-        var messageLenBytes: i32 = message.len();
+        var messageLenBytes: u32 = message.len();
         var numBlocks: i32 = { System.ushr({ messageLenBytes + 8 }, 6) } + 1;
-        var totalLen: i32 = System.shl(numBlocks, 6);
+        var totalLen: u32 = System.shl(numBlocks, 6u32) as u32;
         var paddingBytes: Array<i8> = new Array<i8>(totalLen - messageLenBytes);
         paddingBytes.set(0, System.i2b(128));
-        var messageLenBits: i64 = System.shl(System.i2l(messageLenBytes), 3);
+        var messageLenBits: i64 = System.shl(System.i2l(messageLenBytes as i32), 3);
         {
-            var i: i32 = 0;
+            var i: u32 = 0;
 
             while i < 8 {
                 paddingBytes.set(paddingBytes.len() - 8 + i, System.l2b(messageLenBits));
@@ -115,12 +115,12 @@ class MD5 {
             var i: i32 = 0;
 
             while i < numBlocks {
-                var index: i32 = System.shl(i, 6);
+                var index: u32 = System.shl(i, 6u32) as u32;
                 {
                     var j: i32 = 0;
 
                     while j < 64 {
-                        buffer.set(System.ushr(j, 2), { System.shl(System.b2i(if { index < messageLenBytes } message.get(index) else paddingBytes.get(index - messageLenBytes)), 24) } | { System.ushr(buffer.get(System.ushr(j, 2)), 8) });
+                        buffer.set(System.ushr(j, 2) as u32, { System.shl(System.b2i(if { index < messageLenBytes } message.get(index) else paddingBytes.get(index - messageLenBytes)), 24u32) } | { System.ushr(buffer.get(System.ushr(j, 2) as u32), 8) });
                         j = j + 1;
                         index = index + 1;
                     };
@@ -130,12 +130,12 @@ class MD5 {
                 var originalC: i32 = c;
                 var originalD: i32 = d;
                 {
-                    var j: i32 = 0;
+                    var j: u32 = 0;
 
                     while j < 64 {
                         var div16: i32 = System.ushr(j, 4);
                         var f: i32 = 0;
-                        var bufferIndex: i32 = j;
+                        var bufferIndex: u32 = j;
                         if div16 == 0 {
                             f = { b & c } | { ~b & d };
                         } else if div16 == 1 {
@@ -148,7 +148,7 @@ class MD5 {
                             f = c ^ { b | ~d };
                             bufferIndex = { bufferIndex * 7 } & 15;
                         };;;
-                        var temp: i32 = b + this.rotateLeft(a + f + buffer.get(bufferIndex) + TABLE_T.get(j), SHIFT_AMTS.get({ System.shl(div16, 2) } | { j & 3 }));
+                        var temp: i32 = b + this.rotateLeft(a + f + buffer.get(bufferIndex) + TABLE_T.get(j), SHIFT_AMTS.get({ System.shl(div16, 2u32) as u32 } | { j & 3 }));
                         a = d;
                         d = c;
                         c = b;
@@ -164,7 +164,7 @@ class MD5 {
             };
         }
         var md5: Array<i8> = new Array<i8>(16);
-        var count: i32 = 0;
+        var count: u32 = 0;
         {
             var i: i32 = 0;
 

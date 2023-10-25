@@ -1,5 +1,6 @@
 import builtin_types.BuiltinTypes;
 import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.ParsingException;
 import exceptions.compile_time.TooManyMethodsException;
 import exceptions.compile_time.TypeCheckingException;
 import exceptions.runtime.SnuggleException;
@@ -345,7 +346,7 @@ public class SnuggleTests {
 
     @Test
     public void testI84() throws CompilationException, SnuggleException {
-        test("""
+        assertThrows(ParsingException.class, () -> test("""
                 class i84 {
                     pub fn new() super()
                     pub fn get(): i8 4
@@ -358,7 +359,7 @@ public class SnuggleTests {
                 }
                 
                 System.print(new Other().meow().get())
-                """);
+                """));
     }
 
     public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {

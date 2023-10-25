@@ -73,10 +73,18 @@ public record TypedCast(Loc loc, int tokenLine, TypedExpr lhs, boolean isMaybe, 
                         case 8 -> {
                             visitor.visitInsn(Opcodes.L2I);
                             visitor.visitInsn(Opcodes.I2B);
+                            if (!to.signed) {
+                                visitor.visitLdcInsn(0xff);
+                                visitor.visitInsn(Opcodes.IAND);
+                            }
                         }
                         case 16 -> {
                             visitor.visitInsn(Opcodes.L2I);
                             visitor.visitInsn(Opcodes.I2S);
+                            if (!to.signed) {
+                                visitor.visitLdcInsn(0xffff);
+                                visitor.visitInsn(Opcodes.IAND);
+                            }
                         }
                         case 32 -> visitor.visitInsn(Opcodes.L2I);
                         case 64 -> visitor.visitInsn(Opcodes.I2L);
