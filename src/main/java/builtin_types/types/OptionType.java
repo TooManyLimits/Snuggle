@@ -41,8 +41,8 @@ public class OptionType implements BuiltinType {
         Type boolType = pool.getBasicBuiltin(BoolType.INSTANCE);
         Type unitType = pool.getBasicBuiltin(UnitType.INSTANCE);
 
-        //Different set of methods if we're a reference type
-        if (isReferenceType(generics, pool)) {
+        //Different set of methods if inner type is a reference type
+        if (pool.getTypeDef(innerType).isReferenceType()) {
             return List.of(
                     //.get(): gets the value if present, panics if not present
                     new BytecodeMethodDef(false, "get", List.of(), innerType, v -> {
@@ -130,13 +130,13 @@ public class OptionType implements BuiltinType {
 
     @Override
     public boolean hasSpecialConstructor(List<Type> generics, TypePool pool) {
-        return isReferenceType(generics, pool);
+        //Special constructor if the inner type is a reference type
+        return pool.getTypeDef(generics.get(0)).isReferenceType();
     }
 
     @Override
     public boolean isReferenceType(List<Type> generics, TypePool pool) {
-        //Option of reference type is reference type
-        //Option of non-reference type is non-reference type
-        return pool.getTypeDef(generics.get(0)).isReferenceType();
+        //Option is not itself considered a reference type, even if it contains a reference type.
+        return false;
     }
 }
