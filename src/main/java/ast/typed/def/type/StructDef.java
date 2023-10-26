@@ -19,20 +19,7 @@ public record StructDef(Loc loc, int index, String name, List<SnuggleMethodDef> 
         return new byte[0];
     }
 
-    @Override
-    public Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {
-        return null;
-    }
 
-    @Override
-    public boolean isSubtype(Type other, TypePool pool) {
-        return false;
-    }
-
-    @Override
-    public Type trueSupertype() throws CompilationException {
-        return null;
-    }
 
     @Override
     public List<? extends MethodDef> getMethods() throws CompilationException {
@@ -50,6 +37,21 @@ public record StructDef(Loc loc, int index, String name, List<SnuggleMethodDef> 
     }
 
     @Override
+    public Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {
+        return thisType;
+    }
+
+    @Override
+    public boolean isSubtype(Type other, TypePool pool) {
+        return false; //Structs are not subtypes of anything
+    }
+
+    @Override
+    public Type trueSupertype() throws CompilationException {
+        return null; //Structs have no inheritance
+    }
+
+    @Override
     public String getDescriptor() {
         return null;
     }
@@ -61,11 +63,11 @@ public record StructDef(Loc loc, int index, String name, List<SnuggleMethodDef> 
 
     @Override
     public boolean extensible() {
-        return false;
+        return false; //Structs cannot be extended
     }
 
     @Override
     public boolean isReferenceType() {
-        return false;
+        return false; //Structs are not reference types
     }
 }

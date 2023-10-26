@@ -86,6 +86,21 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testImportsAgain() throws CompilationException, SnuggleException {
+        test(Map.of("main", """
+                import "lib"
+                System.print(new Getter().get())
+                
+                """, "lib", """
+                pub class Getter {
+                    fn new() super()
+                    fn get(): i32 10
+                }
+                
+                """));
+    }
+
+    @Test
     public void testFunFakeVarargs() throws CompilationException, SnuggleException {
         test(
                 """
