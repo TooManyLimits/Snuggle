@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE_USE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Unsigned {
-
+    int value() default 0;
 }

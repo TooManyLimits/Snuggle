@@ -196,7 +196,7 @@ public class Compiler {
                 null
         );
         defaultConstructor.visitCode();
-        defaultConstructor.visitIntInsn(Opcodes.ALOAD, 0);
+        defaultConstructor.visitVarInsn(Opcodes.ALOAD, 0);
         defaultConstructor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>", "()V", false);
         defaultConstructor.visitInsn(Opcodes.RETURN);
         defaultConstructor.visitMaxs(0, 0); //Auto compute

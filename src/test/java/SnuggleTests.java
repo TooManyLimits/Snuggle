@@ -86,7 +86,7 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testFunFakeVarargs() throws CompilationException, SnuggleException{
+    public void testFunFakeVarargs() throws CompilationException, SnuggleException {
         test(
                 """
                 class List<T> {

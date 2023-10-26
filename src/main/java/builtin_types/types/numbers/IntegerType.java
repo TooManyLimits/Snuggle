@@ -169,14 +169,14 @@ public class IntegerType implements BuiltinType {
                 case 8 -> {
                     v.visitInsn(Opcodes.I2B);
                     if (!signed) {
-                        v.visitLdcInsn(0xff);
+                        v.visitIntInsn(Opcodes.SIPUSH, 0xff); //cannot be BIPUSH, because it would sign-extend
                         v.visitInsn(Opcodes.IAND);
                     }
                 }
                 case 16 -> {
                     v.visitInsn(Opcodes.I2S);
                     if (!signed) {
-                        v.visitLdcInsn(0xffff);
+                        v.visitLdcInsn(0xffff); //Cannot be SIPUSH for same reason as above
                         v.visitInsn(Opcodes.IAND);
                     }
                 }

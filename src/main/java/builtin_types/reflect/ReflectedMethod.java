@@ -6,10 +6,7 @@ import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
 import builtin_types.reflect.annotations.*;
-import builtin_types.types.BoolType;
-import builtin_types.types.ObjType;
-import builtin_types.types.StringType;
-import builtin_types.types.UnitType;
+import builtin_types.types.*;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import compile.BytecodeHelper;
@@ -19,6 +16,7 @@ import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 import util.ThrowingFunction;
 
+import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -83,13 +81,46 @@ public class ReflectedMethod {
     private static ThrowingFunction<TypePool, Type, CompilationException> getTypeGetter(AnnotatedType type) {
         Class<?> c = (Class<?>) type.getType();
         String className = c.getName().replace('.', '/');
+
+        //Array types
+        if (type instanceof AnnotatedArrayType arrayType) {
+            ThrowingFunction<TypePool, Type, CompilationException> inner = getTypeGetter(arrayType.getAnnotatedGenericComponentType());
+            return pool -> pool.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(pool)));
+        }
+
         return switch (className) {
             //Primitives
             case "boolean" -> basicBuiltin(BoolType.INSTANCE);
-            case "byte" -> maybeUnsigned(type, IntegerType.I8, IntegerType.U8);
-            case "short" -> maybeUnsigned(type, IntegerType.I16, IntegerType.U16);
-            case "int" -> maybeUnsigned(type, IntegerType.I32, IntegerType.U32);
-            case "long" -> maybeUnsigned(type, IntegerType.I64, IntegerType.U64);
+            case "byte" -> {
+                if (type.getAnnotation(Unsigned.class) != null)
+                    throw new IllegalStateException("Failed to reflect class: Do not use @Unsigned byte, instead use @Unsigned(8) int!");
+                yield basicBuiltin(IntegerType.I8);
+            }
+            case "short" -> {
+                if (type.getAnnotation(Unsigned.class) != null)
+                    throw new IllegalStateException("Failed to reflect class: Do not use @Unsigned short, instead use @Unsigned(16) int!");
+                yield basicBuiltin(IntegerType.I16);
+            }
+            case "int" -> {
+                Unsigned u = type.getAnnotation(Unsigned.class);
+                if (u == null)
+                    yield basicBuiltin(IntegerType.I32);
+                yield switch (u.value()) {
+                    case 8 -> basicBuiltin(IntegerType.U8);
+                    case 16 -> basicBuiltin(IntegerType.U16);
+                    case 0, 32 -> basicBuiltin(IntegerType.U32); //default value is 0, @Unsigned int should be u32
+                    default -> throw new IllegalStateException("Failed to reflect class: for \"@Unsigned(n) int\", n should be 0, 8, 16, or 32!");
+                };
+            }
+            case "long" -> {
+                Unsigned u = type.getAnnotation(Unsigned.class);
+                if (u == null)
+                    yield basicBuiltin(IntegerType.I64);
+                yield switch (u.value()) {
+                    case 0, 64 -> basicBuiltin(IntegerType.U64);
+                    default -> throw new IllegalStateException("Failed to reflect class: for \"@Unsigned(n) long\", n should be 0 or 64!");
+                };
+            }
             case "float" -> basicBuiltin(FloatType.F32);
             case "double" -> basicBuiltin(FloatType.F64);
             case "char" -> throw new IllegalArgumentException("Cannot reflect methods accepting char");
@@ -100,10 +131,6 @@ public class ReflectedMethod {
             //Default
             default -> pool -> pool.getReflectedBuiltin(c);
         };
-    }
-
-    private static ThrowingFunction<TypePool, Type, CompilationException> maybeUnsigned(AnnotatedType t, BuiltinType signed, BuiltinType unsigned) {
-        return t.getAnnotation(Unsigned.class) != null ? pool -> pool.getBasicBuiltin(unsigned) : pool -> pool.getBasicBuiltin(signed);
     }
 
     private static ThrowingFunction<TypePool, Type, CompilationException> basicBuiltin(BuiltinType b) {

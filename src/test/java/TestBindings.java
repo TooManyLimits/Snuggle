@@ -23,11 +23,16 @@ public class TestBindings {
     }
 
     @Rename("assertEquals")
-    public static void assertEqualsU(@Unsigned byte expected, @Unsigned byte actual) {
+    public static void assertEqualsU8(@Unsigned(8) int expected, @Unsigned(8) int actual) {
         Assertions.assertEquals(expected, actual);
     }
 
     public static void assertEquals(short expected, short actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
+    @Rename("assertEquals")
+    public static void assertEqualsU16(@Unsigned(16) int expected, @Unsigned(16) int actual) {
         Assertions.assertEquals(expected, actual);
     }
 
@@ -36,7 +41,7 @@ public class TestBindings {
     }
 
     @Rename("assertEquals")
-    public static void assertEqualsU(@Unsigned int expected, @Unsigned int actual) {
+    public static void assertEqualsU32(@Unsigned int expected, @Unsigned int actual) {
         Assertions.assertEquals(expected, actual);
     }
 
@@ -45,7 +50,7 @@ public class TestBindings {
     }
 
     @Rename("assertEquals")
-    public static void assertEqualsU(@Unsigned long expected, @Unsigned long actual) {
+    public static void assertEqualsU64(@Unsigned long expected, @Unsigned long actual) {
         Assertions.assertEquals(expected, actual);
     }
 
@@ -53,13 +58,11 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
-    // todo: (curve25519) only for byte[]
-    public static void assertArrayEquals(Object a, Object b) {
-        Assertions.assertArrayEquals((byte[]) a, (byte[]) b);
+    public static void assertArrayEquals(byte[] a, byte[] b) {
+        Assertions.assertArrayEquals(a, b);
     }
 
-    // todo: (curve25519) make this return a byte[]???
-    public static Object hex(String s) {
+    public static byte[] hex(String s) {
         return HexFormat.of().parseHex(s);
     }
 }
