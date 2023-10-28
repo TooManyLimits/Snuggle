@@ -1,9 +1,9 @@
 package builtin_types.types.numbers;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
@@ -35,11 +35,11 @@ public class FloatLiteralType implements BuiltinType {
      * Generic is the return type.
      * This is essentially modeled the same as the IntLiteralType version of the function.
      */
-    private <T1, T2> ConstMethodDef generateBinary(String name,
-                                              BiFunction<Fraction, T1, T2> func,
-                                              Type floatLiteralType, FloatType unmappedArgType,
-                                              Type argType, Type returnType,
-                                              TypePool pool) {
+    private <T1, T2> MethodDef generateBinary(String name,
+                                                   BiFunction<Fraction, T1, T2> func,
+                                                   TypeDef floatLiteralType, FloatType unmappedArgType,
+                                                   TypeDef argType, TypeDef returnType,
+                                                   TypeChecker checker) {
 
         return new ConstMethodDef(name, 0, false, List.of(argType), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(floatLiteralType)) {
@@ -57,7 +57,7 @@ public class FloatLiteralType implements BuiltinType {
                     //Find the correct method def, with the proper name and arg type
                     String desiredName = "n_" + name;
                     MethodDef neededMethodDef = ListUtils.find(
-                            pool.getTypeDef(pool.getBasicBuiltin(unmappedArgType)).getMethods(),
+                            checker.getBasicBuiltin(unmappedArgType).methods(),
                             m -> m.name().equals(desiredName) && m.paramTypes().get(0).equals(argType)
                     );
                     //And return a new typed call using it.
@@ -70,43 +70,43 @@ public class FloatLiteralType implements BuiltinType {
     }
 
     //Generate many binary methods
-    private List<ConstMethodDef> generateBinary(String name,
+    private List<MethodDef> generateBinary(String name,
                                                 BiFunction<Fraction, Float, Float> floatFunc,
                                                 BiFunction<Fraction, Double, Double> doubleFunc,
                                                 BiFunction<Fraction, Fraction, Fraction> fractionFunc,
-                                                Type mappedFloatLiteralType, Type mappedF32Type, Type mappedF64Type,
-                                                TypePool pool) {
+                                                TypeDef mappedFloatLiteralType, TypeDef mappedF32Type, TypeDef mappedF64Type,
+                                                TypeChecker checker) {
         return List.of(
                 //Literal, Literal -> Literal
-                generateBinary(name, fractionFunc, mappedFloatLiteralType, null, mappedFloatLiteralType, mappedFloatLiteralType, pool),
+                generateBinary(name, fractionFunc, mappedFloatLiteralType, null, mappedFloatLiteralType, mappedFloatLiteralType, checker),
                 //Literal, f32 -> f32
-                generateBinary(name, floatFunc, mappedFloatLiteralType, FloatType.F32, mappedF32Type, mappedF32Type, pool),
+                generateBinary(name, floatFunc, mappedFloatLiteralType, FloatType.F32, mappedF32Type, mappedF32Type, checker),
                 //Literal, f64 -> f64
-                generateBinary(name, doubleFunc, mappedFloatLiteralType, FloatType.F64, mappedF64Type, mappedF64Type, pool)
+                generateBinary(name, doubleFunc, mappedFloatLiteralType, FloatType.F64, mappedF64Type, mappedF64Type, checker)
         );
     }
 
     //Generate many comparison methods
-    private List<ConstMethodDef> generateComparison(String name,
+    private List<MethodDef> generateComparison(String name,
                                                     BiFunction<Fraction, Float, Boolean> floatFunc,
                                                     BiFunction<Fraction, Double, Boolean> doubleFunc,
                                                     BiFunction<Fraction, Fraction, Boolean> fractionFunc,
-                                                    Type mappedFloatLiteralType, Type mappedBoolType, Type mappedF32Type, Type mappedF64Type,
-                                                    TypePool pool) {
+                                                    TypeDef mappedFloatLiteralType, TypeDef mappedBoolType, TypeDef mappedF32Type, TypeDef mappedF64Type,
+                                                    TypeChecker checker) {
         return List.of(
                 //Literal, Literal -> bool
-                generateBinary(name, fractionFunc, mappedFloatLiteralType, null, mappedFloatLiteralType, mappedBoolType, pool),
+                generateBinary(name, fractionFunc, mappedFloatLiteralType, null, mappedFloatLiteralType, mappedBoolType, checker),
                 //Literal, f32 -> bool
-                generateBinary(name, floatFunc, mappedFloatLiteralType, FloatType.F32, mappedF32Type, mappedBoolType, pool),
+                generateBinary(name, floatFunc, mappedFloatLiteralType, FloatType.F32, mappedF32Type, mappedBoolType, checker),
                 //Literal, f64 -> bool
-                generateBinary(name, doubleFunc, mappedFloatLiteralType, FloatType.F64, mappedF64Type, mappedBoolType, pool)
+                generateBinary(name, doubleFunc, mappedFloatLiteralType, FloatType.F64, mappedF64Type, mappedBoolType, checker)
         );
     }
 
     /**
      * Generate a unary ConstMethodDef with the given name and funcs
      */
-    private <T> ConstMethodDef generateUnary(String name, Function<Fraction, T> func, Type floatLiteralType, Type returnType) {
+    private <T> MethodDef generateUnary(String name, Function<Fraction, T> func, TypeDef floatLiteralType, TypeDef returnType) {
         return new ConstMethodDef(name, 0, false, List.of(), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(floatLiteralType)) {
                 //Get the receiver value and apply the function
@@ -119,13 +119,13 @@ public class FloatLiteralType implements BuiltinType {
     }
 
     //Generate multiple unary methods
-    private List<ConstMethodDef> generateUnary(String name,
+    private List<MethodDef> generateUnary(String name,
                                                Function<Fraction, Float> floatFunc,
                                                Function<Fraction, Double> doubleFunc,
                                                Function<Fraction, Fraction> fractionFunc,
-                                               Type mappedFloatLiteralType,
-                                               Type mappedF32Type,
-                                               Type mappedF64Type) {
+                                               TypeDef mappedFloatLiteralType,
+                                               TypeDef mappedF32Type,
+                                               TypeDef mappedF64Type) {
         return List.of(
                 //Literal -> Literal
                 generateUnary(name, fractionFunc, mappedFloatLiteralType, mappedFloatLiteralType),
@@ -138,14 +138,14 @@ public class FloatLiteralType implements BuiltinType {
 
 
     @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type mappedFloatLiteralType = pool.getBasicBuiltin(INSTANCE);
-        Type mappedF32Type = pool.getBasicBuiltin(FloatType.F32);
-        Type mappedF64Type = pool.getBasicBuiltin(FloatType.F64);
-        Type mappedBoolType = pool.getBasicBuiltin(BoolType.INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef mappedFloatLiteralType = checker.getBasicBuiltin(INSTANCE);
+        TypeDef mappedF32Type = checker.getBasicBuiltin(FloatType.F32);
+        TypeDef mappedF64Type = checker.getBasicBuiltin(FloatType.F64);
+        TypeDef mappedBoolType = checker.getBasicBuiltin(BoolType.INSTANCE);
 
-        BinHelper binHelper = (name, f1, f2, f3) -> generateBinary(name, f1, f2, f3, mappedFloatLiteralType, mappedF32Type, mappedF64Type, pool);
-        CmpHelper cmpHelper = (name, f1, f2, f3) -> generateComparison(name, f1, f2, f3, mappedFloatLiteralType, mappedBoolType, mappedF32Type, mappedF64Type, pool);
+        BinHelper binHelper = (name, f1, f2, f3) -> generateBinary(name, f1, f2, f3, mappedFloatLiteralType, mappedF32Type, mappedF64Type, checker);
+        CmpHelper cmpHelper = (name, f1, f2, f3) -> generateComparison(name, f1, f2, f3, mappedFloatLiteralType, mappedBoolType, mappedF32Type, mappedF64Type, checker);
 
         return ListUtils.join(List.of(
                 binHelper.get("add", (frac, f) -> frac.floatValue() + f, (frac, d) -> frac.doubleValue() + d, Fraction::add),
@@ -176,42 +176,49 @@ public class FloatLiteralType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
         return null;
     }
 
     @Override
-    public Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return null;
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return -1;
+    }
+
+    @Override
+    public Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) {
+        return Set.copyOf(ListUtils.map(FloatType.ALL_FLOAT_TYPES, checker::getBasicBuiltin));
+    }
+
+    @Override
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
         throw new TypeCheckingException("Unable to determine type of float literal. Try adding annotations!", loc);
-    }
-
-    //Despite the float types being supertypes for type-checking reasons,
-    //this has no true supertype, in the sense of being able to perform virtual calls.
-    @Override
-    public Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException {
-        //The supertypes of this are all the integer types
-        return Set.copyOf(ListUtils.map(FloatType.ALL_FLOAT_TYPES, pool::getBasicBuiltin));
-    }
-
-    @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
-    }
-
-    @Override
-    public boolean extensible() {
-        return false;
-    }
-
-    @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
-        return false;
     }
 
     //Helpers for cleaner syntax in getMethods()
     @FunctionalInterface
     private interface BinHelper {
-        List<ConstMethodDef> get(String name,
+        List<MethodDef> get(String name,
                                  BiFunction<Fraction, Float, Float> floatFunc,
                                  BiFunction<Fraction, Double, Double> doubleFunc,
                                  BiFunction<Fraction, Fraction, Fraction> fractionFunc);
@@ -219,7 +226,7 @@ public class FloatLiteralType implements BuiltinType {
 
     @FunctionalInterface
     private interface CmpHelper {
-        List<ConstMethodDef> get(String name,
+        List<MethodDef> get(String name,
                                  BiFunction<Fraction, Float, Boolean> floatFunc,
                                  BiFunction<Fraction, Double, Boolean> doubleFunc,
                                  BiFunction<Fraction, Fraction, Boolean> fractionFunc);

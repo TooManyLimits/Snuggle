@@ -1,11 +1,11 @@
 package builtin_types.types.numbers;
 
+import ast.passes.TypeChecker;
+import ast.typed.def.method.ConstMethodDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedMethodCall;
 import builtin_types.types.BoolType;
 import exceptions.compile_time.CompilationException;
-import ast.passes.TypePool;
-import ast.typed.Type;
-import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.BuiltinType;
@@ -31,7 +31,7 @@ public class IntLiteralType implements BuiltinType {
      * Generic is the return type. This method can be repurposed to work with, say,
      * comparison operators, by replacing T = BigInteger with T = Boolean.
      */
-    private <T> ConstMethodDef generateBinary(String name, BiFunction<BigInteger, BigInteger, T> func, Type intLiteralType, IntegerType unmappedArgType, Type argType, Type returnType, TypePool pool) {
+    private <T> MethodDef generateBinary(String name, BiFunction<BigInteger, BigInteger, T> func, TypeDef intLiteralType, IntegerType unmappedArgType, TypeDef argType, TypeDef returnType, TypeChecker checker) {
         return new ConstMethodDef(name, 0, false, List.of(argType), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(intLiteralType)) {
                 //Get the receiver value
@@ -48,7 +48,7 @@ public class IntLiteralType implements BuiltinType {
                     //Find the correct method def, with the proper name and arg type
                     String desiredName = "n_" + name;
                     MethodDef neededMethodDef = ListUtils.find(
-                            pool.getTypeDef(pool.getBasicBuiltin(unmappedArgType)).getMethods(),
+                            checker.getBasicBuiltin(unmappedArgType).methods(),
                             m -> m.name().equals(desiredName) && m.paramTypes().get(0).equals(argType)
                     );
                     //And return a new typed call using it.
@@ -61,32 +61,32 @@ public class IntLiteralType implements BuiltinType {
     }
 
     //Generate many binary methods
-    private List<ConstMethodDef> generateBinary(String name, BiFunction<BigInteger, BigInteger, BigInteger> func, Type mappedIntLiteralType, List<Type> mappedIntTypes, TypePool pool) {
-        ArrayList<ConstMethodDef> list = new ArrayList<>();
+    private List<MethodDef> generateBinary(String name, BiFunction<BigInteger, BigInteger, BigInteger> func, TypeDef mappedIntLiteralType, List<TypeDef> mappedIntTypes, TypeChecker checker) {
+        ArrayList<MethodDef> list = new ArrayList<>();
         //Literal, Literal -> Literal
-        list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedIntLiteralType, pool));
+        list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedIntLiteralType, checker));
         for (int i = 0; i < mappedIntTypes.size(); i++) {
             IntegerType unmappedIntType = IntegerType.ALL_INT_TYPES.get(i);
-            Type mappedIntType = mappedIntTypes.get(i);
+            TypeDef mappedIntType = mappedIntTypes.get(i);
             //Literal, Literal -> Concrete
-            list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedIntType, pool));
+            list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedIntType, checker));
             //Literal, Concrete -> Concrete
-            list.add(generateBinary(name, func, mappedIntLiteralType, unmappedIntType, mappedIntType, mappedIntType, pool));
+            list.add(generateBinary(name, func, mappedIntLiteralType, unmappedIntType, mappedIntType, mappedIntType, checker));
         }
         list.trimToSize();
         return list;
     }
 
     //Generate many comparison methods
-    private List<ConstMethodDef> generateComparison(String name, BiFunction<BigInteger, BigInteger, Boolean> func, Type mappedIntLiteralType, Type mappedBoolType, List<Type> mappedIntTypes, TypePool pool) {
-        ArrayList<ConstMethodDef> list = new ArrayList<>();
+    private List<MethodDef> generateComparison(String name, BiFunction<BigInteger, BigInteger, Boolean> func, TypeDef mappedIntLiteralType, TypeDef mappedBoolType, List<TypeDef> mappedIntTypes, TypeChecker checker) {
+        ArrayList<MethodDef> list = new ArrayList<>();
         //Literal, Literal -> Boolean
-        list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedBoolType, pool));
+        list.add(generateBinary(name, func, mappedIntLiteralType, null, mappedIntLiteralType, mappedBoolType, checker));
         for (int i = 0; i < mappedIntTypes.size(); i++) {
             IntegerType unmappedIntType = IntegerType.ALL_INT_TYPES.get(i);
-            Type mappedIntType = mappedIntTypes.get(i);
+            TypeDef mappedIntType = mappedIntTypes.get(i);
             //Literal, Concrete -> Boolean
-            list.add(generateBinary(name, func, mappedIntLiteralType, unmappedIntType, mappedIntType, mappedBoolType, pool));
+            list.add(generateBinary(name, func, mappedIntLiteralType, unmappedIntType, mappedIntType, mappedBoolType, checker));
         }
         list.trimToSize();
         return list;
@@ -95,7 +95,7 @@ public class IntLiteralType implements BuiltinType {
     /**
      * Generate a unary ConstMethodDef with the given name and func
      */
-    private <T> ConstMethodDef generateUnary(String name, Function<BigInteger, T> func, Type intLiteralType, Type returnType) {
+    private <T> MethodDef generateUnary(String name, Function<BigInteger, T> func, TypeDef intLiteralType, TypeDef returnType) {
         return new ConstMethodDef(name, 0, false, List.of(), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(intLiteralType)) {
                 //Get the receiver value
@@ -108,11 +108,11 @@ public class IntLiteralType implements BuiltinType {
         }, null);
     }
 
-    private <T> List<ConstMethodDef> generateUnary(String name, Function<BigInteger, T> func, Type mappedIntLiteralType, List<Type> mappedIntTypes) {
-        ArrayList<ConstMethodDef> list = new ArrayList<>();
+    private <T> List<MethodDef> generateUnary(String name, Function<BigInteger, T> func, TypeDef mappedIntLiteralType, List<TypeDef> mappedIntTypes) {
+        ArrayList<MethodDef> list = new ArrayList<>();
         //Literal -> Literal
         list.add(generateUnary(name, func, mappedIntLiteralType, mappedIntLiteralType));
-        for (Type mappedIntType : mappedIntTypes)
+        for (TypeDef mappedIntType : mappedIntTypes)
             //Literal -> Concrete
             list.add(generateUnary(name, func, mappedIntLiteralType, mappedIntType));
         list.trimToSize();
@@ -120,26 +120,26 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type mappedIntLiteralType = pool.getBasicBuiltin(INSTANCE);
-        Type mappedBoolType = pool.getBasicBuiltin(BoolType.INSTANCE);
-        List<Type> mappedIntTypes = ListUtils.map(IntegerType.ALL_INT_TYPES, pool::getBasicBuiltin);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef mappedIntLiteralType = checker.getBasicBuiltin(INSTANCE);
+        TypeDef mappedBoolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        List<TypeDef> mappedIntTypes = ListUtils.map(IntegerType.ALL_INT_TYPES, checker::getBasicBuiltin);
         return ListUtils.join(List.of(
-                generateBinary("add", BigInteger::add, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("sub", BigInteger::subtract, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("mul", BigInteger::multiply, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("div", BigInteger::divide, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("rem", BigInteger::remainder, mappedIntLiteralType, mappedIntTypes, pool),
+                generateBinary("add", BigInteger::add, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("sub", BigInteger::subtract, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("mul", BigInteger::multiply, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("div", BigInteger::divide, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("rem", BigInteger::remainder, mappedIntLiteralType, mappedIntTypes, checker),
 
-                generateBinary("band", BigInteger::and, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("bor", BigInteger::or, mappedIntLiteralType, mappedIntTypes, pool),
-                generateBinary("bxor", BigInteger::xor, mappedIntLiteralType, mappedIntTypes, pool),
+                generateBinary("band", BigInteger::and, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("bor", BigInteger::or, mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("bxor", BigInteger::xor, mappedIntLiteralType, mappedIntTypes, checker),
 
-                generateComparison("gt", (a, b) -> a.compareTo(b) > 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
-                generateComparison("lt", (a, b) -> a.compareTo(b) < 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
-                generateComparison("ge", (a, b) -> a.compareTo(b) >= 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
-                generateComparison("le", (a, b) -> a.compareTo(b) <= 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
-                generateComparison("eq", (a, b) -> a.compareTo(b) == 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, pool),
+                generateComparison("gt", (a, b) -> a.compareTo(b) > 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
+                generateComparison("lt", (a, b) -> a.compareTo(b) < 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
+                generateComparison("ge", (a, b) -> a.compareTo(b) >= 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
+                generateComparison("le", (a, b) -> a.compareTo(b) <= 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
+                generateComparison("eq", (a, b) -> a.compareTo(b) == 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
 
                 generateUnary("neg", BigInteger::negate, mappedIntLiteralType, mappedIntTypes),
                 generateUnary("bnot", BigInteger::not, mappedIntLiteralType, mappedIntTypes)
@@ -158,35 +158,42 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
         return null;
     }
 
     @Override
-    public Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return null;
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return -1;
+    }
+
+    @Override
+    public Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) {
+        return Set.copyOf(ListUtils.map(IntegerType.ALL_INT_TYPES, checker::getBasicBuiltin));
+    }
+
+    @Override
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
         throw new TypeCheckingException("Unable to determine type of int literal. Try adding annotations!", loc);
-    }
-
-    //Despite the integer types being supertypes for type-checking reasons,
-    //this has no true supertype, in the sense of being able to perform virtual calls.
-    @Override
-    public Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException {
-        //The supertypes of this are all the integer types
-        return Set.copyOf(ListUtils.map(IntegerType.ALL_INT_TYPES, pool::getBasicBuiltin));
-    }
-
-    @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
-    }
-
-    @Override
-    public boolean extensible() {
-        return false;
-    }
-
-    @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
-        return false;
     }
 }

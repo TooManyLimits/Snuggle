@@ -2,7 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedBlock;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
@@ -25,10 +25,10 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
     }
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         //empty block {} just evaluates to unit
         if (exprs.size() == 0)
-            return new TypedLiteral(loc, Unit.INSTANCE, checker.pool().getBasicBuiltin(UnitType.INSTANCE));
+            return new TypedLiteral(loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
 
         //Otherwise, map all exprs to inferred exprs, in a pushed checker env
         checker.push();
@@ -39,13 +39,13 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         //Empty block case
         if (exprs.size() == 0) {
-            if (!checker.pool().getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected, checker.pool()))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but got unit", loc);
+            if (!checker.getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected))
+                throw new TypeCheckingException("Expected " + expected.name() + ", but got unit", loc);
             else
-                return new TypedLiteral(loc, Unit.INSTANCE, checker.pool().getBasicBuiltin(UnitType.INSTANCE));
+                return new TypedLiteral(loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
         }
         //Otherwise, infer all exprs except the last one, which is checked instead.
         List<TypedExpr> typedExprs = new ArrayList<>(exprs.size());

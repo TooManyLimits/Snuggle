@@ -66,4 +66,9 @@ public class ListUtils {
         return res;
     }
 
+    @SafeVarargs
+    public static <T> List<T> join(List<T>... lists) {
+        return join(List.of(lists));
+    }
+
 }

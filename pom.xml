@@ -34,7 +34,12 @@
         <dependency>
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-util</artifactId>
-            <version>4.1</version>
+            <version>9.4</version>
+        </dependency>
+        <dependency>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm-tree</artifactId>
+            <version>9.4</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

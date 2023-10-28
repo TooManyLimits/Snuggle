@@ -8,6 +8,8 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import runtime.SnuggleInstance;
+import runtime.SnuggleRuntime;
 import util.CompileAll;
 
 import java.io.IOException;
@@ -140,7 +142,7 @@ public class SnuggleTests {
                         var i = 0u32
                         while i < this.elems.size() {
                             System.print(this.elems.get(i))
-                            i = i + 1
+                            i = i + 1;
                         };
                     }
                 }
@@ -154,17 +156,17 @@ public class SnuggleTests {
         assertThrows(SnuggleException.class, () -> test("""
                 var x = if true "hi";
                 System.print(x.get())
-                
+
                 var z = 1i32
                 var a = while z < 4 {
                     z = z + 1
                     "something a little silly"
                 }
                 System.print(a.get())
-                
+
                 var b = while false "lol"
                 System.print(b.get("while loop never ran"))
-                
+
                 var y = if false "hi 2";
                 System.print(y.get("if expression didnt happen :<"))
                 """));
@@ -186,7 +188,7 @@ public class SnuggleTests {
 
     @Test
     public void testImports() {
-        assertThrows(SnuggleException.class, () -> test(Map.of(
+        assertThrows(ClassCastException.class, () -> test(Map.of(
                 "main",
                 """
                         if 1 < 2 {
@@ -210,7 +212,7 @@ public class SnuggleTests {
 
     @Test
     public void testStackOverflow() {
-        assertThrows(SnuggleException.class, () -> test("""
+        assertThrows(StackOverflowError.class, () -> test("""
                 class death {
                     fn new() super()
                     fn get() this.get()
@@ -221,7 +223,7 @@ public class SnuggleTests {
 
     @Test
     public void testObjectCast() {
-        assertThrows(SnuggleException.class, () -> test("""
+        assertThrows(ClassCastException.class, () -> test("""
                 class A {fn new() super()}
                 class B: A {fn new() super()}
                 
@@ -447,10 +449,13 @@ public class SnuggleTests {
             var after = System.nanoTime();
             System.out.println("Compilation took " + (after - before) / 1000000 + " ms");
             before = after;
+            SnuggleInstance.INSTRUCTIONS = 0;
             instance.run();
             after = System.nanoTime();
             System.out.println("Running took " + (after - before) / 1000000 + " ms");
-        } catch (CompilationException | SnuggleException e) {
+            System.out.println("Cost was " + SnuggleInstance.INSTRUCTIONS);
+            SnuggleInstance.INSTRUCTIONS = 0; //reset just in case
+        } catch (CompilationException | SnuggleException | RuntimeException e) {
             // propagate exceptions
             throw e;
         } catch (Exception e) {

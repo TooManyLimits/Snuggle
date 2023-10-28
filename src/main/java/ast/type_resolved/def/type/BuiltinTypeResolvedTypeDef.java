@@ -1,10 +1,9 @@
 package ast.type_resolved.def.type;
 
+import ast.typed.def.type.BuiltinTypeDef;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import util.LateInit;
@@ -24,25 +23,11 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
     }
 
     @Override
-    public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {
-
-    }
+    public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {}
 
     @Override
-    public TypeDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException {
-        //TODO: Verify with the BuiltinType that this is okay
-        return new BuiltinTypeDef(builtin,
-                builtin.genericName(generics, checker.pool()),
-                builtin.getDescriptor(generics, checker.pool()),
-                builtin.getRuntimeName(generics, checker.pool()),
-                builtin.isReferenceType(generics, checker.pool()),
-                builtin.hasSpecialConstructor(generics, checker.pool()),
-                generics,
-                index,
-                new LateInit<>(() -> builtin.getMethods(generics, checker.pool())),
-                new LateInit<>(() -> builtin.getSupertypes(generics, checker.pool())),
-                new LateInit<>(() -> builtin.getTrueSupertype(generics, checker.pool()))
-        );
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
+        return new BuiltinTypeDef(builtin, generics, checker);
     }
 
 }

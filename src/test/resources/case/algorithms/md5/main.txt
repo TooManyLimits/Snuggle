@@ -186,7 +186,7 @@ class MD5 {
     fn new() super()
 }
 
-var input: Array<i8> = Test.hex("f3a89dd6b9faa8cf295e138c688d693cc137c39c98c0a4af3c6b51e16963c8de") as Array<i8>;
-var output: Array<i8> = Test.hex("b4b0896660df2d61a736591879830fbb") as Array<i8>;
+var input: Array<i8> = Test.hex("f3a89dd6b9faa8cf295e138c688d693cc137c39c98c0a4af3c6b51e16963c8de");
+var output: Array<i8> = Test.hex("b4b0896660df2d61a736591879830fbb");
 
 Test.assertArrayEquals(output, new MD5().computeMD5(input));

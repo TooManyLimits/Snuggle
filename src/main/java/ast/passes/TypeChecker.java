@@ -3,17 +3,21 @@ package ast.passes;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.GenericTypeDef;
+import ast.typed.def.type.IndirectTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.type_resolved.prog.TypeResolvedAST;
-import ast.typed.Type;
 import ast.typed.prog.TypedAST;
 import ast.typed.prog.TypedFile;
+import builtin_types.BuiltinType;
 import exceptions.compile_time.*;
 import lexing.Loc;
+import util.ListUtils;
 import util.MapStack;
 import util.MapUtils;
 
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -21,35 +25,100 @@ import java.util.*;
  * the next stage: a TypedAST.
  *
  * Figures out the types of all expressions and such.
+ * Tracks variables in scope and such things.
  */
 public class TypeChecker {
 
-    // The annotatedType pool, keeps track of all the types in existence
-    private final TypePool typePool;
+    private final TypeResolvedAST ast;
 
     private TypeChecker(TypeResolvedAST ast) throws CompilationException {
-        typePool = new TypePool(this, ast);
+        this.ast = ast;
     }
 
-    public TypePool pool() {
-        return typePool;
-    }
-
-    private final MapStack<String, Type> scopeVariables = new MapStack<>();
+    private final MapStack<String, TypeDef> scopeVariables = new MapStack<>();
     public void push() { scopeVariables.push(); }
     public void pop() { scopeVariables.pop(); }
-    public void declare(Loc loc, String name, Type type) throws CompilationException {
-        Type prevType = scopeVariables.putIfAbsent(name, type);
+    public void declare(Loc loc, String name, TypeDef type) throws CompilationException {
+        TypeDef prevType = scopeVariables.putIfAbsent(name, type);
         if (prevType != null)
             throw new AlreadyDeclaredException("Variable \"" + name + "\" is already declared in this scope!", loc);
     }
 
-    public Type lookup(Loc loc, String name) throws CompilationException {
-        Type t = scopeVariables.get(name);
+    public TypeDef lookup(Loc loc, String name) throws CompilationException {
+        TypeDef t = scopeVariables.get(name);
         if (t == null)
             throw new UndeclaredVariableException("Variable \"" + name + "\" was not declared in this scope", loc);
         return t;
     }
+
+    //A cache for mapping ResolvedType -> TypeDef
+    private final Map<Integer, Map<List<TypeDef>, TypeDef>> cache = new HashMap<>();
+    //The set of all TypeDefs created here
+    private final List<TypeDef> allTypeDefs = new ArrayList<>();
+
+    //Converts from ResolvedType to TypeDef.
+    public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics) {
+        if (resolvedType instanceof ResolvedType.Basic basic) {
+            //Convert the generics and check if we've cached this already.
+            //If we have, return that value.
+            List<TypeDef> convertedGenerics = ListUtils.map(basic.generics(), g -> getOrInstantiate(g, typeGenerics));
+            Map<List<TypeDef>, TypeDef> tMap = cache.get(basic.index());
+            if (tMap != null) {
+                TypeDef t = tMap.get(convertedGenerics);
+                if (t != null)
+                    return t;
+            }
+            //We haven't cached this yet, so let's compute and cache it.
+            //Create the new type, but as an indirect. This adds a layer of indirection
+            //to avoid problems in recursion.
+            IndirectTypeDef resultType = new IndirectTypeDef();
+            allTypeDefs.add(resultType);
+            cache.computeIfAbsent(basic.index(), x -> new HashMap<>()).put(convertedGenerics, resultType);
+            TypeDef instantiated = ast.typeDefs().get(basic.index()).instantiate(resultType, this, convertedGenerics);
+            resultType.fill(instantiated);
+            //And return
+            return resultType;
+        } else if (resolvedType instanceof ResolvedType.Generic generic) {
+            if (generic.isMethod())
+                return new GenericTypeDef(generic.index());
+            else
+                return typeGenerics.get(generic.index());
+        } else {
+            throw new IllegalStateException("Unexpected ResolvedType; bug in compiler, please report!");
+        }
+    }
+
+    public TypeDef getBasicBuiltin(BuiltinType type) {
+        return getOrInstantiate(new ResolvedType.Basic(ast.builtinIds().get(type), List.of()), List.of());
+    }
+
+    public TypeDef getReflectedBuiltin(Class<?> clazz) {
+        return getBasicBuiltin(ast.reflectedBuiltins().get(clazz));
+    }
+
+    public TypeDef getGenericBuiltin(BuiltinType type, List<TypeDef> convertedGenerics) {
+        //Similarly structured to above method getOrInstantiate()
+        int index = ast.builtinIds().get(type);
+        //Convert the generics and check if we've cached this already.
+        //If we have, return that value.
+        Map<List<TypeDef>, TypeDef> tMap = cache.get(index);
+        if (tMap != null) {
+            TypeDef t = tMap.get(convertedGenerics);
+            if (t != null)
+                return t;
+        }
+        //We haven't cached this yet, so let's compute and cache it.
+        //Create the new type, but as an indirect. This adds a layer of indirection
+        //to avoid problems in recursion.
+        IndirectTypeDef resultType = new IndirectTypeDef();
+        allTypeDefs.add(resultType);
+        cache.computeIfAbsent(index, x -> new HashMap<>()).put(convertedGenerics, resultType);
+        TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, convertedGenerics);
+        resultType.fill(instantiated);
+        //And return
+        return resultType;
+    }
+
 
     /**
      * Method to fully convert a TypeResolvedAST into a TypedAST.
@@ -66,11 +135,10 @@ public class TypeChecker {
         //However, this way, since new types are always appended to the end, we continue
         //checking method bodies until no new method bodies are added to check, and we reach
         //the end of the list.
-        List<TypeDef> checkedTypeDefs = checker.pool().getFinalTypeDefs();
-        for (int i = 0; i < checkedTypeDefs.size(); i++)
-            checkedTypeDefs.get(i).checkCode();
+        for (int i = 0; i < checker.allTypeDefs.size(); i++)
+            checker.allTypeDefs.get(i).checkCode();
         //Return the result
-        return new TypedAST(checkedTypeDefs, typedFiles);
+        return new TypedAST(checker.allTypeDefs, typedFiles);
     }
 
     /**
@@ -90,7 +158,7 @@ public class TypeChecker {
      * @param expectedReturnType The type which the best method must return. If null, there's no restriction on the return type.
      */
 
-    public BestMethodInfo getBestMethod(Loc loc, Type currentType, Type receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<Type> typeGenerics, boolean isCallStatic, boolean isSuperCall, Type expectedReturnType) throws CompilationException {
+    public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType) throws CompilationException {
         //First step: find a list of potentially matching methods we can call.
 
         List<MethodDef> matchingMethods = new ArrayList<>();
@@ -98,8 +166,8 @@ public class TypeChecker {
         List<List<TypedExpr>> matchingMethodsTypedArgs = new ArrayList<>();
         //Create a cache for the check() lookups.
         //null map values mean that we already tried check()ing this, and it failed.
-        List<HashMap<Type, TypedExpr>> checkCache = new ArrayList<>(args.size());
-        for (int i = 0; i < args.size(); i++) checkCache.add(new HashMap<>());
+        List<IdentityHashMap<TypeDef, TypedExpr>> checkCache = new ArrayList<>(args.size());
+        for (int i = 0; i < args.size(); i++) checkCache.add(new IdentityHashMap<>());
         //Keep track of info for no-matching-method errors
         boolean foundCheckError = false;
         TypeCheckingException onlyCheckError = null;
@@ -108,14 +176,14 @@ public class TypeChecker {
         //Get the list of methods to look through:
         List<? extends MethodDef> methodsToCheck;
         if (isSuperCall) {
-            TypeDef def = pool().getTypeDef(receiverType);
-            receiverType = def.trueSupertype();
+            TypeDef def = receiverType;
+            receiverType = def.inheritanceSupertype();
             if (receiverType == null)
                 throw new NoSuitableMethodException("Cannot use super, as this type has no supertype!", loc);
-            def = pool().getTypeDef(receiverType);
-            methodsToCheck = def.getMethods();
+            def = receiverType;
+            methodsToCheck = def.methods();
         } else {
-            methodsToCheck = pool().getTypeDef(receiverType).getAllMethods(pool());
+            methodsToCheck = receiverType.getAllMethods();
         }
 
         //Loop over all these methods:
@@ -133,7 +201,7 @@ public class TypeChecker {
             //First, invalid return types we can filter out:
             if (expectedReturnType != null) {
                 //We have an expected type, so skip anything whose return type doesn't fit it
-                if (!def.returnType().isSubtype(expectedReturnType, pool())) {
+                if (!def.returnType().isSubtype(expectedReturnType)) {
                     if (thrownOutDueToWrongReturnType == null)
                         thrownOutDueToWrongReturnType = new ArrayList<>();
                     thrownOutDueToWrongReturnType.add(def);
@@ -144,7 +212,7 @@ public class TypeChecker {
             //Now, let's check the arg types:
             List<TypedExpr> typedArgs = new ArrayList<>(args.size());
             int i = 0;
-            Type expectedParamType = null;
+            TypeDef expectedParamType = null;
             try {
                 //Iterate over the expected params...
                 for (i = 0; i < def.paramTypes().size(); i++) {
@@ -209,18 +277,18 @@ public class TypeChecker {
                     try {
                         //Iterate over the expected params and check() them all
                         for (int i = 0; i < thrownOut.paramTypes().size(); i++) {
-                            Type expectedParamType = thrownOut.paramTypes().get(i);
+                            TypeDef expectedParamType = thrownOut.paramTypes().get(i);
                             args.get(i).check(currentType, this, typeGenerics, expectedParamType);
                         }
                     } catch (TypeCheckingException e) {
                         continue;
                     }
-                    previouslyMatchingReturnTypes.append(thrownOut.returnType().name(pool()));
+                    previouslyMatchingReturnTypes.append(thrownOut.returnType().name());
                     previouslyMatchingReturnTypes.append(", ");
                 }
 
                 if (previouslyMatchingReturnTypes.length() > 0) {
-                    String expectedTypeName = expectedReturnType.name(pool());
+                    String expectedTypeName = expectedReturnType.name();
                     previouslyMatchingReturnTypes.delete(previouslyMatchingReturnTypes.length() - 2, previouslyMatchingReturnTypes.length());
                     throw new TypeCheckingException("Expected method \"" + methodName + "\" to return " + expectedTypeName + ", but only found options " + previouslyMatchingReturnTypes, loc);
                 }
@@ -231,7 +299,7 @@ public class TypeChecker {
                 else
                     throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
             } else
-                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" on type \"" + receiverType.name(pool()) + "\" with provided args", loc);
+                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" on type \"" + receiverType.name() + "\" with provided args", loc);
         }
 
         //Exactly one method must have matched:
@@ -241,23 +309,23 @@ public class TypeChecker {
     //Holds the result of getBestMethod().
     //Contains all the information needed for the caller; particularly
     //the method def that was chosen as well as the type-checked arguments.
-    public record BestMethodInfo(Type receiverType, MethodDef methodDef, List<TypedExpr> typedArgs) {}
+    public record BestMethodInfo(TypeDef receiverType, MethodDef methodDef, List<TypedExpr> typedArgs) {}
 
     /**
      * Attempt to choose the most specific method from the given list of methods.
      * If there is no most specific, throws a TooManyMethodsException.
      * The return value is the index of the most specific method.
      */
-    private int tryChoosingMostSpecific(Loc loc, String methodName, List<MethodDef> matchingMethods) throws CompilationException {
+    private static int tryChoosingMostSpecific(Loc loc, String methodName, List<MethodDef> matchingMethods) throws CompilationException {
         //Create the indices array
         Integer[] arr = new Integer[matchingMethods.size()];
         for (int i = 0; i < arr.length; i++)
             arr[i] = i;
 
         //Sort, so the most specific wind up at the front
-        Arrays.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b), this));
+        Arrays.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)));
         //If the first 2 are equally specific, error
-        if (matchingMethods.get(arr[0]).compareSpecificity(matchingMethods.get(arr[1]), this) == 0)
+        if (matchingMethods.get(arr[0]).compareSpecificity(matchingMethods.get(arr[1])) == 0)
             throw new TooManyMethodsException("Unable to determine which overload of \"" + methodName + "\" to call based on provided args and context", loc);
         return arr[0];
     }

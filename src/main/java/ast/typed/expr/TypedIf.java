@@ -1,39 +1,42 @@
 package ast.typed.expr;
 
-import ast.type_resolved.TypeCheckingHelper;
-import ast.typed.Type;
-import compile.Compiler;
-import compile.ScopeHelper;
+import ast.ir.def.CodeBlock;
+import ast.ir.instruction.InnerCodeBlock;
+import ast.ir.instruction.flow.IrLabel;
+import ast.ir.instruction.flow.Jump;
+import ast.ir.instruction.flow.JumpIfFalse;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * At this stage of the AST, a TypedIf always has an ifFalse branch.
  * If it didn't have one at the previous stage of the AST, it was filled
  * in with an empty Option constructor.
  */
-public record TypedIf(Loc loc, TypedExpr cond, TypedExpr ifTrue, TypedExpr ifFalse, Type type) implements TypedExpr {
+public record TypedIf(Loc loc, TypedExpr cond, TypedExpr ifTrue, TypedExpr ifFalse, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        //Compile condition, pushing a bool on the stack
-        cond.compile(compiler, env, visitor);
-        //Generate labels
+    public void compile(CodeBlock code) {
+
         Label ifFalseLabel = new Label();
         Label endLabel = new Label();
-        //If the condition is false (0), jump to the "false" zone
-        visitor.visitJumpInsn(Opcodes.IFEQ, ifFalseLabel);
-        //Compile the "true" zone, leaving its result on the stack
-        ifTrue.compile(compiler, env, visitor);
-        //Jump to the end
-        visitor.visitJumpInsn(Opcodes.GOTO, endLabel);
-        //Emit the false zone label and compile it, leaving its result on the stack
-        visitor.visitLabel(ifFalseLabel);
-        ifFalse.compile(compiler, env, visitor);
-        //Mark the end label
-        visitor.visitLabel(endLabel);
+
+        CodeBlock trueBlock = new CodeBlock(code);
+        CodeBlock falseBlock = new CodeBlock(code);
+
+        cond.compile(code); //Push cond on the stack
+        code.emit(new JumpIfFalse(ifFalseLabel)); //Jump if false
+
+        ifTrue.compile(trueBlock); //Compile ifTrue (into the true block)
+        trueBlock.emit(new Jump(endLabel)); //Jump to end label (inside the true block)
+        code.emit(new InnerCodeBlock(trueBlock));
+
+        code.emit(new IrLabel(ifFalseLabel)); //Begin false branch
+        ifFalse.compile(falseBlock); //Compile ifFalse (into the false block)
+        code.emit(new InnerCodeBlock(falseBlock));
+
+        code.emit(new IrLabel(endLabel)); //End
     }
 }

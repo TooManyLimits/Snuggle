@@ -1,17 +1,13 @@
 package ast.typed.def.method;
 
-import ast.typed.Type;
-import ast.typed.expr.TypedExpr;
-import ast.typed.expr.TypedMethodCall;
-import ast.typed.expr.TypedStaticMethodCall;
-import compile.Compiler;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public record BytecodeMethodDef(boolean isStatic, String name, List<Type> paramTypes, Type returnType, Consumer<MethodVisitor> bytecode) implements MethodDef {
+public record BytecodeMethodDef(String name, boolean isStatic, List<TypeDef> paramTypes, TypeDef returnType, Consumer<MethodVisitor> bytecode) implements MethodDef {
 
     @Override
     public int numGenerics() {
@@ -19,22 +15,17 @@ public record BytecodeMethodDef(boolean isStatic, String name, List<Type> paramT
     }
 
     @Override
-    public boolean isConst() {
-        return false;
+    public TypeDef owningType() {
+        throw new IllegalStateException("Should not be asking for owning type of bytecode method def - Bug in compiler, please report!");
     }
 
     @Override
-    public TypedExpr doConst(TypedMethodCall typedCall) throws CompilationException {
-        return null;
+    public void checkCode() throws CompilationException {
+        //No code to check here
     }
 
     @Override
-    public TypedExpr doConstStatic(TypedStaticMethodCall typedCall) throws CompilationException {
-        return null;
-    }
-
-    @Override
-    public void compileCall(int opcode, Type owner, Compiler compiler, MethodVisitor visitor) throws CompilationException {
-        bytecode.accept(visitor);
+    public void compileCall(boolean isSuperCall, MethodVisitor jvm) {
+        bytecode.accept(jvm);
     }
 }

@@ -1,12 +1,12 @@
 package ast.type_resolved.def.method;
 
+import ast.typed.def.method.SnuggleMethodDef;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedExpr;
-import ast.typed.Type;
-import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.expr.TypedExpr;
 import lexing.Loc;
 import util.LateInit;
@@ -27,9 +27,10 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean isStatic, String nam
         body.verifyGenericArgCounts(verifier);
     }
 
-    public SnuggleMethodDef instantiateType(Type currentType, TypeChecker checker, List<Type> generics) throws CompilationException {
-        List<Type> newParamTypes = ListUtils.map(paramTypes, t -> checker.pool().getOrInstantiateType(t, generics));
-        Type newReturnType = checker.pool().getOrInstantiateType(returnType, generics);
+    //allMethods are passed in for disambiguating between method names.
+    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
+        List<TypeDef> newParamTypes = ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, generics));
+        TypeDef newReturnType = checker.getOrInstantiate(returnType, generics);
         //TypedBody must be computed *after* we know all the method signatures and such
         LateInit<TypedExpr, CompilationException> typedBody = new LateInit<>(() -> {
             checker.push();
@@ -40,7 +41,15 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean isStatic, String nam
             checker.pop();
             return res;
         });
-        return new SnuggleMethodDef(loc, isStatic, name, numGenerics, paramNames, newParamTypes, newReturnType, typedBody);
+
+        int disambiguationIndex = 0;
+        for (TypeResolvedMethodDef method : allMethods) {
+            if (this == method)
+                break;
+            if (method.name().equals(name))
+                disambiguationIndex++;
+        }
+        return new SnuggleMethodDef(loc, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames, newParamTypes, newReturnType, typedBody);
     }
 
 }

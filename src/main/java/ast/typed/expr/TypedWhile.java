@@ -1,46 +1,44 @@
 package ast.typed.expr;
 
-import ast.typed.Type;
-import ast.typed.def.type.BuiltinTypeDef;
+import ast.ir.def.CodeBlock;
+import ast.ir.instruction.InnerCodeBlock;
+import ast.ir.instruction.flow.IrLabel;
+import ast.ir.instruction.flow.Jump;
+import ast.ir.instruction.flow.JumpIfFalse;
+import ast.ir.instruction.stack.Pop;
 import ast.typed.def.type.TypeDef;
-import compile.BytecodeHelper;
-import compile.Compiler;
-import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import runtime.Unit;
+import util.ListUtils;
 
-public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, Type type) implements TypedExpr {
+import java.util.List;
+
+public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
+    public void compile(CodeBlock code) {
         Label condLabel = new Label();
         Label endLabel = new Label();
 
-        //Get type def:
-        Type innerType = ((BuiltinTypeDef) compiler.getTypeDef(type)).generics().get(0);
-        TypeDef innerTypeDef = compiler.getTypeDef(innerType);
+        //Push optional "none" as the current "result" :iea:
+        new TypedConstructor(loc, type, ListUtils.find(type.methods(), method -> method.name().equals("new") && method.paramTypes().size() == 0), List.of()).compile(code);
 
-        //Start by pushing an Optional "None" on the stack.
-        //This(these) stack slot(s) contain(s) the "current result".
-        BytecodeHelper.pushNone(innerTypeDef, visitor);
+        code.emit(new IrLabel(condLabel)); //Emit cond label
 
-        //Emit the cond label
-        visitor.visitLabel(condLabel);
-        //Compile the cond
-        cond.compile(compiler, env, visitor);
-        //If the cond was false, jump to end
-        visitor.visitJumpInsn(Opcodes.IFEQ, endLabel);
-        //Compile the inner expression, replacing the current result
-        BytecodeHelper.pop(innerTypeDef, visitor); //pop the current result
-        body.compile(compiler, env, visitor); //push the result of the body
-        //Jump back to the top
-        visitor.visitJumpInsn(Opcodes.GOTO, condLabel);
-        //Finally emit end label
-        visitor.visitLabel(endLabel);
-        //Current result is on the stack.
+        //Compile everything that happens multiple times into their own CodeBlocks
+        CodeBlock condBlock = new CodeBlock(code);
+        CodeBlock bodyBlock = new CodeBlock(code);
+
+        cond.compile(condBlock); //Compile cond into the cond block
+        condBlock.emit(new JumpIfFalse(endLabel)); //Compile jumping to the end (inside the cond block)
+        code.emit(new InnerCodeBlock(condBlock)); //Emit the cond block
+
+        bodyBlock.emit(new Pop(type)); //Pop the "result"
+        body.compile(bodyBlock); //Compile body into the body block
+        bodyBlock.emit(new Jump(condLabel)); //Jump to the start (inside the body block)
+        code.emit(new InnerCodeBlock(bodyBlock)); //Emit the body block
+
+        code.emit(new IrLabel(endLabel)); //End label
     }
 }

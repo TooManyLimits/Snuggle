@@ -1,9 +1,9 @@
 package ast.type_resolved.expr;
 
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import lexing.Loc;
 
@@ -20,7 +20,7 @@ public interface TypeResolvedExpr {
     //which is what the passed typeGenerics are for.
 
     //Attempt to infer the annotatedType of this expr.
-    TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException;
+    TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException;
 
     //Check that the annotatedType of this expr matches the expected annotatedType. If it doesn't, error.
     //
@@ -28,6 +28,6 @@ public interface TypeResolvedExpr {
     //If this check() call fails, then ensure that the checker parameter's variables and scopes are NOT MODIFIED.
     //The exception to this is for expressions which cannot exist inside of method parameters
     //(currently only declarations)
-    TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException;
+    TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException;
 
 }

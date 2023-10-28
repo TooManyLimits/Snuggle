@@ -3,7 +3,6 @@ package ast.type_resolved.def.type;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
 import ast.typed.def.type.TypeDef;
 
 import java.util.List;
@@ -20,19 +19,18 @@ public interface TypeResolvedTypeDef {
     /**
      * Instantiate this annotatedType with the given list of generics.
      */
-    TypeDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException;
+    TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics);
 
-
-    default String instantiateName(TypeChecker checker, List<Type> generics) throws CompilationException {
-        StringBuilder newName = new StringBuilder(name());
+    static String instantiateName(String name, List<TypeDef> generics) {
+        StringBuilder newName = new StringBuilder(name);
         if (generics.size() > 0) {
-            newName.append("<");
-            for (Type t : generics) {
-                newName.append(checker.pool().getTypeDef(t).name());
+            newName.append("(");
+            for (TypeDef t : generics) {
+                newName.append(t.name());
                 newName.append(", ");
             }
             newName.delete(newName.length() - 2, newName.length());
-            newName.append(">");
+            newName.append(")");
         }
         return newName.toString();
     }

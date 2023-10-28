@@ -1,13 +1,12 @@
 package builtin_types.types.numbers;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
-import compile.BytecodeHelper;
-import exceptions.compile_time.CompilationException;
+import ast.ir.helper.BytecodeHelper;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -90,14 +89,9 @@ public class IntegerType implements BuiltinType {
      */
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type type = pool.getBasicBuiltin(this);
-        Type boolType = pool.getBasicBuiltin(BoolType.INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef type = checker.getBasicBuiltin(this);
+        TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
 
         return ListUtils.join(List.of(
                 //Regular binary operators
@@ -138,20 +132,6 @@ public class IntegerType implements BuiltinType {
                     };
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
-//                DefineConstWithFallback.defineUnary("not", b -> b.equals(BigInteger.ZERO), boolType, doOperationThenConvert(v -> {
-//                    Label pushTrue = new Label();
-//                    Label end = new Label();
-//                    if (bits == 64) {
-//                        v.visitInsn(Opcodes.LCMP);
-//                        v.visitInsn(Opcodes.ICONST_0);
-//                    }
-//                    v.visitJumpInsn(Opcodes.IFEQ, pushTrue);
-//                    v.visitInsn(Opcodes.ICONST_0);
-//                    v.visitJumpInsn(Opcodes.GOTO, end);
-//                    v.visitLabel(pushTrue);
-//                    v.visitInsn(Opcodes.ICONST_1);
-//                    v.visitLabel(end);
-//                })),
 
                 //Comparisons
                 DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
@@ -221,22 +201,37 @@ public class IntegerType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(descriptor);
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
         return descriptor;
     }
 
     @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
-    }
-
-    @Override
-    public boolean extensible() {
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
         return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return bits == 64 ? 2 : 1;
     }
 }

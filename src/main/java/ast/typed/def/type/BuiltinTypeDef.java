@@ -1,41 +1,57 @@
 package ast.typed.def.type;
 
+import ast.passes.TypeChecker;
 import ast.typed.def.field.FieldDef;
+import ast.typed.def.method.MethodDef;
+import builtin_types.BuiltinType;
 import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
-import ast.passes.TypePool;
-import ast.typed.Type;
-import ast.typed.def.method.MethodDef;
-import builtin_types.BuiltinType;
 import lexing.Loc;
-import util.LateInit;
+import util.ListUtils;
 
 import java.util.List;
 import java.util.Set;
 
-public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String generifiedDescriptor,
-                             String generifiedRuntimeName, boolean isReferenceType, boolean hasSpecialConstructor, List<Type> generics, int index,
-                             LateInit<List<? extends MethodDef>, CompilationException> localizedMethods,
-                             LateInit<Set<Type>, CompilationException> localizedSupertypes,
-                             LateInit<Type, CompilationException> localizedTrueSupertype) implements TypeDef {
-    @Override
-    public String name() {
-        return generifiedName;
+public class BuiltinTypeDef implements TypeDef {
+
+    private final BuiltinType builtin;
+    public final List<TypeDef> generics;
+    private final String name, runtimeName, returnDescriptor;
+    private final List<String> descriptor;
+    private final boolean isReferenceType, isPlural, extensible, hasSpecialConstructor;
+    private final int stackSlots;
+    private final Set<TypeDef> typeCheckingSupertypes;
+    private final TypeDef inheritanceSupertype;
+    private final List<FieldDef> fields;
+    private final List<MethodDef> methods;
+
+    public BuiltinTypeDef(BuiltinType builtinType, List<TypeDef> generics, TypeChecker checker) {
+        this.builtin = builtinType;
+        this.generics = List.copyOf(generics);
+        this.name = builtinType.genericName(checker, generics);
+        this.descriptor = builtinType.descriptor(checker, generics);
+        this.runtimeName = builtinType.runtimeName(checker, generics);
+        this.returnDescriptor = builtinType.returnDescriptor(checker, generics);
+        this.isReferenceType = builtinType.isReferenceType(checker, generics);
+        this.isPlural = builtinType.isPlural(checker, generics);
+        this.extensible = builtinType.extensible(checker, generics);
+        this.hasSpecialConstructor = builtinType.hasSpecialConstructor(checker, generics);
+        this.stackSlots = builtinType.stackSlots(checker, generics);
+        this.typeCheckingSupertypes = builtinType.getTypeCheckingSupertypes(checker, generics);
+        this.inheritanceSupertype = builtinType.getInheritanceSupertype(checker, generics);
+        this.fields = builtinType.getFields(checker, generics);
+        this.methods = builtinType.getMethods(checker, generics);
     }
 
     @Override
-    public boolean isSubtype(Type other, TypePool pool) {
-        try {
-            return localizedSupertypes.get().contains(other);
-        } catch (CompilationException e) {
-            throw new IllegalStateException("Bug in setup for BuiltinType " + builtin.name() + ", failed to locate supertypes?");
-        }
+    public BuiltinType builtin() {
+        return builtin;
     }
 
-    //Helper method for casting checks
+    @Override
     public boolean isNumeric() {
         return builtin == IntLiteralType.INSTANCE ||
                 builtin == FloatLiteralType.INSTANCE ||
@@ -43,43 +59,99 @@ public record BuiltinTypeDef(BuiltinType builtin, String generifiedName, String 
                 builtin instanceof FloatType;
     }
 
+    //Whether this type has a special constructor situation.
     @Override
-    public Type trueSupertype() throws CompilationException {
-        return localizedTrueSupertype.get();
-    }
-
-    @Override
-    public Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {
-        return builtin.toStorable(thisType, loc, pool);
+    public boolean hasSpecialConstructor() {
+        return hasSpecialConstructor;
     }
 
     @Override
     public void checkCode() throws CompilationException {
-        
+        //No code to check here
     }
 
     @Override
-    public List<? extends MethodDef> getMethods() throws CompilationException {
-        return localizedMethods.get();
+    public String name() {
+        return name;
     }
 
     @Override
-    public List<? extends FieldDef> getFields() throws CompilationException {
-        throw new IllegalStateException("Builtin type fields not yet implemented");
+    public String runtimeName() {
+        if (runtimeName == null)
+            throw new IllegalStateException("Should never be asking " + name + " for runtime name.");
+        return runtimeName;
     }
 
     @Override
-    public String getDescriptor() {
-        return generifiedDescriptor;
+    public boolean isReferenceType() {
+        return isReferenceType;
     }
 
     @Override
-    public String getRuntimeName() {
-        return generifiedRuntimeName;
+    public boolean isPlural() {
+        return isPlural;
     }
 
     @Override
     public boolean extensible() {
+        return extensible;
+    }
+
+    @Override
+    public int stackSlots() {
+        if (stackSlots < 0)
+            throw new IllegalStateException("Should never be asking " + name + " for stack slots.");
+        return stackSlots;
+    }
+
+    @Override
+    public List<String> getDescriptor() {
+        if (descriptor == null)
+            throw new IllegalStateException("Should never be asking " + name + " for descriptor.");
+        return descriptor;
+    }
+
+    @Override
+    public String getReturnTypeDescriptor() {
+        if (returnDescriptor == null)
+            throw new IllegalStateException("Should never be asking " + name + " for descriptor.");
+        return returnDescriptor;
+    }
+
+    @Override
+    public Set<TypeDef> typeCheckingSupertypes() {
+        return typeCheckingSupertypes;
+    }
+
+    @Override
+    public TypeDef inheritanceSupertype() {
+        return inheritanceSupertype;
+    }
+
+    @Override
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
+        return builtin.compileTimeToRuntimeConvert(thisType, loc, checker);
+    }
+
+    @Override
+    public List<FieldDef> fields() {
+        return fields;
+    }
+
+    @Override
+    public List<MethodDef> methods() {
+        return methods;
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TypeDef typeDef)
+            return this == typeDef.get();
         return false;
     }
 }

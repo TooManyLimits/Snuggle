@@ -19,6 +19,12 @@ public class LateInit<T, E extends Throwable> {
         return cachedResult;
     }
 
+    public T getAlreadyFilled() {
+        if (filled)
+            return cachedResult;
+        throw new IllegalStateException("Attempt to getAlreadyFilled() on LateInit, but it was not already filled!");
+    }
+
     @Override
     public String toString() {
         if (filled)

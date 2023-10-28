@@ -1,70 +1,84 @@
 package ast.typed.def.method;
 
-import ast.passes.TypeChecker;
-import ast.passes.TypePool;
+import ast.typed.def.type.GenericTypeDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedStaticMethodCall;
-import compile.Compiler;
 import exceptions.compile_time.CompilationException;
-import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
 import org.objectweb.asm.MethodVisitor;
-import util.ListUtils;
 
 import java.util.List;
 
 public interface MethodDef {
 
+    //Information that a MethodDef *has*.
+
     String name();
     int numGenerics();
     boolean isStatic();
-    List<Type> paramTypes(); //Some may be Type.Generic, if numGenerics > 0
-    Type returnType(); //May be Type.Generic, if numGenerics > 0
+    List<TypeDef> paramTypes(); //Some may be GenericTypeDef, if numGenerics > 0
+    TypeDef returnType(); //May be GenericTypeDef, if numGenerics > 0
+    TypeDef owningType(); //The type that this method is on
 
-    //Const method handling
-    boolean isConst();
-    TypedExpr doConst(TypedMethodCall typedCall) throws CompilationException;
-    TypedExpr doConstStatic(TypedStaticMethodCall typedCall) throws CompilationException;
+    //Things that a MethodDef can *do*.
 
-    //Compile a call to this method
-    void compileCall(int opcode, Type owner, Compiler compiler, MethodVisitor visitor) throws CompilationException;
+    void checkCode() throws CompilationException;
+
+    //Compile a call to this method. The receiver (if applicable) and the arguments are on the stack.
+    void compileCall(boolean isSuperCall, MethodVisitor jvm);
+
+    //Constant-fold the method. By default, does nothing and just returns the input.
+    default TypedExpr constantFold(TypedMethodCall call) { return call; }
+    default TypedExpr constantFold(TypedStaticMethodCall call) { return call; }
+
+    default boolean isConstructor() { return name().equals("new"); }
+
+    default String getDescriptor() {
+        String returnTypeDescriptor = isConstructor() ? "V" : returnType().getReturnTypeDescriptor();
+
+        StringBuilder b = new StringBuilder("(");
+        for (TypeDef p : paramTypes())
+            for (String s : p.getDescriptor())
+                b.append(s);
+        return b.append(")").append(returnTypeDescriptor).toString();
+    }
 
     //Compare specificity of this method's args with another method's args.
     //If this one is more specific, return a negative value.
     //If neither is more specific, return 0.
     //If the other one is more specific, return a positive value.
     //The result is that sort()-ing this list will put the most specific method(s) at the front.
-    default int compareSpecificity(MethodDef other, TypeChecker checker) {
-        TypePool pool = checker.pool();
+    default int compareSpecificity(MethodDef other) {
         int currentState = 0;
-        List<Type> myParams = paramTypes();
-        List<Type> otherParams = other.paramTypes();
+        List<TypeDef> myParams = paramTypes();
+        List<TypeDef> otherParams = other.paramTypes();
 
         for (int i = 0; i < myParams.size(); i++) {
-            Type myParam = myParams.get(i);
-            Type otherParam = otherParams.get(i);
+            TypeDef myParam = myParams.get(i);
+            TypeDef otherParam = otherParams.get(i);
 
             if (i == 0) {
-                if (myParam.isSubtype(otherParam, pool)) {
-                    if (otherParam.isSubtype(myParam, pool))
+                if (myParam.isSubtype(otherParam)) {
+                    if (otherParam.isSubtype(myParam))
                         currentState = currentState; //same type, don't change currentState
                     else
                         currentState = -1;
                 } else {
-                    if (otherParam.isSubtype(myParam, pool))
+                    if (otherParam.isSubtype(myParam))
                         currentState = 1;
                     else
                         currentState = currentState;
                 }
             } else {
-                if (myParam.isSubtype(otherParam, pool)) {
-                    if (otherParam.isSubtype(myParam, pool))
+                if (myParam.isSubtype(otherParam)) {
+                    if (otherParam.isSubtype(myParam))
                         currentState = currentState; //same type, don't change currentState
                     else
                         if (currentState != -1)
                             return 0;
                 } else {
-                    if (otherParam.isSubtype(myParam, pool))
+                    if (otherParam.isSubtype(myParam))
                         if (currentState != 1)
                             return 0;
                     else
@@ -80,13 +94,13 @@ public interface MethodDef {
                 return 0;
 
             //Now choose the most specific return type
-            if (returnType().isSubtype(other.returnType(), pool)) {
-                if (other.returnType().isSubtype(returnType(), pool))
+            if (returnType().isSubtype(other.returnType())) {
+                if (other.returnType().isSubtype(returnType()))
                     throw new IllegalStateException("Two methods with same signature? Bug in compiler, please report!");
                 else
                     return -1;
             } else {
-                if (other.returnType().isSubtype(returnType(), pool))
+                if (other.returnType().isSubtype(returnType()))
                     return 1;
                 else
                     return 0;
@@ -108,21 +122,17 @@ public interface MethodDef {
      * considered overriding it.
      */
     default Signature getSignature() {
-        List<Type> paramTypes = paramTypes();
-        Type returnType = returnType();
-        for (Type paramType : paramTypes)
-            if (paramType instanceof Type.Generic)
+        List<TypeDef> paramTypes = paramTypes();
+        TypeDef returnType = returnType();
+        for (TypeDef paramType : paramTypes)
+            if (paramType instanceof GenericTypeDef)
                 return null;
-        if (returnType instanceof Type.Generic)
+        if (returnType instanceof GenericTypeDef)
             return null;
-        return new Signature(
-                name(),
-                ListUtils.map(paramTypes, p -> ((Type.Basic) p).index()),
-                ((Type.Basic) returnType).index()
-        );
+        return new Signature(name(), paramTypes, returnType);
     }
 
-    //Literally just an opaque data type used above to figure out method overriding
-    record Signature(String name, List<Integer> params, int returnType) {}
+    //Literally just a data type used above to figure out method overriding
+    record Signature(String name, List<TypeDef> params, TypeDef returnType) {}
 
 }

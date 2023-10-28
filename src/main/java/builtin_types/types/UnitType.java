@@ -1,6 +1,7 @@
 package builtin_types.types;
 
-import ast.passes.TypePool;
+import ast.passes.TypeChecker;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import org.objectweb.asm.Type;
 import runtime.Unit;
@@ -27,22 +28,39 @@ public class UnitType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<ast.typed.Type> generics, TypePool pool) {
-        return "L" + getRuntimeName(generics, pool) + ";";
-    }
-
-    @Override
-    public String getRuntimeName(List<ast.typed.Type> generics, TypePool pool) {
+    public String runtimeName(TypeChecker checker, List<TypeDef> generics) {
         return Type.getInternalName(Unit.class);
     }
 
     @Override
-    public boolean extensible() {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(Type.getDescriptor(Unit.class));
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return Type.getDescriptor(Unit.class);
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
+        return true;
+    }
+
+    @Override
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
 
     @Override
-    public boolean isReferenceType(List<ast.typed.Type> generics, TypePool pool) {
-        return true;
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
     }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return 1;
+    }
+
+
 }

@@ -113,8 +113,10 @@ public class TypeResolver {
             //Also resolve the imports and code in the file:
             codeByFile.put(f.name(), new TypeResolvedFile(
                     f.name(),
-                    ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
-                    ListUtils.map(f.code(), e -> e.resolve(this))
+                    ListUtils.join(
+                            ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
+                            ListUtils.map(f.code(), e -> e.resolve(this))
+                    )
             ));
             //Pop scope
             pop();

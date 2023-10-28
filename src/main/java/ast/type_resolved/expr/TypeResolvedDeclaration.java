@@ -3,7 +3,7 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.typed.Type;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedDeclaration;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
@@ -23,20 +23,20 @@ public record TypeResolvedDeclaration(Loc loc, String name, ResolvedType annotat
     }
 
     @Override
-    public TypedDeclaration infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedDeclaration infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         if (annotatedType == null) {
             //Infer rhs
             TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics);
             //Ensure rhs isn't an un-storable value (e.g. a literal).
             //This following method errors if a storable type can't be found.
-            Type rhsType = checker.pool().getTypeDef(typedRhs.type()).toStorable(typedRhs.type(), typedRhs.loc(), checker.pool());
+            TypeDef rhsType = typedRhs.type().compileTimeToRuntimeConvert(typedRhs.type(), typedRhs.loc(), checker);
             //If it's a literal, can pull the type upwards on the spot
             if (typedRhs instanceof TypedLiteral literal)
                 typedRhs = literal.pullTypeUpwards(rhsType);
             checker.declare(loc, name, rhsType);
             return new TypedDeclaration(loc, name, rhsType, typedRhs);
         } else {
-            Type instantiatedAnnotatedType = checker.pool().getOrInstantiateType(annotatedType, typeGenerics);
+            TypeDef instantiatedAnnotatedType = checker.getOrInstantiate(annotatedType, typeGenerics);
             //Check rhs
             TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, instantiatedAnnotatedType);
             checker.declare(loc, name, instantiatedAnnotatedType);
@@ -45,7 +45,8 @@ public record TypeResolvedDeclaration(Loc loc, String name, ResolvedType annotat
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+        //If we ever need to check() a declaration, it's in an invalid place, hence why we throw a parsing exception.
         throw new ParsingException("Invalid declaration location for variable \"" + name + "\"", loc);
 //        throw new IllegalStateException("Error: Attempt to check() a declaration. This should be impossible - Bug in compiler, please report!");
     }

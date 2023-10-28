@@ -1,27 +1,19 @@
 package ast.typed.expr;
 
-import ast.typed.Type;
+import ast.ir.def.CodeBlock;
+import ast.ir.instruction.vars.LoadLocal;
+import ast.ir.instruction.vars.StoreLocal;
 import ast.typed.def.type.TypeDef;
-import compile.BytecodeHelper;
-import compile.Compiler;
-import compile.ScopeHelper;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import org.objectweb.asm.MethodVisitor;
 
-public record TypedDeclaration(Loc loc, String name, Type type, TypedExpr rhs) implements TypedExpr {
+public record TypedDeclaration(Loc loc, String name, TypeDef type, TypedExpr rhs) implements TypedExpr {
 
     @Override
-    public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        //First compile the rhs, pushing its result on the stack
-        rhs.compile(compiler, env, visitor);
-
-        //Dup the result value
-        BytecodeHelper.dup(compiler.getTypeDef(type), visitor, 0);
-
-        //Store
-        int index = env.declare(loc, compiler, name, type);
-        TypeDef def = compiler.getTypeDef(type);
-        TypedVariable.visitVariable(index, def, true, visitor);
+    public void compile(CodeBlock code) {
+        rhs.compile(code); //First compile the rhs, pushing its result on the stack
+        int index = code.env.declare(loc, name, type); //Get the index
+        code.emit(new StoreLocal(index, type.get())); //Store
+        code.emit(new LoadLocal(index, type.get())); //Then load
     }
 }

@@ -1,12 +1,13 @@
 package builtin_types.types;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.util.List;
 
@@ -16,37 +17,58 @@ public class ObjType implements BuiltinType {
     private ObjType() {}
 
     @Override
-    public String name() {
-        return "Obj";
-    }
-
-    @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
-        return "Ljava/lang/Object;";
-    }
-
-    @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return "java/lang/Object";
-    }
-
-    @Override
-    public boolean extensible() {
-        return true;
-    }
-
-    @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type thisType = pool.getBasicBuiltin(INSTANCE);
-        Type unitType = pool.getBasicBuiltin(UnitType.INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef thisType = checker.getBasicBuiltin(INSTANCE);
+        TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(
-                new BytecodeMethodDef(false, "new", List.of(), unitType, v ->
+                new BytecodeMethodDef("new", false, List.of(), unitType, v ->
                         v.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false))
         );
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public String name() {
+        return "Obj";
+    }
+
+    @Override
+    public String runtimeName(TypeChecker checker, List<TypeDef> generics) {
+        return Type.getInternalName(Object.class);
+    }
+
+    @Override
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(Type.getDescriptor(Object.class));
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return Type.getDescriptor(Object.class);
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return true;
+    }
+
+    @Override
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return true;
+    }
+
+    @Override
+    public boolean hasSpecialConstructor(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+//        return true;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return 1;
     }
 }

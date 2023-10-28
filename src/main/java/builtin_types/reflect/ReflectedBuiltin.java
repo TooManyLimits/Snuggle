@@ -1,8 +1,8 @@
 package builtin_types.reflect;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.reflect.annotations.SnuggleBlacklist;
 import builtin_types.reflect.annotations.SnuggleType;
@@ -23,7 +23,7 @@ public class ReflectedBuiltin implements BuiltinType {
     public final String name, descriptor, runtimeName;
     public final boolean nameable;
     private final ArrayList<ReflectedMethod> reflectedMethods;
-    private final ThrowingFunction<TypePool, Type, CompilationException> supertypeGetter;
+    private final ThrowingFunction<TypeChecker, TypeDef, RuntimeException> supertypeGetter;
 
 
     public ReflectedBuiltin(Class<?> reflectedClass) {
@@ -62,6 +62,11 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        return ListUtils.map(reflectedMethods, m -> m.get(checker));
+    }
+
+    @Override
     public String name() {
         return name;
     }
@@ -71,37 +76,53 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
-        return descriptor;
-    }
-
-    @Override
-    public Set<Type> getSupertypes(List<Type> generics, TypePool pool) throws CompilationException {
-        return Set.of(supertypeGetter.apply(pool));
-    }
-
-    @Override
-    public Type getTrueSupertype(List<Type> generics, TypePool pool) throws CompilationException {
-        return supertypeGetter.apply(pool);
-    }
-
-    @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
+    public String runtimeName(TypeChecker checker, List<TypeDef> generics) {
         return runtimeName;
     }
 
     @Override
-    public boolean extensible() {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(descriptor);
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return descriptor;
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return true;
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
         return true;
     }
 
     @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        return ListUtils.map(reflectedMethods, m -> m.get(pool));
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return 1;
     }
+
+    @Override
+    public int numGenerics() {
+        return 0;
+    }
+
+    @Override
+    public TypeDef getInheritanceSupertype(TypeChecker checker, List<TypeDef> generics) {
+        return supertypeGetter.apply(checker);
+    }
+
+    @Override
+    public Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) {
+        return Set.of(getInheritanceSupertype(checker, generics));
+    }
+
 }

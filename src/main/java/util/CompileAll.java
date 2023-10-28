@@ -1,5 +1,6 @@
 package util;
 
+import ast.ir.def.Program;
 import ast.parsed.prog.ParsedAST;
 import ast.passes.GenericVerifier;
 import ast.passes.Parser;
@@ -8,7 +9,6 @@ import ast.passes.TypeResolver;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.typed.prog.TypedAST;
 import builtin_types.BuiltinTypes;
-import compile.Compiler;
 import exceptions.compile_time.CompilationException;
 import lexing.Lexer;
 import runtime.SnuggleInstance;
@@ -44,7 +44,7 @@ public class CompileAll {
 //        for (TypeDef d : typedAST.typeDefs())
 //            System.out.println(d);
         //6. Compile to instance and return
-        return Compiler.compileToInstance(typedAST);
+        return Program.of(typedAST).compileToInstance();
     }
 
     public static void compileAllToJar(File targetFile, BuiltinTypes types, Map<String, String> files) throws CompilationException, IOException {
@@ -64,7 +64,7 @@ public class CompileAll {
 //        for (TypeDef d : typedAST.typeDefs())
 //            System.out.println(d);
         //6. Compile to instance and return
-        Compiler.compileToJar(typedAST, targetFile);
+        Program.of(typedAST).compileToJar(targetFile);
     }
 
 }
