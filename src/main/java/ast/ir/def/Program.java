@@ -83,7 +83,8 @@ public record Program(List<GeneratedClass> generatedClasses, Map<String, CodeBlo
             //If we haven't made this folder yet, create it.
             String compiledName = compiled.name();
             int index = compiledName.indexOf('/');
-            while (index != -1) {
+            int lastIndex = compiledName.lastIndexOf('/');
+            while (index != lastIndex) {
                 String before = compiledName.substring(0, index);
                 String after = compiledName.substring(index + 1);
                 if (!createdFolderEntries.contains(before)) {
@@ -92,7 +93,7 @@ public record Program(List<GeneratedClass> generatedClasses, Map<String, CodeBlo
                     jos.putNextEntry(folderEntry);
                     jos.closeEntry();
                 }
-                index = after.indexOf('/');
+                index = before.length() + 1 + after.indexOf('/');
             }
             //Add the .class file to the jar
             JarEntry e = new JarEntry(compiledName + ".class");

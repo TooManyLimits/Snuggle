@@ -169,7 +169,7 @@ public class IntegerType implements BuiltinType {
         return v -> {
             Label pushTrue = new Label();
             Label end = new Label();
-            if (!signed) {
+            if (!signed && intCompareOp != Opcodes.IF_ICMPEQ) {
                 //Add min_value to both args
                 for (int i = 0; i < 2; i++) {
                     if (bits <= 32) {

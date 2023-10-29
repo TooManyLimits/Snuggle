@@ -20,7 +20,7 @@ public class ClassDef implements TypeDef {
 
     public ClassDef(Loc loc, String name, TypeDef supertype, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
-        this.name = name;
+        this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.supertype = supertype;
         this.fields = fields;
         this.methods = methods;

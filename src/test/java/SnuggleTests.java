@@ -12,6 +12,7 @@ import runtime.SnuggleInstance;
 import runtime.SnuggleRuntime;
 import util.CompileAll;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
@@ -104,9 +105,8 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testFunFakeVarargs() throws CompilationException, SnuggleException {
-        test(
-                """
+    public void testFunFakeVarargs() throws CompilationException, SnuggleException, IOException {
+        String code = """
                 class List<T> {
                     var backing: Array<T>
                     var size: u32
@@ -154,7 +154,9 @@ public class SnuggleTests {
                 }
                 
                 new FakeVarargsPrinter<i32>(1)(3)(5)(7)(9)()
-                """);
+                """;
+        test(code);
+        CompileAll.compileAllToJar(new File("FunFakeVarargs.jar"), new BuiltinTypes(), Map.of("main", code));
     }
 
     @Test
