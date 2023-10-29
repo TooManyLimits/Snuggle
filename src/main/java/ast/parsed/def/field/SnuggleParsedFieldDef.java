@@ -11,6 +11,6 @@ import lexing.Loc;
 public record SnuggleParsedFieldDef(Loc loc, boolean pub, boolean isStatic, String name, ParsedType annotatedType, ParsedExpr initializer) implements ParsedFieldDef {
     @Override
     public SnuggleTypeResolvedFieldDef resolve(TypeResolver resolver) throws CompilationException {
-        return new SnuggleTypeResolvedFieldDef(loc, pub, isStatic, name, annotatedType.resolve(loc, resolver), initializer.resolve(resolver));
+        return new SnuggleTypeResolvedFieldDef(loc, pub, isStatic, name, annotatedType.resolve(loc, resolver), initializer != null ? initializer.resolve(resolver) : null);
     }
 }

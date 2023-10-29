@@ -6,6 +6,7 @@ import ast.ir.instruction.flow.IrLabel;
 import ast.ir.instruction.flow.Jump;
 import ast.ir.instruction.flow.JumpIfFalse;
 import ast.ir.instruction.stack.Pop;
+import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import lexing.Loc;
 import org.objectweb.asm.Label;
@@ -21,7 +22,10 @@ public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, TypeDef type) 
         Label endLabel = new Label();
 
         //Push optional "none" as the current "result" :iea:
-        new TypedConstructor(loc, type, ListUtils.find(type.methods(), method -> method.name().equals("new") && method.paramTypes().size() == 0), List.of()).compile(code);
+        MethodDef constructorDef = ListUtils.find(type.methods(), method -> method.name().equals("new") && method.paramTypes().size() == 0);
+        if (constructorDef == null)
+            throw new IllegalStateException("Options of non-reference types not yet implemented!");
+        new TypedConstructor(loc, type, constructorDef, List.of()).compile(code);
 
         code.emit(new IrLabel(condLabel)); //Emit cond label
 

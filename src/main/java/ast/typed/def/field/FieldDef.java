@@ -5,6 +5,7 @@ import exceptions.compile_time.CompilationException;
 
 public interface FieldDef {
     String name();
+    TypeDef owningType();
     TypeDef type();
     boolean isStatic();
 

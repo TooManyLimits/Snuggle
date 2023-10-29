@@ -12,7 +12,7 @@ import util.ListUtils;
 import java.util.List;
 import java.util.Objects;
 
-public record GeneratedClass(String name, TypeDef supertype, List<GeneratedMethod> methods) {
+public record GeneratedClass(String name, TypeDef supertype, List<GeneratedField> fields, List<GeneratedMethod> methods) {
 
 
     //If this TypeDef can't be made into a GeneratedClass, simply return null.
@@ -23,6 +23,10 @@ public record GeneratedClass(String name, TypeDef supertype, List<GeneratedMetho
         return new GeneratedClass(
                 typeDef.name(),
                 typeDef.inheritanceSupertype(),
+                ListUtils.join(ListUtils.map(
+                        typeDef.fields(),
+                        GeneratedField::of
+                )),
                 ListUtils.filter(ListUtils.map(
                         typeDef.methods(),
                         GeneratedMethod::of
@@ -35,6 +39,8 @@ public record GeneratedClass(String name, TypeDef supertype, List<GeneratedMetho
     public Program.CompiledClass compile() throws CompilationException {
         String superName = supertype == null ? Type.getInternalName(Object.class) : supertype.runtimeName();
         ClassVisitor writer = NameHelper.generateClassWriter(name, superName, false);
+        for (GeneratedField field : fields)
+            field.compile(writer);
         for (GeneratedMethod method : methods)
             method.compile(writer);
 

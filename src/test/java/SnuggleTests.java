@@ -108,9 +108,13 @@ public class SnuggleTests {
         test(
                 """
                 class List<T> {
-                    var backing: Array<T> = new Array<T>(5)
-                    var size: u32 = 0
-                    fn new() super()
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        this.backing = new Array<T>(5)
+                        this.size = 0;
+                    }
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
@@ -119,7 +123,7 @@ public class SnuggleTests {
                             var i: u32 = 0
                             while i < this.backing.len() {
                                 newBacking.set(i, this.backing.get(i))
-                                i = i + 1
+                                i = i + 1;
                             }
                             this.backing = newBacking;
                         };
@@ -130,9 +134,10 @@ public class SnuggleTests {
                 }
                 
                 class FakeVarargsPrinter<T> {
-                    var elems: List<T> = new List<T>()
+                    var elems: List<T>
                     fn new(firstElem: T) {
                         super()
+                        this.elems = new List<T>()
                         this(firstElem);
                     }
                     fn invoke(elem: T): FakeVarargsPrinter<T> {
@@ -264,9 +269,13 @@ public class SnuggleTests {
     public void testList() throws CompilationException, SnuggleException {
         test("""
                 class List<T> {
-                    var backing: Array<T> = new Array<T>(5)
-                    var size: u32 = 0
-                    fn new() super()
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        this.backing = new Array<T>(5)
+                        this.size = 0;
+                    }
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
@@ -275,7 +284,7 @@ public class SnuggleTests {
                             var i: u32 = 0
                             while i < this.backing.len() {
                                 newBacking.set(i, this.backing.get(i))
-                                i = i + 1
+                                i = i + 1;
                             }
                             this.backing = newBacking;
                         } else {}
@@ -296,7 +305,7 @@ public class SnuggleTests {
                 var i: u32 = 0
                 while i < a.backingSize() {
                     System.print(a.get(i))
-                    i = i + 1
+                    i = i + 1;
                 }
                 
                 """);

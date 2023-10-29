@@ -25,7 +25,7 @@ public record SnuggleTypeResolvedFieldDef(Loc loc, boolean pub, boolean isStatic
     @Override
     public SnuggleFieldDef instantiateType(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
         TypeDef initializedType = checker.getOrInstantiate(annotatedType, generics);
-        return new SnuggleFieldDef(loc, pub, name, initializedType, isStatic);
+        return new SnuggleFieldDef(loc, pub, name, currentType, initializedType, isStatic);
 //                initializer == null ? null : new LateInit<>(() -> {
 //                    checker.push();
 //                    checker.declare(loc, "this", currentType);
