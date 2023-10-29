@@ -69,34 +69,11 @@ public record Program(List<GeneratedClass> generatedClasses, Map<String, CodeBlo
         Manifest manifest = new Manifest();
         JarOutputStream jos = new JarOutputStream(fos, manifest);
 
-        Set<String> createdFolderEntries = new HashSet<>();
-
-        JarEntry snuggle = new JarEntry("snuggle/");
-        createdFolderEntries.add("snuggle");
-        jos.putNextEntry(snuggle);
-        jos.closeEntry();
-
         CompileResult res = compile();
 
-
         for (CompiledClass compiled : ListUtils.join(List.of(res.runtime), res.otherClasses)) {
-            //If we haven't made this folder yet, create it.
-            String compiledName = compiled.name();
-            int index = compiledName.indexOf('/');
-            int lastIndex = compiledName.lastIndexOf('/');
-            while (index != lastIndex) {
-                String before = compiledName.substring(0, index);
-                String after = compiledName.substring(index + 1);
-                if (!createdFolderEntries.contains(before)) {
-                    JarEntry folderEntry = new JarEntry(before + "/");
-                    createdFolderEntries.add(before);
-                    jos.putNextEntry(folderEntry);
-                    jos.closeEntry();
-                }
-                index = before.length() + 1 + after.indexOf('/');
-            }
             //Add the .class file to the jar
-            JarEntry e = new JarEntry(compiledName + ".class");
+            JarEntry e = new JarEntry(compiled.name() + ".class");
             jos.putNextEntry(e);
             jos.write(compiled.bytes());
             jos.closeEntry();
