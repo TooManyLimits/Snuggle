@@ -3,6 +3,7 @@ package ast.passes;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.GenericTypeDef;
 import ast.typed.def.type.IndirectTypeDef;
 import ast.typed.def.type.TypeDef;
@@ -193,6 +194,13 @@ public class TypeChecker {
             if (!def.name().equals(methodName)) continue; //Name doesn't match
             if (def.isStatic() != isCallStatic) continue; //static vs non-static
             if (def.paramTypes().size() != args.size()) continue; //Arity doesn't match
+            if (!def.pub()) {
+                if (def instanceof SnuggleMethodDef snuggleMethodDef) {
+                    if (!snuggleMethodDef.loc().fileName().equals(loc.fileName()))
+                        continue;
+                } else
+                    throw new IllegalStateException("Method defs aside from SnuggleMethodDef should always be pub! Bug in compiler, please report!");
+            }
             //TODO: Add support for method generics. Taking things slow.
             if (def.numGenerics() > 0) throw new IllegalStateException("Generic methods not yet implemented");
             if (def.numGenerics() > 0 && genericArgs.size() != 0 && genericArgs.size() != def.numGenerics()) continue;

@@ -1,14 +1,12 @@
 package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.helper.BytecodeHelper;
 import ast.ir.instruction.misc.LineNumber;
 import ast.ir.instruction.stack.Push;
 import ast.ir.instruction.vars.LoadThis;
-import ast.ir.instruction.MethodCall;
+import ast.ir.instruction.objects.MethodCall;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import runtime.Unit;
 

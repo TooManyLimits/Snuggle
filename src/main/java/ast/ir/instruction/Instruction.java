@@ -10,6 +10,6 @@ public interface Instruction {
     void accept(MethodVisitor jvm) throws CompilationException;
 
     //Get the cost for this operation (not counting inner code blocks)
-    int cost();
+    long cost();
 
 }

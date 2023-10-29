@@ -1,13 +1,12 @@
 package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.instruction.InnerCodeBlock;
+import ast.ir.instruction.misc.InnerCodeBlock;
 import ast.ir.instruction.flow.IrLabel;
 import ast.ir.instruction.flow.Jump;
 import ast.ir.instruction.flow.JumpIfFalse;
 import ast.ir.instruction.stack.Pop;
 import ast.typed.def.type.TypeDef;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
 import util.ListUtils;

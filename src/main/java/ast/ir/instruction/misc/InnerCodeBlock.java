@@ -1,6 +1,7 @@
-package ast.ir.instruction;
+package ast.ir.instruction.misc;
 
 import ast.ir.def.CodeBlock;
+import ast.ir.instruction.Instruction;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 
@@ -12,7 +13,7 @@ public record InnerCodeBlock(CodeBlock codeBlock) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 0; //Cost is handled by the inner codeblock
     }
 }

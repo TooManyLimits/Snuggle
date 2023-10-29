@@ -122,14 +122,14 @@ public class IntegerType implements BuiltinType {
                 //Unary
                 signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
                 DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, doOperationThenConvert(switch (bits) {
-                    case 8, 16, 32 -> v -> {
+                    case 8, 16, 32 -> (Consumer<MethodVisitor>) (v -> { //Cast is because intellij is bugged, and thinks it's an error without the cast
                         v.visitInsn(Opcodes.ICONST_M1);
                         v.visitInsn(Opcodes.IXOR);
-                    };
-                    case 64 -> v -> {
+                    });
+                    case 64 -> (Consumer<MethodVisitor>) (v -> {
                         v.visitLdcInsn(-1L);
                         v.visitInsn(Opcodes.LXOR);
-                    };
+                    });
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
 

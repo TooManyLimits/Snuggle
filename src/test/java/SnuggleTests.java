@@ -30,6 +30,7 @@ public class SnuggleTests {
     @ValueSource(strings = {
             "algorithms/curve25519",
             "algorithms/fibfast",
+            "algorithms/fib",
             "algorithms/md5",
 
             "array/simple",
@@ -95,8 +96,8 @@ public class SnuggleTests {
                 
                 """, "lib", """
                 pub class Getter {
-                    fn new() super()
-                    fn get(): i32 10
+                    pub fn new() super()
+                    pub fn get(): i32 10
                 }
                 
                 """));
@@ -200,9 +201,9 @@ public class SnuggleTests {
                 "cutie",
                 """
                         pub class Cutie {
-                            fn new() super()
+                            pub fn new() super()
                             fn bad() System.print(new Obj() as Cutie)
-                            fn good() System.print("good cutie :D")
+                            pub fn good() System.print("good cutie :D")
                         }
                         new Cutie().bad() //error!
                         System.print("Cutie!")

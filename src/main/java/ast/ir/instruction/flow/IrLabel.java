@@ -13,7 +13,7 @@ public record IrLabel(Label asmLabel) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 0;
     }
 }

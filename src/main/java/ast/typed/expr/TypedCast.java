@@ -1,11 +1,10 @@
 package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.instruction.misc.Cast;
+import ast.ir.instruction.objects.Cast;
 import ast.ir.instruction.misc.LineNumber;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 public record TypedCast(Loc loc, int tokenLine, TypedExpr lhs, boolean isMaybe, TypeDef type) implements TypedExpr {

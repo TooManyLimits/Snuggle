@@ -1,13 +1,11 @@
 package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.instruction.MethodCall;
+import ast.ir.instruction.objects.MethodCall;
 import ast.ir.instruction.misc.LineNumber;
-import ast.ir.instruction.misc.New;
+import ast.ir.instruction.objects.New;
 import ast.typed.def.method.MethodDef;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;

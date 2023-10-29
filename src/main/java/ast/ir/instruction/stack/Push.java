@@ -101,7 +101,7 @@ public record Push(Loc loc, Object obj, TypeDef type) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1; //Cost is always considered 1
     }
 }

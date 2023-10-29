@@ -17,7 +17,7 @@ public record LineNumber(int line) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 0; //No cost to this of course
     }
 }

@@ -30,7 +30,7 @@ public record RunImport(String fileName) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1;
     }
 }

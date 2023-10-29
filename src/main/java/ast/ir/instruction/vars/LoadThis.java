@@ -18,7 +18,7 @@ public record LoadThis(TypeDef type) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1; //Loading this costs 1
     }
 }

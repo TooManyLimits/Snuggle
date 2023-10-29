@@ -41,7 +41,7 @@ public record Return(MethodDef methodDef, TypeDef returnType) implements Instruc
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1;
     }
 }

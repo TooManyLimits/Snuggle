@@ -14,7 +14,7 @@ import util.LateInit;
 
 import java.util.List;
 
-public record SnuggleMethodDef(Loc loc, String name, int disambiguationIndex, int numGenerics, boolean isStatic, boolean inline, TypeDef owningType, List<String> paramNames, List<TypeDef> paramTypes, TypeDef returnType, LateInit<TypedExpr, CompilationException> body) implements MethodDef {
+public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambiguationIndex, int numGenerics, boolean isStatic, boolean inline, TypeDef owningType, List<String> paramNames, List<TypeDef> paramTypes, TypeDef returnType, LateInit<TypedExpr, CompilationException> body) implements MethodDef {
 
     @Override
     public TypedExpr constantFold(TypedMethodCall call) {
@@ -42,6 +42,11 @@ public record SnuggleMethodDef(Loc loc, String name, int disambiguationIndex, in
         body.getAlreadyFilled().compile(block); //Compile the body
         block.emit(new Return(this, returnType.get())); //Return result of the body
         return block;
+    }
+
+    @Override
+    public boolean pub() {
+        return pub; //Idk if the record one already overrides, so doing this to be sure
     }
 
     public String dedupName() {

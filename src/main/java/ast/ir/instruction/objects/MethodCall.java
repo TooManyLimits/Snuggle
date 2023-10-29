@@ -1,5 +1,6 @@
-package ast.ir.instruction;
+package ast.ir.instruction.objects;
 
+import ast.ir.instruction.Instruction;
 import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
@@ -13,7 +14,7 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall) implements
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1; //Say it costs 1 to call
     }
 }

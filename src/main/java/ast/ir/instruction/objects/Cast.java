@@ -1,4 +1,4 @@
-package ast.ir.instruction.misc;
+package ast.ir.instruction.objects;
 
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.BuiltinTypeDef;
@@ -34,7 +34,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         //Any casts are interpreted as costing 1, even though some casts are more expensive than others
         //(particularly those involving unsigned ints)
         return 1;

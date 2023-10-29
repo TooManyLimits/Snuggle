@@ -1,4 +1,4 @@
-package ast.ir.instruction.misc;
+package ast.ir.instruction.objects;
 
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.TypeDef;
@@ -18,7 +18,7 @@ public record New(TypeDef typeDef) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 0; //Calling the constructor will be the cost.
     }
 }

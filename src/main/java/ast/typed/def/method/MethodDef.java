@@ -21,6 +21,8 @@ public interface MethodDef {
     TypeDef returnType(); //May be GenericTypeDef, if numGenerics > 0
     TypeDef owningType(); //The type that this method is on
 
+    default boolean pub() { return true; }; //MethodDef other than SnuggleMethodDef should always be pub
+
     //Things that a MethodDef can *do*.
 
     void checkCode() throws CompilationException;

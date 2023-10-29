@@ -24,7 +24,7 @@ public record Pop(TypeDef type) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         //We trust JIT to combine multiple POP instructions into one.
         return type.stackSlots() == 0 ? 0 : 1; //Cost is marked as 1 because of this trust ^
     }

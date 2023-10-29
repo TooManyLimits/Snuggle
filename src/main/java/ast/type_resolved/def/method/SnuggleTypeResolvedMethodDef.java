@@ -14,7 +14,7 @@ import util.ListUtils;
 
 import java.util.List;
 
-public record SnuggleTypeResolvedMethodDef(Loc loc, boolean isStatic, String name, int numGenerics, List<String> paramNames, List<ResolvedType> paramTypes, ResolvedType returnType, TypeResolvedExpr body) implements TypeResolvedMethodDef {
+public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStatic, String name, int numGenerics, List<String> paramNames, List<ResolvedType> paramTypes, ResolvedType returnType, TypeResolvedExpr body) implements TypeResolvedMethodDef {
 
     //Same as in other types. Error if there's a violation.
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {
@@ -49,7 +49,7 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean isStatic, String nam
             if (method.name().equals(name))
                 disambiguationIndex++;
         }
-        return new SnuggleMethodDef(loc, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames, newParamTypes, newReturnType, typedBody);
+        return new SnuggleMethodDef(loc, pub, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames, newParamTypes, newReturnType, typedBody);
     }
 
 }

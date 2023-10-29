@@ -18,7 +18,7 @@ public class CodeBlock {
 
     //The instructions in the array
     private final ArrayList<Instruction> instructions = new ArrayList<>();
-    private int cost = 0;
+    private long cost = 0;
 
     //The scope for this code block
     public final ScopeHelper env;
@@ -40,15 +40,15 @@ public class CodeBlock {
     }
 
     //Get cost
-    public int cost() { return cost; }
+    public long cost() { return cost; }
 
     //Returns the "cost" of the script as calculated by the IR
     public void writeJvmBytecode(MethodVisitor jvmBytecode) throws CompilationException {
         //TODO: Make this not just be some random static field
         jvmBytecode.visitLdcInsn(cost);
-        jvmBytecode.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "I");
-        jvmBytecode.visitInsn(Opcodes.IADD);
-        jvmBytecode.visitFieldInsn(Opcodes.PUTSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "I");
+        jvmBytecode.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
+        jvmBytecode.visitInsn(Opcodes.LADD);
+        jvmBytecode.visitFieldInsn(Opcodes.PUTSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
 
         for (Instruction i : instructions)
             i.accept(jvmBytecode);

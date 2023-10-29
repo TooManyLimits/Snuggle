@@ -16,7 +16,7 @@ public record StoreLocal(int index, TypeDef type) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1 + type().stackSlots() / 2; //Costs more depending on stack slots
     }
 }

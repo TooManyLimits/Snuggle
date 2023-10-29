@@ -14,7 +14,7 @@ public record Jump(Label label) implements Instruction {
     }
 
     @Override
-    public int cost() {
+    public long cost() {
         return 1;
     }
 }
