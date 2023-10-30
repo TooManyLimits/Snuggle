@@ -1,6 +1,7 @@
 package ast.ir.def.type;
 
 import ast.ir.def.Program;
+import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.ClassDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
@@ -16,6 +17,8 @@ public interface GeneratedType {
             return GeneratedClass.of(c);
         if (typeDef.get() instanceof StructDef s)
             return GeneratedStruct.of(s);
+        if (typeDef.get() instanceof BuiltinTypeDef b && b.shouldGenerateStructClassAtRuntime())
+            return GeneratedBuiltinStructType.of(b);
         return null;
     }
 

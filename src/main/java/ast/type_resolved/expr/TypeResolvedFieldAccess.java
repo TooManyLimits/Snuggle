@@ -26,7 +26,7 @@ public record TypeResolvedFieldAccess(Loc loc, TypeResolvedExpr lhs, String name
         TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
         FieldDef field = ListUtils.find(typedLhs.type().fields(), f -> f.name().equals(name));
         if (field == null)
-            throw new UndeclaredVariableException("Unable to locate field \"" + name + "\"", loc);
+            throw new UndeclaredVariableException("Unable to locate field \"" + name + "\" on type " + typedLhs.type().name(), loc);
         return new TypedFieldAccess(loc, typedLhs, field, field.type());
     }
 

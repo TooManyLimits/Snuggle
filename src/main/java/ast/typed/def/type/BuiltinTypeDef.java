@@ -21,7 +21,7 @@ public class BuiltinTypeDef implements TypeDef {
     public final List<TypeDef> generics;
     private final String name, runtimeName, returnDescriptor;
     private final List<String> descriptor;
-    private final boolean isReferenceType, isPlural, extensible, hasSpecialConstructor;
+    private final boolean isReferenceType, isPlural, extensible, hasSpecialConstructor, shouldGenerateStructClassAtRuntime;
     private final int stackSlots;
     private final Set<TypeDef> typeCheckingSupertypes;
     private final TypeDef inheritanceSupertype;
@@ -39,12 +39,21 @@ public class BuiltinTypeDef implements TypeDef {
         this.isPlural = builtinType.isPlural(checker, generics);
         this.extensible = builtinType.extensible(checker, generics);
         this.hasSpecialConstructor = builtinType.hasSpecialConstructor(checker, generics);
+        this.shouldGenerateStructClassAtRuntime = builtinType.shouldGenerateStructClassAtRuntime(checker, generics);
         this.stackSlots = builtinType.stackSlots(checker, generics);
         this.typeCheckingSupertypes = builtinType.getTypeCheckingSupertypes(checker, generics);
         this.inheritanceSupertype = builtinType.getInheritanceSupertype(checker, generics);
         this.fields = builtinType.getFields(checker, generics);
         this.methods = builtinType.getMethods(checker, generics);
     }
+
+    //Whether this should generate a struct class at runtime.
+    //Usually no, except for certain builtin cases, such as
+    //Option<T> where T is not a reference type.
+    public boolean shouldGenerateStructClassAtRuntime() {
+        return shouldGenerateStructClassAtRuntime;
+    }
+
 
     @Override
     public BuiltinType builtin() {
@@ -77,8 +86,8 @@ public class BuiltinTypeDef implements TypeDef {
 
     @Override
     public String runtimeName() {
-        if (runtimeName == null)
-            throw new IllegalStateException("Should never be asking " + name + " for runtime name.");
+//        if (runtimeName == null)
+//            throw new IllegalStateException("Should never be asking " + name + " for runtime name.");
         return runtimeName;
     }
 

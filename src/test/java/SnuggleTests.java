@@ -90,6 +90,58 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testValueTypeOptions() throws CompilationException, SnuggleException {
+        test("""
+                class GetMaybe {
+                    fn new() super()
+                    fn get(x: u64): u64?
+                        if x % 6828 < 3345
+                            new u64?(x % 6828)
+                        else
+                            new u64?()
+                }
+                var maybe = new GetMaybe()
+                
+                var perhaps = maybe.get(62896882877)
+                System.print(if perhaps.is()
+                        "It was! The value is " + perhaps.get().str()
+                    else
+                        "It was not :( No value")
+                
+                perhaps = maybe.get(20978632037)
+                System.print(if perhaps.is()
+                        "It was! The value is " + perhaps.get().str()
+                    else
+                        "It was not :( No value")
+                
+                """);
+    }
+
+    @Test
+    public void testReferenceTypeOption() throws CompilationException, SnuggleException {
+        test("""
+                class A {
+                    var x: String?
+                    var y: B?
+                    fn new() {
+                        super()
+                        x = new String?("i am an A")
+                        y = new B?(new B());
+                    }
+                }
+                class B {
+                    var y: String?
+                    fn new() {
+                        super()
+                        y = new String?("i am a B");
+                    }
+                }
+                
+                System.print(new A().y.get().y.get())
+                """);
+    }
+
+    @Test
     public void testReturn() throws CompilationException, SnuggleException {
         test("""
                 class Tester {

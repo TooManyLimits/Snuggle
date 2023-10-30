@@ -29,13 +29,14 @@ public interface BuiltinType {
      */
     default boolean nameable() { return true; }
     //The name at runtime for this type. For example, name() -> "Obj", runtimeName() -> "java/lang/Object"
-    default String runtimeName(TypeChecker checker, List<TypeDef> generics) { return null; }
+    default String runtimeName(TypeChecker checker, List<TypeDef> generics) { return "builtin_structs/" + genericName(checker, generics); }
     List<String> descriptor(TypeChecker checker, List<TypeDef> generics); //The descriptor for this type.
     String returnDescriptor(TypeChecker checker, List<TypeDef> generics); //The descriptor for this type in return position. Usually the same as the regular descriptor.
     boolean isReferenceType(TypeChecker checker, List<TypeDef> generics); //Is this a reference type?
     boolean isPlural(TypeChecker checker, List<TypeDef> generics); //Is this type plural?
     boolean extensible(TypeChecker checker, List<TypeDef> generics); //Can this be extended?
     default boolean hasSpecialConstructor(TypeChecker checker, List<TypeDef> generics) { return false; } //Does this have a special constructor, or will a regular NEW bytecode work?
+    default boolean shouldGenerateStructClassAtRuntime(TypeChecker checker, List<TypeDef> generics) { return false; } //Generally false, except for a few cases
     int stackSlots(TypeChecker checker, List<TypeDef> generics); //Number of stack slots this takes
 
     /**

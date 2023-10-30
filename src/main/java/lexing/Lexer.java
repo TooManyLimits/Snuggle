@@ -114,6 +114,7 @@ public class Lexer {
         if (next == null) peek();
         last = next;
         next = null;
+//        System.out.println(last);
     }
 
     public Token take() throws CompilationException {

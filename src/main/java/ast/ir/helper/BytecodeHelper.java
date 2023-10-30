@@ -75,14 +75,28 @@ public class BytecodeHelper {
         }
     }
 
-
-
-    public static void pushNone(TypeDef innerType, MethodVisitor visitor) {
-        if (innerType.isReferenceType()) {
-            visitor.visitInsn(Opcodes.ACONST_NULL);
+    public static void pushDefaultValue(MethodVisitor jvm, TypeDef def) {
+        if (def.isPlural()) {
+            for (FieldDef field : def.fields())
+                pushDefaultValue(jvm, field.type());
+        } else if (def.isReferenceType()) {
+            jvm.visitInsn(Opcodes.ACONST_NULL);
+        } else if (def.builtin() instanceof IntegerType i) {
+            switch (i.bits) {
+                case 8, 16, 32 -> jvm.visitInsn(Opcodes.ICONST_0);
+                case 64 -> jvm.visitInsn(Opcodes.LCONST_0);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
+        } else if (def.builtin() instanceof BoolType) {
+            jvm.visitInsn(Opcodes.ICONST_0);
+        } else if (def.builtin() instanceof FloatType f) {
+            switch (f.bits) {
+                case 32 -> jvm.visitInsn(Opcodes.FCONST_0);
+                case 64 -> jvm.visitInsn(Opcodes.DCONST_0);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
         } else {
-            visitor.visitInsn(Opcodes.ICONST_0); //TODO: Make this actually work
-            //throw new IllegalStateException("Optional non-reference types not yet implemented");
+            throw new IllegalStateException("Unrecognized type \"" + def.name() + "\" - didn't meet any condition? Bug in compiler, please report!");
         }
     }
 

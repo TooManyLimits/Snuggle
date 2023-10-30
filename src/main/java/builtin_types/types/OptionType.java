@@ -1,6 +1,9 @@
 package builtin_types.types;
 
+import ast.ir.instruction.stack.Pop;
 import ast.passes.TypeChecker;
+import ast.typed.def.field.BuiltinFieldDef;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
@@ -92,12 +95,113 @@ public class OptionType implements BuiltinType {
                     }),
                     new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, v -> {
                         //Literally just do nothing lmao
+                    }),
+                    new BytecodeMethodDef("is", false, thisType, List.of(), boolType, v -> {
+                        Label ifPresent = new Label();
+                        Label done = new Label();
+                        v.visitJumpInsn(Opcodes.IFNONNULL, ifPresent);
+                        v.visitInsn(Opcodes.ICONST_0);
+                        v.visitJumpInsn(Opcodes.GOTO, done);
+                        v.visitLabel(ifPresent);
+                        v.visitInsn(Opcodes.ICONST_1);
+                        v.visitLabel(done);
                     })
             );
         } else {
-            return List.of();
-//            throw new IllegalStateException("Optional non-reference types not yet implemented!");
+            //In this case, we are plural. The stack format is:
+            //[innerType, bool]
+            return List.of(
+                    //.get(): gets the value if present, panics if not present
+                    new BytecodeMethodDef("get", false, thisType, List.of(), innerType, v -> {
+                        //Stack is [value, bool]
+                        //If bool is empty
+                        Label afterError = new Label();
+                        v.visitJumpInsn(Opcodes.IFNE, afterError);
+                        //Throw an error
+                        BytecodeHelper.createObject(v, SnuggleException.class, "Tried to use get() on empty Option!");
+                        v.visitInsn(Opcodes.ATHROW);
+                        //Emit label
+                        v.visitLabel(afterError);
+                    }),
+                    //get() with special error message
+                    new ConstMethodDef("get", 0, false, List.of(stringType), innerType, call -> {
+                        //If error message is known at compile time, then bake it into the method definition
+                        if (call.args().get(0) instanceof TypedLiteral literal) {
+                            if (literal.obj() instanceof String constantErrorMessage) {
+                                return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, thisType, List.of(), innerType, v -> {
+                                    //Stack is [value, bool]
+                                    //If not empty, jump over the error throw
+                                    Label afterError = new Label();
+                                    v.visitJumpInsn(Opcodes.IFNE, afterError);
+                                    //Throw an error
+                                    BytecodeHelper.createObject(v, SnuggleException.class, constantErrorMessage);
+                                    v.visitInsn(Opcodes.ATHROW);
+                                    //Emit label
+                                    v.visitLabel(afterError);
+                                }), List.of(), innerType);
+                            } else {
+                                throw new IllegalStateException("Method get() expects string, but was literal and not string? Bug in compiler, please report!");
+                            }
+                        } else {
+                            return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, thisType, List.of(stringType), innerType, v -> {
+                                //Stack is [value, bool, String]
+                                v.visitInsn(Opcodes.SWAP); //[value, String, bool]
+                                Label afterError = new Label();
+                                v.visitJumpInsn(Opcodes.IFNE, afterError); //[value, String]
+                                //Throw an error, with the item on the stack being the string
+                                String exceptionName = org.objectweb.asm.Type.getInternalName(SnuggleException.class);
+                                v.visitTypeInsn(Opcodes.NEW, exceptionName); //[value, String, SnuggleException]
+                                v.visitInsn(Opcodes.DUP_X1); //[value, SnuggleException, String, SnuggleException]
+                                v.visitInsn(Opcodes.DUP_X1); //[value, SnuggleException, SnuggleException, String, SnuggleException]
+                                v.visitInsn(Opcodes.POP); //[value, SnuggleException, SnuggleException, String]
+                                v.visitMethodInsn(Opcodes.INVOKESPECIAL, exceptionName, "<init>", "(Ljava/lang/String;)V", false); //[value, SnuggleException]
+                                v.visitInsn(Opcodes.ATHROW); //Throw!
+                                //Emit label
+                                v.visitLabel(afterError); //[value, String]
+                                v.visitInsn(Opcodes.POP); //[value]
+                            }), call.args(), innerType);
+                        }
+                    }, null),
+                    new BytecodeMethodDef("new", false, thisType, List.of(), unitType, v -> {
+                        //Push a default innerType on the stack, then push false, then continue along
+                        BytecodeHelper.pushDefaultValue(v, innerType);
+                        v.visitInsn(Opcodes.ICONST_0);
+                    }),
+                    new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, v -> {
+                        //Just wrap the value with true lol
+                        v.visitInsn(Opcodes.ICONST_1);
+                    }),
+                    new BytecodeMethodDef("is", false, thisType, List.of(), boolType, v -> {
+                        //Stack is [value, bool]
+                        Label ifPresent = new Label();
+                        Label done = new Label();
+                        v.visitJumpInsn(Opcodes.IFNE, ifPresent); //[value]
+                        new Pop(innerType).accept(v); //Pop inner off the stack: []
+                        v.visitInsn(Opcodes.ICONST_0); //Push false: [false]
+                        v.visitJumpInsn(Opcodes.GOTO, done);
+                        v.visitLabel(ifPresent); //[value]
+                        new Pop(innerType).accept(v); //Pop inner off the stack: []
+                        v.visitInsn(Opcodes.ICONST_1); //Push true: [true]
+                        v.visitLabel(done); //[true] or [false]
+                    })
+            );
         }
+    }
+
+    @Override
+    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics) {
+        if (!isPlural(checker, generics))
+            return List.of(); //Non-plural form: no fields
+        //Plural form needs fields. An Option is a struct composed of:
+        // - the inner, wrapped type
+        // - a boolean
+        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
+        TypeDef innerType = generics.get(0);
+        TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        return List.of(
+                new BuiltinFieldDef("#value", thisType, innerType, false),
+                new BuiltinFieldDef("#isPresent", thisType, boolType, false)
+        );
     }
 
     @Override
@@ -145,6 +249,11 @@ public class OptionType implements BuiltinType {
     }
 
     @Override
+    public boolean shouldGenerateStructClassAtRuntime(TypeChecker checker, List<TypeDef> generics) {
+        return isPlural(checker, generics);
+    }
+
+    @Override
     public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
         if (generics.get(0).isReferenceType())
             return 1;
@@ -152,7 +261,9 @@ public class OptionType implements BuiltinType {
     }
 
     @Override
-    public int numGenerics() { return 1; }
+    public int numGenerics() {
+        return 1;
+    }
 
 
 }
