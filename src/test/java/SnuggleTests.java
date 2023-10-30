@@ -90,6 +90,33 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testBox() throws CompilationException, SnuggleException {
+        test("""
+                class Box<T> {
+                    var value: T
+                    fn new(v: T) {
+                        super()
+                        this.value = v;
+                    }
+                }
+                struct Thing {
+                    var thing: u32
+                }
+                
+                var x = new Thing { 10 }
+                Test.assertEquals(x.thing, 10)
+                x.thing = 5
+                Test.assertEquals(x.thing, 5)
+                
+                var y = new Box<Thing>(new Thing { 50 })
+                Test.assertEquals(y.value.thing, 50)
+                y.value.thing = 100
+                Test.assertEquals(y.value.thing, 100)
+                
+                """);
+    }
+
+    @Test
     public void testStruct() throws CompilationException, SnuggleException {
         test("""
                 struct Vec3 {
@@ -104,7 +131,7 @@ public class SnuggleTests {
                         new Vec3(this.x + o.x, this.y + o.y, this.z + o.z)
                 }
                 System.print(new Vec3(1, 2, 3).str())
-                System.print(new Vec3(16, 4, 10).z)
+                System.print(new Vec3 { 16, 4, 10 }.z)
                 System.print({new Vec3(2f32 * 3 + 1, 1, -10f32) + new Vec3(4, 10, 21)}.str())
                 """, null); //new File("TestStruct.jar"));
     }
@@ -142,7 +169,7 @@ public class SnuggleTests {
 
     @Test
     public void testFunFakeVarargs() throws CompilationException, SnuggleException, IOException {
-        String code = """
+        test("""
                 class List<T> {
                     var backing: Array<T>
                     var size: u32
@@ -190,9 +217,7 @@ public class SnuggleTests {
                 }
                 
                 new FakeVarargsPrinter<i32>(1)(3)(5)(7)(9)()
-                """;
-        test(code);
-        CompileAll.compileAllToJar(new File("FunFakeVarargs.jar"), new BuiltinTypes(), Map.of("main", code));
+                """); //, new File("FunFakeVarargs.jar"));
     }
 
     @Test

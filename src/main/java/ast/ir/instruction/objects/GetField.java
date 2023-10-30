@@ -29,7 +29,7 @@ public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
         if (fieldsToFollow.size() > 1) {
             StringBuilder nameBuilder = new StringBuilder();
             for (FieldDef def : fieldsToFollow)
-                nameBuilder.append(def).append("$");
+                nameBuilder.append(def.name()).append("$");
             nameBuilder.deleteCharAt(nameBuilder.length() - 1); //Delete trailing $
             fieldName = nameBuilder.toString();
         }

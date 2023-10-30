@@ -35,7 +35,6 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
             lhs = fieldAccess.lhs();
             if (lhs.type().isReferenceType())
                 break;
-
         }
 
         //Now, assert that the lhs is either:
