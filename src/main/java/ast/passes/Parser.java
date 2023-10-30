@@ -249,7 +249,7 @@ public class Parser {
                 case BITWISE_XOR -> "bxor";
 
                 //Special
-                case AND, OR -> "SPECIAL_IGNORE";
+                case AND, OR -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
 
                 case EQUAL, NOT_EQUAL -> "eq";
                 case GREATER -> "gt";
@@ -264,9 +264,11 @@ public class Parser {
 
             //Special handling for and/or operations. They can't be method calls
             //because of short-circuiting.
-            //TODO: Remove
+            //a || b gets converted to { var temp = a; if temp temp else b }
+            //a && b gets converted to { var temp = a; if temp b else temp }
+            //TODO: Remove and replace with better system, such as dedicated AST node
             if (op == AND || op == OR) {
-                String tempVarName = "$desugarShortCircuit";
+                String tempVarName = "$$desugarShortCircuit$$";
                 ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
                 ParsedExpr ifFalse = rhs;
                 if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
@@ -371,7 +373,7 @@ public class Parser {
                         case POWER_ASSIGN -> "powAssign";
 
                         //Special handling, short-circuiting
-                        case OR_ASSIGN, AND_ASSIGN -> "IGNORE_SPECIAL";
+                        case OR_ASSIGN, AND_ASSIGN -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
 
                         case BITWISE_AND_ASSIGN -> "bandAssign";
                         case BITWISE_OR_ASSIGN -> "borAssign";
@@ -383,13 +385,13 @@ public class Parser {
 
                     //If the left was a field access, then we need to do some variable binding first.
                     if (lhs instanceof ParsedFieldAccess fieldAccess) {
-                        //TODO: Remove
+                        //TODO: Remove and replace with better system, such as dedicated AST node
 
                         //a.b += 5
                         //becomes
                         //{ var temp = a; temp.b = temp.b.plusEquals(5) }
                         //Important that the temp variable is not possible to be a regular identifier, otherwise this could mess with things
-                        String tempVarName = "$desugarAugmentedAssignment";
+                        String tempVarName = "$$desugarAugmentedAssignment$$";
 
                         //Special case for short-circuiting
                         if (operator == OR_ASSIGN || operator == AND_ASSIGN) {
@@ -422,7 +424,7 @@ public class Parser {
                                 )
                         ));
                     } else {
-                        //TODO: Remove
+                        //TODO: Remove and replace with better system, such as dedicated AST node
                         //Special short-circuiting handling
                         if (operator == OR_ASSIGN || operator == AND_ASSIGN)  {
                             ParsedExpr ifTrue = lhs;
