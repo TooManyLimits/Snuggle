@@ -90,7 +90,26 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testReturn() throws CompilationException, SnuggleException {
+        test("""
+                class Tester {
+                    fn new() super()
+                    fn abs(input: i32): i32 {
+                        if input < 0 {
+                            return -input;
+                        }
+                        return input
+                    }
+                }
+                var t = new Tester()
+                Test.assertEquals(10, t.abs(-10))
+                Test.assertEquals(50, t.abs(50))
+                """);
+    }
+
+    @Test
     public void testShorterList() throws CompilationException, SnuggleException {
+        //Test field access syntax with implicit "this."
         test("""
                 class List<T> {
                     var backing: Array<T>
@@ -198,9 +217,9 @@ public class SnuggleTests {
                     fn new(x: f32, y: f32, z: f32)
                         new Vec3 { x, y, z }
                     fn str(): String
-                        "{" + this.x.str() + ", " + this.y.str() + ", " + this.z.str() + "}"
+                        "{" + x.str() + ", " + y.str() + ", " + z.str() + "}"
                     fn add(o: Vec3): Vec3
-                        new Vec3(this.x + o.x, this.y + o.y, this.z + o.z)
+                        new Vec3 {x + o.x, y + o.y, z + o.z}
                 }
                 System.print(new Vec3 {1, 2, 3}.str())
                 Test.assertEquals("{1.0, 2.0, 3.0}", new Vec3 {1, 2, 3}.str())

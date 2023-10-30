@@ -34,7 +34,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
 
     //Compile this method into a CodeBlock and return it
     public CodeBlock compileToCodeBlock() throws CompilationException {
-        CodeBlock block = new CodeBlock();
+        CodeBlock block = new CodeBlock(this);
         if (!isStatic) {
             if (!isConstructor() || !owningType.isPlural()) //Don't give a "this" local to plural-type constructors
                 block.env.declare(loc, "this", owningType); //"this" is first variable for non-static methods
