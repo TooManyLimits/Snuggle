@@ -194,6 +194,20 @@ public class SnuggleTests {
                     var thing: u32
                 }
                 
+                class Whatnot {
+                    var elem: Box<Thing>
+                    fn new() {
+                        super()
+                        elem = new Box<Thing>(new Thing{30});
+                    }
+                    fn getThing(): Thing {
+                        elem.value
+                    }
+                    fn getBoxed(): Box<Thing> {
+                        elem
+                    }
+                }
+                
                 var x = new Thing { 10 }
                 Test.assertEquals(10, x.thing)
                 x.thing = 5
@@ -203,6 +217,14 @@ public class SnuggleTests {
                 Test.assertEquals(50, y.value.thing)
                 y.value.thing = 100
                 Test.assertEquals(100, y.value.thing)
+                
+                var z = new Whatnot()
+                Test.assertEquals(30, z.getThing().thing)
+                Test.assertEquals(30, z.getBoxed().value.thing)
+                //z.getThing().thing = 50 //Error
+                //Test.assertEquals(30, z.getThing().thing)
+                z.getBoxed().value.thing = 50
+                Test.assertEquals(50, z.getThing().thing)
                 
                 """);
     }
