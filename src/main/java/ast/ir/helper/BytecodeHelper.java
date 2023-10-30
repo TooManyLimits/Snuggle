@@ -40,11 +40,11 @@ public class BytecodeHelper {
         //Handle plural types first
         if (def.isPlural()) {
             if (store) {
-                AtomicInteger mutableIndex = new AtomicInteger(index); //cursed
+                AtomicInteger mutableIndex = new AtomicInteger(index + def.stackSlots()); //cursed
                 ListUtils.iterBackwards(def.fields(), field -> {
                     if (field.isStatic()) return;
+                    mutableIndex.addAndGet(-field.type().stackSlots());
                     visitVariable(mutableIndex.get(), field.type(), store, visitor);
-                    mutableIndex.addAndGet(field.type().stackSlots());
                 });
             } else {
                 for (FieldDef field : def.fields()) {

@@ -90,6 +90,31 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testNestedStruct() throws CompilationException, SnuggleException {
+        test("""
+                struct Nester {
+                    var x: f64
+                    var y: Nested
+                    var z: u32
+                }
+                struct Nested {
+                    var a: i64
+                    var b: f32
+                }
+                
+                var c = new Nester {
+                    x = 10,
+                    y = new Nested {
+                        a = 11,
+                        b = 12
+                    },
+                    z = 13
+                }
+                System.print(c.y.b)
+                """);
+    }
+
+    @Test
     public void testBox() throws CompilationException, SnuggleException {
         test("""
                 class Box<T> {
@@ -104,14 +129,14 @@ public class SnuggleTests {
                 }
                 
                 var x = new Thing { 10 }
-                Test.assertEquals(x.thing, 10)
+                Test.assertEquals(10, x.thing)
                 x.thing = 5
-                Test.assertEquals(x.thing, 5)
+                Test.assertEquals(5, x.thing)
                 
                 var y = new Box<Thing>(new Thing { 50 })
-                Test.assertEquals(y.value.thing, 50)
+                Test.assertEquals(50, y.value.thing)
                 y.value.thing = 100
-                Test.assertEquals(y.value.thing, 100)
+                Test.assertEquals(100, y.value.thing)
                 
                 """);
     }
@@ -130,9 +155,12 @@ public class SnuggleTests {
                     fn add(o: Vec3): Vec3
                         new Vec3(this.x + o.x, this.y + o.y, this.z + o.z)
                 }
-                System.print(new Vec3(1, 2, 3).str())
+                System.print(new Vec3 {1, 2, 3}.str())
+                Test.assertEquals("{1.0, 2.0, 3.0}", new Vec3 {1, 2, 3}.str())
                 System.print(new Vec3 { 16, 4, 10 }.z)
-                System.print({new Vec3(2f32 * 3 + 1, 1, -10f32) + new Vec3(4, 10, 21)}.str())
+                Test.assertEquals(10, new Vec3 { 16, 4, 10 }.z)
+                System.print({new Vec3 {2f32 * 3 + 1, 1, -10f32} + new Vec3(4, 10, 21)}.str())
+                Test.assertEquals("{11.0, 11.0, 11.0}", {new Vec3 {2f32 * 3 + 1, 1, -10f32} + new Vec3(4, 10, 21)}.str())
                 """, null); //new File("TestStruct.jar"));
     }
 

@@ -54,7 +54,15 @@ public class TestBindings {
         Assertions.assertEquals(expected, actual);
     }
 
+    public static void assertEquals(float expected, float actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
     public static void assertEquals(double expected, double actual) {
+        Assertions.assertEquals(expected, actual);
+    }
+
+    public static void assertEquals(String expected, String actual) {
         Assertions.assertEquals(expected, actual);
     }
 
