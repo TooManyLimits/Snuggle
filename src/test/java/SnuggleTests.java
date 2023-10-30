@@ -90,6 +90,53 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testShorterList() throws CompilationException, SnuggleException {
+        test("""
+                class List<T> {
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        backing = new Array<T>(5)
+                        size = 0;
+                    }
+                    fn push(elem: T) {
+                        backing.set(size, elem)
+                        size = size + 1;
+                        if size == backing.len() {
+                            var newBacking = new Array<T>(size * 2);
+                            var i: u32 = 0
+                            while i < backing.len() {
+                                newBacking.set(i, backing.get(i))
+                                i = i + 1;
+                            }
+                            backing = newBacking;
+                        } else {}
+                    }
+                    fn get(index: u32): T backing.get(index)
+                    fn size(): u32 size
+                    fn backingSize(): u32 backing.len()
+                }
+                
+                var a = new List<u32>()
+                a.push(1)
+                a.push(3)
+                a.push(5)
+                a.push(2)
+                a.push(7)
+                a.push(4)
+                
+                var i: u32 = 0
+                while i < a.backingSize() {
+                    System.print(a.get(i))
+                    i = i + 1;
+                }
+                
+                
+                """);
+    }
+
+    @Test
     public void testNestedStruct() throws CompilationException, SnuggleException {
         test("""
                 struct Nester {
