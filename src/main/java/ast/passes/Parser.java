@@ -1,5 +1,6 @@
 package ast.passes;
 
+import ast.ir.instruction.flow.Return;
 import ast.parsed.ParsedType;
 import ast.parsed.def.field.SnuggleParsedFieldDef;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
@@ -504,6 +505,7 @@ public class Parser {
             case IF -> parseIf(classGenerics, methodGenerics);
             case WHILE -> parseWhile(classGenerics, methodGenerics);
             case LEFT_CURLY -> parseBlock(classGenerics, methodGenerics);
+            case RETURN -> new ParsedReturn(lexer.last().loc(), parseExpr(classGenerics, methodGenerics, false));
 
             //Variable declaration
             case VAR -> parseDeclaration(classGenerics, methodGenerics, canBeDeclaration);

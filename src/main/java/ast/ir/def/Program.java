@@ -3,6 +3,7 @@ package ast.ir.def;
 import ast.ir.def.type.GeneratedType;
 import ast.ir.helper.NameHelper;
 import ast.ir.instruction.stack.Pop;
+import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.prog.TypedAST;
 import exceptions.compile_time.CompilationException;
@@ -39,7 +40,7 @@ public record Program(List<GeneratedType> generatedClasses, Map<String, CodeBloc
 
         //Create the top-level code
         Map<String, CodeBlock> topLevelCode = MapUtils.mapValues(typedAST.files(), file -> {
-            CodeBlock codeBlock = new CodeBlock();
+            CodeBlock codeBlock = new CodeBlock((MethodDef) null);
             for (TypedExpr expr : file.code()) {
                 expr.compile(codeBlock, null);
                 codeBlock.emit(new Pop(expr.type().get()));

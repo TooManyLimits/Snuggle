@@ -10,7 +10,6 @@ import org.objectweb.asm.Opcodes;
 
 public record GeneratedMethod(SnuggleMethodDef methodDef, CodeBlock body) {
 
-    //Already existing methods are passed in for removing duplicate names
     public static GeneratedMethod of(MethodDef methodDef) throws CompilationException {
         if (methodDef instanceof SnuggleMethodDef snuggleMethodDef) {
             CodeBlock body = snuggleMethodDef.compileToCodeBlock();

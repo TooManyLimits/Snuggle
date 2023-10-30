@@ -43,7 +43,7 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
         //Empty block case
         if (exprs.size() == 0) {
             if (!checker.getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected))
-                throw new TypeCheckingException("Expected " + expected.name() + ", but got unit", loc);
+                throw new TypeCheckingException("Expected this expression to evaluate to type \"" + expected.name() + "\", but instead got \"" + checker.getBasicBuiltin(UnitType.INSTANCE).name() + "\"", loc);
             else
                 return new TypedLiteral(loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
         }

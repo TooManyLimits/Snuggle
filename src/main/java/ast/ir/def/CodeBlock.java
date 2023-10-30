@@ -2,6 +2,7 @@ package ast.ir.def;
 
 import ast.ir.helper.ScopeHelper;
 import ast.ir.instruction.Instruction;
+import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -22,13 +23,17 @@ public class CodeBlock {
 
     //The scope for this code block
     public final ScopeHelper env;
+    //The MethodDef this code block is for. If not for any MethodDef, then null.
+    public final MethodDef methodDef;
 
-    public CodeBlock() {
+    public CodeBlock(MethodDef methodDef) {
         env = new ScopeHelper();
+        this.methodDef = methodDef;
     }
 
     public CodeBlock(CodeBlock other) {
         env = other.env;
+        methodDef = other.methodDef;
         cost = 0; //Cost is tracked independently
     }
 

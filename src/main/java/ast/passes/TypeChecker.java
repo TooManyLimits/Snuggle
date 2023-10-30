@@ -45,11 +45,13 @@ public class TypeChecker {
             throw new AlreadyDeclaredException("Variable \"" + name + "\" is already declared in this scope!", loc);
     }
 
-    public TypeDef lookup(Loc loc, String name) throws CompilationException {
-        TypeDef t = scopeVariables.get(name);
-        if (t == null)
-            throw new UndeclaredVariableException("Variable \"" + name + "\" was not declared in this scope", loc);
-        return t;
+    //Returns null if the variable was not found
+    public TypeDef lookup(String name) { //throws CompilationException {
+//        TypeDef t = scopeVariables.get(name);
+//        if (t == null)
+//            throw new UndeclaredVariableException(errorMessage, loc);
+//        return t;
+        return scopeVariables.get(name);
     }
 
     //A cache for mapping ResolvedType -> TypeDef

@@ -10,6 +10,6 @@ public record ParsedVariable(Loc loc, String name) implements ParsedExpr {
 
     @Override
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {
-        return new TypeResolvedVariable(loc, name);
+        return new TypeResolvedVariable(loc, name, false);
     }
 }
