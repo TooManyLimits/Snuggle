@@ -21,6 +21,6 @@ public record LoadLocal(int index, TypeDef type) implements Instruction {
     @Override
     public long cost() {
         //Higher cost depending on stack slots used
-        return 1 + type.stackSlots() / 2;
+        return 1 + (type.stackSlots() - 1) / 2;
     }
 }

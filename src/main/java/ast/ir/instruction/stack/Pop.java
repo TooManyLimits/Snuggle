@@ -1,10 +1,12 @@
 package ast.ir.instruction.stack;
 
 import ast.ir.instruction.Instruction;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.ListUtils;
 
 //Pop the given object type from the stack
 public record Pop(TypeDef type) implements Instruction {
@@ -12,7 +14,9 @@ public record Pop(TypeDef type) implements Instruction {
     @Override
     public void accept(MethodVisitor jvm) {
         if (type.isPlural()) {
-            throw new IllegalStateException("Plural types not implemented yet");
+            ListUtils.iterBackwards(type.fields(),
+                    f -> new Pop(f.type()).accept(jvm)
+            );
         } else {
             if (type.stackSlots() == 1)
                 jvm.visitInsn(Opcodes.POP);

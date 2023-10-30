@@ -90,6 +90,42 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testStruct() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec3 {
+                    var x: f32
+                    var y: f32
+                    var z: f32
+                    fn new(x: f32, y: f32, z: f32)
+                        new Vec3 { x, y, z }
+                    fn str(): String
+                        "{" + this.x.str() + ", " + this.y.str() + ", " + this.z.str() + "}"
+                    fn add(o: Vec3): Vec3
+                        new Vec3(this.x + o.x, this.y + o.y, this.z + o.z)
+                }
+                System.print(new Vec3(1, 2, 3).str())
+                System.print(new Vec3(16, 4, 10).z)
+                System.print({new Vec3(2f32 * 3 + 1, 1, -10f32) + new Vec3(4, 10, 21)}.str())
+                """);
+    }
+
+    @Test
+    public void testLeapYear() throws CompilationException, SnuggleException {
+        test("""
+                class Leap {
+                    fn new() super()
+                    fn check(year: u32): bool
+                        year % 4 == 0 && year % 100 != 0 || year % 400 == 0
+                }
+                var l = new Leap()
+                Test.assertFalse(l.check(3))
+                Test.assertTrue(l.check(16))
+                Test.assertTrue(l.check(800))
+                Test.assertFalse(l.check(700))
+                """);
+    }
+
+    @Test
     public void testImportsAgain() throws CompilationException, SnuggleException {
         test(Map.of("main", """
                 import "lib"

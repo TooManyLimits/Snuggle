@@ -16,13 +16,12 @@ public record ParsedStructDef(Loc loc, boolean pub, String name, int numGenerics
 
     @Override
     public TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException {
-//        return new TypeResolvedStructDef(
-//                loc,
-//                name,
-//                numGenerics,
-//                ListUtils.map(methods, m -> m.resolve(resolver)),
-//                ListUtils.map(fields, f -> f.resolve(resolver))
-//        );
-        return null;
+        return new TypeResolvedStructDef(
+                loc,
+                name,
+                numGenerics,
+                ListUtils.map(methods, m -> m.resolve(resolver)),
+                ListUtils.map(fields, f -> f.resolve(resolver))
+        );
     }
 }

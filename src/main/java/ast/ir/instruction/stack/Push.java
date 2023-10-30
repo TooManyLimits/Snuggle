@@ -29,7 +29,10 @@ public record Push(Loc loc, Object obj, TypeDef type) implements Instruction {
         //Convert fractions ahead of time to either double or float, to save code
         if (obj instanceof Fraction f) {
             if (type.builtin() instanceof FloatType t)
-                obj = t.bits == 32 ? f.floatValue() : f.doubleValue();
+                if (t.bits == 32) //No ternary! Bad!
+                    obj = f.floatValue();
+                else
+                    obj = f.doubleValue();
             else
                 throw new IllegalStateException("Literal obj is fraction, but type is not float type? Bug in compiler, please report!");
         }

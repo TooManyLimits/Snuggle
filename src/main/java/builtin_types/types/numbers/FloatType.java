@@ -6,6 +6,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
+import builtin_types.types.StringType;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -43,6 +44,7 @@ public class FloatType implements BuiltinType {
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
         TypeDef type = checker.getBasicBuiltin(this);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
 
         Function<Object, Float> floatConverter = x -> (x instanceof Fraction f) ? f.floatValue() : (Float) x;
         Function<Object, Double> doubleConverter = x -> (x instanceof Fraction f) ? f.doubleValue() : (Double) x;
@@ -85,7 +87,11 @@ public class FloatType implements BuiltinType {
                 cmpHelper.get("lt", (a, b) -> a<b, (a, b) -> a<b, Opcodes.IFGE),
                 cmpHelper.get("ge", (a, b) -> a>=b, (a, b) -> a>=b, Opcodes.IFLT),
                 cmpHelper.get("le", (a, b) -> a<=b, (a, b) -> a<=b, Opcodes.IFGT),
-                cmpHelper.get("eq", Float::equals, Double::equals, Opcodes.IFNE)
+                cmpHelper.get("eq", Float::equals, Double::equals, Opcodes.IFNE),
+
+                //Other
+                DefineConstWithFallback.defineUnary("str", Object::toString, stringType, v ->
+                        v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(" + descriptor + ")Ljava/lang/String;", false))
         ));
 
     }

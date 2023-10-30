@@ -7,6 +7,7 @@ import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
 import ast.ir.helper.BytecodeHelper;
+import builtin_types.types.StringType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -92,13 +93,13 @@ public class IntegerType implements BuiltinType {
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
         TypeDef type = checker.getBasicBuiltin(this);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
 
         return ListUtils.join(List.of(
                 //Regular binary operators
                 DefineConstWithFallback.defineBinary("add", BigInteger::add, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IADD : Opcodes.LADD))),
                 DefineConstWithFallback.defineBinary("sub", BigInteger::subtract, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISUB : Opcodes.LSUB))),
                 DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
-                //IntelliJ is bugged, so it thinks these are errors; really they compile fine
                 DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
@@ -138,32 +139,49 @@ public class IntegerType implements BuiltinType {
                 DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
                 DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
                 DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ))
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ)),
+
+                //Other
+                DefineConstWithFallback.defineUnary("str", Object::toString, stringType, v -> {
+                    convert(v);
+                    String desc = switch (bits) {
+                        case 8, 16, 32 -> "I";
+                        case 64 -> "J";
+                        default -> throw new IllegalStateException("Unexpected value: " + bits);
+                    };
+                    desc = "(" + desc + ")Ljava/lang/String;";
+                    v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", desc, false);
+                })
         ));
     }
 
     private Consumer<MethodVisitor> doOperationThenConvert(Consumer<MethodVisitor> doOperation) {
         return v -> {
             doOperation.accept(v);
-            switch (bits) {
-                case 8 -> {
-                    v.visitInsn(Opcodes.I2B);
-                    if (!signed) {
-                        v.visitIntInsn(Opcodes.SIPUSH, 0xff); //cannot be BIPUSH, because it would sign-extend
-                        v.visitInsn(Opcodes.IAND);
-                    }
-                }
-                case 16 -> {
-                    v.visitInsn(Opcodes.I2S);
-                    if (!signed) {
-                        v.visitLdcInsn(0xffff); //Cannot be SIPUSH for same reason as above
-                        v.visitInsn(Opcodes.IAND);
-                    }
-                }
-                case 32, 64 -> {}
-            }
+            convert(v);
         };
     }
+
+    private void convert(MethodVisitor v) {
+        switch (bits) {
+            case 8 -> {
+                v.visitInsn(Opcodes.I2B);
+                if (!signed) {
+                    v.visitIntInsn(Opcodes.SIPUSH, 0xff); //cannot be BIPUSH, because it would sign-extend
+                    v.visitInsn(Opcodes.IAND);
+                }
+            }
+            case 16 -> {
+                v.visitInsn(Opcodes.I2S);
+                if (!signed) {
+                    v.visitLdcInsn(0xffff); //Cannot be SIPUSH for same reason as above
+                    v.visitInsn(Opcodes.IAND);
+                }
+            }
+            case 32, 64 -> {}
+        }
+    }
+
 
     private Consumer<MethodVisitor> intCompare(int intCompareOp) {
         return v -> {

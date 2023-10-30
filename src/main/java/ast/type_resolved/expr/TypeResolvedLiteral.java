@@ -13,6 +13,7 @@ import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.Fraction;
 import util.IntLiteralData;
 
 import java.math.BigDecimal;
@@ -55,7 +56,7 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
             //Expected float type?
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
                 if (checker.getBasicBuiltin(t).equals(expected))
-                    return new TypedLiteral(e.loc(), new BigDecimal(value), expected);
+                    return new TypedLiteral(e.loc(), new Fraction(value, BigInteger.ONE), expected);
 
             //Didn't expect any of those numeric types? Error
             throw new TypeCheckingException("Expected " + expected.name() + ", got int literal", loc);

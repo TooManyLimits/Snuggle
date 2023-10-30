@@ -1,6 +1,7 @@
 package ast.typed.def.method;
 
 import ast.typed.def.type.GenericTypeDef;
+import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedStaticMethodCall;
 import exceptions.compile_time.CompilationException;
@@ -40,6 +41,9 @@ public interface MethodDef {
         String returnTypeDescriptor = isConstructor() ? "V" : returnType().getReturnTypeDescriptor();
 
         StringBuilder b = new StringBuilder("(");
+        if (owningType().get() instanceof StructDef structDef && !isConstructor())
+            for (String s : structDef.getDescriptor())
+                b.append(s);
         for (TypeDef p : paramTypes())
             for (String s : p.getDescriptor())
                 b.append(s);

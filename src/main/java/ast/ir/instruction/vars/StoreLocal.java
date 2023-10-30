@@ -9,7 +9,6 @@ import org.objectweb.asm.MethodVisitor;
 //Store the value on top of the stack to the variable at the given index with the given type
 public record StoreLocal(int index, TypeDef type) implements Instruction {
 
-
     @Override
     public void accept(MethodVisitor jvm) {
         BytecodeHelper.visitVariable(index, type, true, jvm);
@@ -17,6 +16,6 @@ public record StoreLocal(int index, TypeDef type) implements Instruction {
 
     @Override
     public long cost() {
-        return 1 + type().stackSlots() / 2; //Costs more depending on stack slots
+        return 1 + (type.stackSlots() - 1) / 2; //Costs more depending on stack slots
     }
 }

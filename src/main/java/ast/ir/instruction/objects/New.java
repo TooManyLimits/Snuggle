@@ -19,6 +19,6 @@ public record New(TypeDef typeDef) implements Instruction {
 
     @Override
     public long cost() {
-        return 0; //Calling the constructor will be the cost.
+        return 1; //Calling the constructor will be the cost.
     }
 }

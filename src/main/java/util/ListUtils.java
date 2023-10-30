@@ -15,6 +15,11 @@ public class ListUtils {
         return result;
     }
 
+    public static <T, E extends Throwable> void iterBackwards(List<T> list, ThrowingConsumer<T, E> func) throws E {
+        for (int i = list.size() - 1; i >= 0; i--)
+            func.accept(list.get(i));
+    }
+
     public static <T, R, E extends Throwable> List<R> map(List<T> list, ThrowingFunction<T, R, E> func) throws E {
         ArrayList<R> result = new ArrayList<>(list.size());
         for (T elem : list)

@@ -34,7 +34,11 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
         //TypedBody must be computed *after* we know all the method signatures and such
         LateInit<TypedExpr, CompilationException> typedBody = new LateInit<>(() -> {
             checker.push();
-            checker.declare(loc, "this", currentType);
+            if (!isStatic) {
+                if (!isConstructor() || !currentType.isPlural()) //Don't give a "this" local to plural-type constructors
+                    checker.declare(loc, "this", currentType);
+            }
+
             for (int i = 0; i < newParamTypes.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(i));
             TypedExpr res = body.check(currentType, checker, generics, newReturnType);

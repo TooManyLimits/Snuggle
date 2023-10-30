@@ -1,5 +1,6 @@
 package ast.ir.def;
 
+import ast.ir.def.type.GeneratedType;
 import ast.ir.helper.NameHelper;
 import ast.ir.instruction.stack.Pop;
 import ast.typed.expr.TypedExpr;
@@ -27,20 +28,20 @@ import java.util.jar.Manifest;
  * Many elements of the IR refer to TypeDef objects, so those
  * need to stay around.
  */
-public record Program(List<GeneratedClass> generatedClasses, Map<String, CodeBlock> topLevelCode) {
+public record Program(List<GeneratedType> generatedClasses, Map<String, CodeBlock> topLevelCode) {
 
     public static Program of(TypedAST typedAST) throws CompilationException {
         //Create the generatedClasses:
-        List<GeneratedClass> classes = ListUtils.filter(ListUtils.map(
+        List<GeneratedType> classes = ListUtils.filter(ListUtils.map(
                 typedAST.typeDefs(),
-                GeneratedClass::of
+                GeneratedType::of
         ),      Objects::nonNull);
 
         //Create the top-level code
         Map<String, CodeBlock> topLevelCode = MapUtils.mapValues(typedAST.files(), file -> {
             CodeBlock codeBlock = new CodeBlock();
             for (TypedExpr expr : file.code()) {
-                expr.compile(codeBlock);
+                expr.compile(codeBlock, null);
                 codeBlock.emit(new Pop(expr.type().get()));
             }
             return codeBlock;
@@ -53,7 +54,7 @@ public record Program(List<GeneratedClass> generatedClasses, Map<String, CodeBlo
         CompiledClass runtimeClass = createRuntime();
         List<CompiledClass> otherClasses = new ArrayList<>();
         otherClasses.add(createFiles());
-        for (GeneratedClass generatedClass : generatedClasses)
+        for (GeneratedType generatedClass : generatedClasses)
             otherClasses.add(generatedClass.compile());
         return new CompileResult(runtimeClass, otherClasses);
     }

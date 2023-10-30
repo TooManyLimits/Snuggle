@@ -9,7 +9,7 @@ public class Fraction extends Number implements Comparable<Fraction> {
 
     public final BigInteger numerator, denominator;
 
-    private Fraction(BigInteger numerator, BigInteger denominator) {
+    public Fraction(BigInteger numerator, BigInteger denominator) {
         this.numerator = numerator;
         this.denominator = denominator;
     }

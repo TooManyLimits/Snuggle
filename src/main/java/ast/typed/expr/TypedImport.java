@@ -10,11 +10,8 @@ import lexing.Loc;
 public record TypedImport(Loc loc, String fileName, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(CodeBlock code) {
-
+    public void compile(CodeBlock code, DesiredFieldNode desiredFields) {
         code.emit(new LineNumber(loc.startLine()));
         code.emit(new RunImport(fileName));
-
-
     }
 }

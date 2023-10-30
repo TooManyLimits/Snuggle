@@ -9,9 +9,10 @@ import lexing.Loc;
 public record TypedVariable(Loc loc, String name, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(CodeBlock code) {
-        int index = code.env.lookup(loc, name);
-        code.emit(new LoadLocal(index, type.get()));
+    public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
+        int startIndex = code.env.lookup(loc, name);
+        TypedAssignment.DefIndexPair offsetIndex = TypedAssignment.getDesiredIndexOffset(type, startIndex, desiredFields);
+        code.emit(new LoadLocal(offsetIndex.index(), offsetIndex.def().get()));
     }
 
 }

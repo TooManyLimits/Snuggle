@@ -1,5 +1,6 @@
 package ast.type_resolved.expr;
 
+import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.UnitType;
 import exceptions.compile_time.CompilationException;
@@ -26,7 +27,12 @@ public record TypeResolvedConstructor(Loc loc, ResolvedType type, List<TypeResol
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         //Lookup the best method
         TypeDef t = checker.getOrInstantiate(type, typeGenerics);
-        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, t, "new", args, List.of(), typeGenerics, false, false, checker.getBasicBuiltin(UnitType.INSTANCE));
+        TypeDef expectedResult;
+        if (t.get() instanceof StructDef)
+            expectedResult = t; //Expected type for struct constructors is the struct itself
+        else
+            expectedResult = checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, t, "new", args, List.of(), typeGenerics, false, false, expectedResult);
         return new TypedConstructor(loc, t, best.methodDef(), best.typedArgs());
     }
 

@@ -1,5 +1,6 @@
 package ast.ir.helper;
 
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.BoolType;
@@ -9,6 +10,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import runtime.Unit;
+import util.ListUtils;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class with several helpful methods for outputting bytecode
@@ -33,7 +37,25 @@ public class BytecodeHelper {
     }
 
     public static void visitVariable(int index, TypeDef def, boolean store, MethodVisitor visitor) {
-        if (def.builtin() instanceof IntegerType i) {
+        //Handle plural types first
+        if (def.isPlural()) {
+            if (store) {
+                AtomicInteger mutableIndex = new AtomicInteger(index); //cursed
+                ListUtils.iterBackwards(def.fields(), field -> {
+                    if (field.isStatic()) return;
+                    visitVariable(mutableIndex.get(), field.type(), store, visitor);
+                    mutableIndex.addAndGet(field.type().stackSlots());
+                });
+            } else {
+                for (FieldDef field : def.fields()) {
+                    if (field.isStatic()) continue;
+                    visitVariable(index, field.type(), store, visitor);
+                    index += field.type().stackSlots();
+                }
+            }
+        }
+        //Now other types
+        else if (def.builtin() instanceof IntegerType i) {
             switch (i.bits) {
                 case 8, 16, 32 -> visitor.visitVarInsn(store ? Opcodes.ISTORE : Opcodes.ILOAD, index);
                 case 64 -> visitor.visitVarInsn(store ? Opcodes.LSTORE : Opcodes.LLOAD, index);

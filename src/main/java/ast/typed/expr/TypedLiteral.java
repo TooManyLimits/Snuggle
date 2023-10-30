@@ -26,7 +26,7 @@ public record TypedLiteral(Loc loc, Object obj, TypeDef type) implements TypedEx
         return new TypedLiteral(loc, obj, expected);
     }
 
-    public void compile(CodeBlock code) {
+    public void compile(CodeBlock code, DesiredFieldNode desiredFields) {
         code.emit(new Push(loc, obj, type));
     }
 

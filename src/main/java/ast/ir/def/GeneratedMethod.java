@@ -11,7 +11,7 @@ import org.objectweb.asm.Opcodes;
 public record GeneratedMethod(SnuggleMethodDef methodDef, CodeBlock body) {
 
     //Already existing methods are passed in for removing duplicate names
-    public static GeneratedMethod of(MethodDef methodDef) {
+    public static GeneratedMethod of(MethodDef methodDef) throws CompilationException {
         if (methodDef instanceof SnuggleMethodDef snuggleMethodDef) {
             CodeBlock body = snuggleMethodDef.compileToCodeBlock();
             return new GeneratedMethod(snuggleMethodDef, body);
@@ -22,7 +22,7 @@ public record GeneratedMethod(SnuggleMethodDef methodDef, CodeBlock body) {
 
     public void compile(ClassVisitor classWriter) throws CompilationException {
         int access = Opcodes.ACC_PUBLIC;
-        if (methodDef.isStatic()) access += Opcodes.ACC_STATIC;
+        if (methodDef.isStatic() || methodDef.owningType().isPlural()) access += Opcodes.ACC_STATIC;
         //Create writer
         MethodVisitor methodWriter = classWriter.visitMethod(access, methodDef.dedupName(), methodDef.getDescriptor(), null, null);
         //Visit params

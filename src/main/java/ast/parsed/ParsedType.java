@@ -27,6 +27,19 @@ public sealed interface ParsedType {
                 throw new UnknownTypeException("Type \"" + name + "\" could not be found in the current scope.", loc);
             return new ResolvedType.Basic(resolvedName, ListUtils.map(generics, g -> g.resolve(loc, resolver)));
         }
+
+        @Override
+        public String toString() {
+            StringBuilder s = new StringBuilder(name);
+            if (generics.size() > 0) {
+                s.append("<");
+                for (ParsedType t : generics)
+                    s.append(t).append(", ");
+                s.delete(s.length() - 2, s.length());
+                s.append(">");
+            }
+            return s.toString();
+        }
     }
 
     record Generic(int index, boolean isMethod) implements ParsedType {
@@ -34,6 +47,11 @@ public sealed interface ParsedType {
         public ResolvedType resolve(Loc loc, TypeResolver resolver) throws CompilationException {
             //Generics not ready yet, just copy data.
             return new ResolvedType.Generic(index, isMethod);
+        }
+
+        @Override
+        public String toString() {
+            return (isMethod ? "Method" : "Type") + ("Generic(" + index + ")");
         }
     }
 

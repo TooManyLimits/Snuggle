@@ -11,6 +11,10 @@ public interface TypeResolvedMethodDef {
 
     String name();
 
+    default boolean isConstructor() {
+        return name().equals("new");
+    }
+
     /**
      * Note that this only instantiates *TYPE* generics,
      * NOT *METHOD* generics!

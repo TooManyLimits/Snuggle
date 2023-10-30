@@ -23,20 +23,20 @@ public class ScopeHelper {
     private final MapStack<String, Integer> localVariables = new MapStack<>();
 
     public int declare(Loc loc, String name, TypeDef type) {
-        //TODO: Plural
-        int slots = 1;
-        if ((type.builtin() instanceof IntegerType i && i.bits == 64) ||
-            (type.builtin() instanceof FloatType f && f.bits == 64))
-            slots = 2;
-
-        return declare(loc, name, slots);
+        if (type.isPlural()) {
+            return declare(loc, name, type.stackSlots());
+        } else if ((type.builtin() instanceof IntegerType i && i.bits == 64) ||
+                (type.builtin() instanceof FloatType f && f.bits == 64)) {
+            return declare(loc, name, 2);
+        } else {
+            return declare(loc, name, 1);
+        }
     }
 
     // long and double use 2 slots, everything else uses 1
     // (yes, references *do* only use 1, despite being 64 bits,
     // I think it's for backwards compatibility or something)
     public int declare(Loc loc, String name, int slots) {
-        if (slots < 1 || slots > 2) throw new IllegalArgumentException("Illegal slot count? Bug in compiler, please report");
         if (localVariables.putIfAbsent(name, curIndex) != null)
             throw new IllegalStateException("Variable \"" + name + "\" is already declared in this scope - but this should have been caught earlier? Bug in compiler, please report!");
         curIndex += slots;

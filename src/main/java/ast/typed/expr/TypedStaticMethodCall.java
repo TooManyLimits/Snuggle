@@ -5,6 +5,7 @@ import ast.ir.instruction.misc.LineNumber;
 import ast.ir.instruction.objects.MethodCall;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
+import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;
@@ -13,11 +14,11 @@ public record TypedStaticMethodCall(Loc loc, TypeDef receiverType, MethodDef met
 
 
     @Override
-    public void compile(CodeBlock code) {
+    public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
         for (TypedExpr arg : args)
-            arg.compile(code);
+            arg.compile(code, null);
         code.emit(new LineNumber(loc.startLine()));
-        code.emit(new MethodCall(false, method));
+        code.emit(new MethodCall(false, method, DesiredFieldNode.toList(desiredFields)));
     }
 
 

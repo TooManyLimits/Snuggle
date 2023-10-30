@@ -5,14 +5,18 @@ import ast.ir.instruction.objects.Cast;
 import ast.ir.instruction.misc.LineNumber;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
+import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 public record TypedCast(Loc loc, int tokenLine, TypedExpr lhs, boolean isMaybe, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(CodeBlock block) {
+    public void compile(CodeBlock block, DesiredFieldNode desiredFieldNode) throws CompilationException {
+        if (desiredFieldNode != null)
+            throw new IllegalStateException("DesiredFieldNode should always be null when compiling a cast? Bug in compiler, please report!");
         //Load lhs on the stack
-        lhs.compile(block);
+        lhs.compile(block, null);
         //Emit line number
         block.emit(new LineNumber(loc.startLine()));
         //Emit cast

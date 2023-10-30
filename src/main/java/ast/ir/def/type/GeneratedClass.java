@@ -1,5 +1,8 @@
-package ast.ir.def;
+package ast.ir.def.type;
 
+import ast.ir.def.field.GeneratedField;
+import ast.ir.def.GeneratedMethod;
+import ast.ir.def.Program;
 import ast.ir.helper.NameHelper;
 import ast.typed.def.type.ClassDef;
 import ast.typed.def.type.TypeDef;
@@ -12,23 +15,19 @@ import util.ListUtils;
 import java.util.List;
 import java.util.Objects;
 
-public record GeneratedClass(String name, TypeDef supertype, List<GeneratedField> fields, List<GeneratedMethod> methods) {
+public record GeneratedClass(String name, TypeDef supertype, List<GeneratedField> fields, List<GeneratedMethod> methods) implements GeneratedType {
 
 
-    //If this TypeDef can't be made into a GeneratedClass, simply return null.
-    public static GeneratedClass of(TypeDef typeDef) {
-        if (!(typeDef.get() instanceof ClassDef))
-            return null;
-
+    public static GeneratedClass of(ClassDef c) throws CompilationException {
         return new GeneratedClass(
-                typeDef.name(),
-                typeDef.inheritanceSupertype(),
-                ListUtils.join(ListUtils.map(
-                        typeDef.fields(),
-                        GeneratedField::of
-                )),
+                c.name(),
+                c.inheritanceSupertype(),
+                ListUtils.map(
+                        c.fields(),
+                        f -> new GeneratedField(false, f)
+                ),
                 ListUtils.filter(ListUtils.map(
-                        typeDef.methods(),
+                        c.methods(),
                         GeneratedMethod::of
                 ),      Objects::nonNull)
         );
