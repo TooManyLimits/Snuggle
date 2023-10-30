@@ -2,7 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedAssignment;
 import ast.typed.expr.TypedExpr;
 import exceptions.compile_time.CompilationException;
@@ -20,18 +20,18 @@ public record TypeResolvedAssignment(Loc loc, TypeResolvedExpr lhs, TypeResolved
     }
 
     @Override
-    public TypedAssignment infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedAssignment infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
-        Type type = typedLhs.type();
+        TypeDef type = typedLhs.type();
         TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, type);
         return new TypedAssignment(loc, typedLhs, typedRhs, type);
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         TypedAssignment inferred = infer(currentType, checker, typeGenerics);
-        if (!inferred.type().isSubtype(expected, checker.pool()))
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got " + inferred.type().name(checker.pool()), loc);
+        if (!inferred.type().isSubtype(expected))
+            throw new TypeCheckingException("Expected " + expected.name() + ", got " + inferred.type().name(), loc);
         return inferred;
     }
 }

@@ -1,36 +1,29 @@
 package ast.typed.expr;
 
-import ast.typed.Type;
+import ast.ir.def.CodeBlock;
+import ast.ir.instruction.misc.LineNumber;
+import ast.ir.instruction.stack.Push;
+import ast.ir.instruction.vars.LoadThis;
+import ast.ir.instruction.objects.MethodCall;
 import ast.typed.def.method.MethodDef;
-import compile.BytecodeHelper;
-import compile.Compiler;
-import compile.ScopeHelper;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+import runtime.Unit;
 
 import java.util.List;
 
-public record TypedSuperMethodCall(Loc loc, Type receiverType, MethodDef method, List<TypedExpr> args, Type type) implements TypedExpr {
+public record TypedSuperMethodCall(Loc loc, TypeDef receiverType, MethodDef method, List<TypedExpr> args, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        boolean isConstructorCall = method.name().equals("new");
-        visitor.visitVarInsn(Opcodes.ALOAD, 0);
+    public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
+        code.emit(new LoadThis(receiverType));
+        for (TypedExpr arg : args)
+            arg.compile(code, null);
+        code.emit(new LineNumber(loc.startLine()));
+        code.emit(new MethodCall(true, method, DesiredFieldNode.toList(desiredFields)));
 
-        for (TypedExpr arg : args) //Push all args on the stack
-            arg.compile(compiler, env, visitor);
-
-        //Visit the line number:
-        Label label = new Label();
-        visitor.visitLabel(label);
-        visitor.visitLineNumber(loc.startLine(), label);
-
-        method.compileCall(Opcodes.INVOKESPECIAL, receiverType, compiler, visitor); //Invoke special
-
-        if (isConstructorCall) //Push unit, if constructor
-            BytecodeHelper.pushUnit(visitor);
+        if (method.isConstructor() && !method.owningType().isPlural())
+            code.emit(new Push(loc, Unit.INSTANCE, type));
     }
 }

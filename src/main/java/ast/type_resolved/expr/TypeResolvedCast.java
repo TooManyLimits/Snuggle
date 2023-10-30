@@ -2,9 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.passes.TypePool;
 import ast.type_resolved.ResolvedType;
-import ast.typed.Type;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedCast;
@@ -40,66 +38,63 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
     //   Performing this action does not usually have much purpose.
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         //First get my type in the pool.
-        Type myType = checker.pool().getOrInstantiateType(type, typeGenerics);
-        TypeDef myTypeDef = checker.pool().getTypeDef(myType);
+        TypeDef myTypeDef = checker.getOrInstantiate(type, typeGenerics);
         //Also infer the lhs:
         TypedExpr inferredLhs = lhs.infer(currentType, checker, typeGenerics);
-        TypeDef lhsTypeDef = checker.pool().getTypeDef(inferredLhs.type());
+        TypeDef lhsTypeDef = inferredLhs.type();
 
         //Case 1: numeric type -> numeric type:
-        if (myTypeDef instanceof BuiltinTypeDef b && (b.builtin() instanceof IntegerType || b.builtin() instanceof FloatType)) {
+        if (myTypeDef.builtin() instanceof IntegerType || myTypeDef.builtin() instanceof FloatType) {
             if (isMaybe)
                 throw new TypeCheckingException("The \"as?\" operator cannot be used to convert to a numeric type; the conversion will always succeed! Use regular \"as\".", loc);
-            if (lhsTypeDef instanceof BuiltinTypeDef b2) {
-                if (!b2.isNumeric())
-                    throw new TypeCheckingException("Only numeric types can be casted to numeric types like " + myTypeDef.name() + ", but the expression has type " + lhsTypeDef.name(), loc);
+            if (lhsTypeDef.isNumeric()) {
                 //Happy path: lhs is numeric; this cast will succeed!
 
                 //Just do a quick check if lhs is a literal; if it is,
                 //then perform the cast at compile time for constant folding.
                 if (inferredLhs instanceof TypedLiteral literal)
-                    return new TypedLiteral(loc, compileTimeCast(literal, b, checker.pool()), myType);
-                return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
+                    return new TypedLiteral(loc, compileTimeCast(literal, (BuiltinTypeDef) myTypeDef.get()), myTypeDef);
+                return new TypedCast(loc, tokenLine, inferredLhs, false, myTypeDef);
             }
             //Lhs cannot be numeric, or else its typedef would have been a builtin
             throw new TypeCheckingException("Only numeric types can be casted to numeric types like " + myTypeDef.name() + ", but the expression has type " + lhsTypeDef.name(), loc);
         }
 
         //Remaining cases: Check subtyping relationships
-        if (lhsTypeDef.isSubtype(myType, checker.pool())) {
-            if (myType.isSubtype(inferredLhs.type(), checker.pool())) {
+        if (lhsTypeDef.isSubtype(myTypeDef)) {
+            if (myTypeDef.isSubtype(inferredLhs.type())) {
                 //Case 2a: Subtypes of each other, so they must be the same type. Error.
-                throw new TypeCheckingException("Cannot cast from type \"" + myType.name(checker.pool()) + "\" to itself. This would be useless, and so is likely to be a bug", loc);
+                throw new TypeCheckingException("Cannot cast from type \"" + myTypeDef.name() + "\" to itself. This would be useless, and so is likely to be a bug", loc);
             } else {
                 //Case 4: Casting a subtype to a supertype.
                 //Similar to numeric types above, the "as?" operator is useless here, so error if we see it.
                 if (isMaybe)
                     throw new TypeCheckingException("The \"as?\" operator cannot be used to convert from subtype to supertype; the conversion will always succeed! Use regular \"as\" instead here.", loc);
                 //Otherwise, the cast is successful.
-                return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
+                return new TypedCast(loc, tokenLine, inferredLhs, false, myTypeDef);
             }
         } else {
-            if (myType.isSubtype(inferredLhs.type(), checker.pool())) {
+            if (myTypeDef.isSubtype(inferredLhs.type())) {
                 //Case 3: Casting a supertype to a subtype.
                 //This is the interesting one.
                 if (isMaybe) {
                     //Create the type Option<myType> and return it
-                    Type optionWrapped = checker.pool().getGenericBuiltin(OptionType.INSTANCE, List.of(myType));
+                    TypeDef optionWrapped = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(myTypeDef));
                     return new TypedCast(loc, tokenLine, inferredLhs, true, optionWrapped);
                 } else {
-                    return new TypedCast(loc, tokenLine, inferredLhs, false, myType);
+                    return new TypedCast(loc, tokenLine, inferredLhs, false, myTypeDef);
                 }
             } else {
                 //Case 2: Neither is a subtype of the other. Error.
-                throw new TypeCheckingException("Cannot cast from type \"" + lhsTypeDef.name() + "\" to \"" + myType.name(checker.pool()) + "\", as they do not have a supertype-subtype relationship.", loc);
+                throw new TypeCheckingException("Cannot cast from type \"" + lhsTypeDef.name() + "\" to \"" + myTypeDef.name() + "\", as they do not have a supertype-subtype relationship.", loc);
             }
         }
     }
 
     //Deal with compile time casting, for constant folding
-    private Object compileTimeCast(TypedLiteral leftLit, BuiltinTypeDef myTypeDef, TypePool pool) throws CompilationException {
+    private Object compileTimeCast(TypedLiteral leftLit, BuiltinTypeDef myTypeDef) throws CompilationException {
         //This handles BigInteger, Fraction, Float, and Double
         if (leftLit.obj() instanceof Number number) {
             if (myTypeDef.builtin() instanceof IntegerType integerType) {
@@ -123,14 +118,14 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
                 };
             }
         }
-        throw new TypeCheckingException("Type " + leftLit.type().name(pool) + " cannot be cast to " + myTypeDef.name(), loc);
+        throw new TypeCheckingException("Type " + leftLit.type().name() + " cannot be cast to " + myTypeDef.name(), loc);
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         TypedExpr inferred = infer(currentType, checker, typeGenerics);
-        if (!inferred.type().isSubtype(expected, checker.pool()))
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but \"as\" expression resulted in " + inferred.type().name(checker.pool()), loc);
+        if (!inferred.type().isSubtype(expected))
+            throw new TypeCheckingException("Expected " + expected.name() + ", but \"as\" expression resulted in " + inferred.type().name(), loc);
         return inferred;
     }
 }

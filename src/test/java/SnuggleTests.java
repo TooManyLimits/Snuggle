@@ -8,8 +8,11 @@ import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import runtime.SnuggleInstance;
+import runtime.SnuggleRuntime;
 import util.CompileAll;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
@@ -28,6 +31,7 @@ public class SnuggleTests {
     @ValueSource(strings = {
             "algorithms/curve25519",
             "algorithms/fibfast",
+            "algorithms/fib",
             "algorithms/md5",
 
             "array/simple",
@@ -82,7 +86,98 @@ public class SnuggleTests {
             throw new UncheckedIOException(e);
         }
 
-        test(new BuiltinTypes(), files);
+        test(new BuiltinTypes(), files, null);
+    }
+
+    @Test
+    public void testNestedStruct() throws CompilationException, SnuggleException {
+        test("""
+                struct Nester {
+                    var x: f64
+                    var y: Nested
+                    var z: u32
+                }
+                struct Nested {
+                    var a: i64
+                    var b: f32
+                }
+                
+                var c = new Nester {
+                    x = 10,
+                    y = new Nested {
+                        a = 11,
+                        b = 12
+                    },
+                    z = 13
+                }
+                System.print(c.y.b)
+                """);
+    }
+
+    @Test
+    public void testBox() throws CompilationException, SnuggleException {
+        test("""
+                class Box<T> {
+                    var value: T
+                    fn new(v: T) {
+                        super()
+                        this.value = v;
+                    }
+                }
+                struct Thing {
+                    var thing: u32
+                }
+                
+                var x = new Thing { 10 }
+                Test.assertEquals(10, x.thing)
+                x.thing = 5
+                Test.assertEquals(5, x.thing)
+                
+                var y = new Box<Thing>(new Thing { 50 })
+                Test.assertEquals(50, y.value.thing)
+                y.value.thing = 100
+                Test.assertEquals(100, y.value.thing)
+                
+                """);
+    }
+
+    @Test
+    public void testStruct() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec3 {
+                    var x: f32
+                    var y: f32
+                    var z: f32
+                    fn new(x: f32, y: f32, z: f32)
+                        new Vec3 { x, y, z }
+                    fn str(): String
+                        "{" + this.x.str() + ", " + this.y.str() + ", " + this.z.str() + "}"
+                    fn add(o: Vec3): Vec3
+                        new Vec3(this.x + o.x, this.y + o.y, this.z + o.z)
+                }
+                System.print(new Vec3 {1, 2, 3}.str())
+                Test.assertEquals("{1.0, 2.0, 3.0}", new Vec3 {1, 2, 3}.str())
+                System.print(new Vec3 { 16, 4, 10 }.z)
+                Test.assertEquals(10, new Vec3 { 16, 4, 10 }.z)
+                System.print({new Vec3 {2f32 * 3 + 1, 1, -10f32} + new Vec3(4, 10, 21)}.str())
+                Test.assertEquals("{11.0, 11.0, 11.0}", {new Vec3 {2f32 * 3 + 1, 1, -10f32} + new Vec3(4, 10, 21)}.str())
+                """, null); //new File("TestStruct.jar"));
+    }
+
+    @Test
+    public void testLeapYear() throws CompilationException, SnuggleException {
+        test("""
+                class Leap {
+                    fn new() super()
+                    fn check(year: u32): bool
+                        year % 4 == 0 && year % 100 != 0 || year % 400 == 0
+                }
+                var l = new Leap()
+                Test.assertFalse(l.check(3))
+                Test.assertTrue(l.check(16))
+                Test.assertTrue(l.check(800))
+                Test.assertFalse(l.check(700))
+                """);
     }
 
     @Test
@@ -93,21 +188,24 @@ public class SnuggleTests {
                 
                 """, "lib", """
                 pub class Getter {
-                    fn new() super()
-                    fn get(): i32 10
+                    pub fn new() super()
+                    pub fn get(): i32 10
                 }
                 
                 """));
     }
 
     @Test
-    public void testFunFakeVarargs() throws CompilationException, SnuggleException {
-        test(
-                """
+    public void testFunFakeVarargs() throws CompilationException, SnuggleException, IOException {
+        test("""
                 class List<T> {
-                    var backing: Array<T> = new Array<T>(5)
-                    var size: u32 = 0
-                    fn new() super()
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        this.backing = new Array<T>(5)
+                        this.size = 0;
+                    }
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
@@ -116,7 +214,7 @@ public class SnuggleTests {
                             var i: u32 = 0
                             while i < this.backing.len() {
                                 newBacking.set(i, this.backing.get(i))
-                                i = i + 1
+                                i = i + 1;
                             }
                             this.backing = newBacking;
                         };
@@ -127,9 +225,10 @@ public class SnuggleTests {
                 }
                 
                 class FakeVarargsPrinter<T> {
-                    var elems: List<T> = new List<T>()
+                    var elems: List<T>
                     fn new(firstElem: T) {
                         super()
+                        this.elems = new List<T>()
                         this(firstElem);
                     }
                     fn invoke(elem: T): FakeVarargsPrinter<T> {
@@ -140,13 +239,13 @@ public class SnuggleTests {
                         var i = 0u32
                         while i < this.elems.size() {
                             System.print(this.elems.get(i))
-                            i = i + 1
+                            i = i + 1;
                         };
                     }
                 }
                 
                 new FakeVarargsPrinter<i32>(1)(3)(5)(7)(9)()
-                """);
+                """); //, new File("FunFakeVarargs.jar"));
     }
 
     @Test
@@ -154,17 +253,17 @@ public class SnuggleTests {
         assertThrows(SnuggleException.class, () -> test("""
                 var x = if true "hi";
                 System.print(x.get())
-                
+
                 var z = 1i32
                 var a = while z < 4 {
                     z = z + 1
                     "something a little silly"
                 }
                 System.print(a.get())
-                
+
                 var b = while false "lol"
                 System.print(b.get("while loop never ran"))
-                
+
                 var y = if false "hi 2";
                 System.print(y.get("if expression didnt happen :<"))
                 """));
@@ -186,7 +285,7 @@ public class SnuggleTests {
 
     @Test
     public void testImports() {
-        assertThrows(SnuggleException.class, () -> test(Map.of(
+        assertThrows(ClassCastException.class, () -> test(Map.of(
                 "main",
                 """
                         if 1 < 2 {
@@ -198,9 +297,9 @@ public class SnuggleTests {
                 "cutie",
                 """
                         pub class Cutie {
-                            fn new() super()
+                            pub fn new() super()
                             fn bad() System.print(new Obj() as Cutie)
-                            fn good() System.print("good cutie :D")
+                            pub fn good() System.print("good cutie :D")
                         }
                         new Cutie().bad() //error!
                         System.print("Cutie!")
@@ -210,7 +309,7 @@ public class SnuggleTests {
 
     @Test
     public void testStackOverflow() {
-        assertThrows(SnuggleException.class, () -> test("""
+        assertThrows(StackOverflowError.class, () -> test("""
                 class death {
                     fn new() super()
                     fn get() this.get()
@@ -221,7 +320,7 @@ public class SnuggleTests {
 
     @Test
     public void testObjectCast() {
-        assertThrows(SnuggleException.class, () -> test("""
+        assertThrows(ClassCastException.class, () -> test("""
                 class A {fn new() super()}
                 class B: A {fn new() super()}
                 
@@ -261,9 +360,13 @@ public class SnuggleTests {
     public void testList() throws CompilationException, SnuggleException {
         test("""
                 class List<T> {
-                    var backing: Array<T> = new Array<T>(5)
-                    var size: u32 = 0
-                    fn new() super()
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        this.backing = new Array<T>(5)
+                        this.size = 0;
+                    }
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
@@ -272,7 +375,7 @@ public class SnuggleTests {
                             var i: u32 = 0
                             while i < this.backing.len() {
                                 newBacking.set(i, this.backing.get(i))
-                                i = i + 1
+                                i = i + 1;
                             }
                             this.backing = newBacking;
                         } else {}
@@ -293,7 +396,7 @@ public class SnuggleTests {
                 var i: u32 = 0
                 while i < a.backingSize() {
                     System.print(a.get(i))
-                    i = i + 1
+                    i = i + 1;
                 }
                 
                 """);
@@ -426,19 +529,23 @@ public class SnuggleTests {
 
 //    public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {
     public void test(String main) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), Map.of("main", main));
+        test(new BuiltinTypes(), Map.of("main", main), null);
+    }
+
+    public void test(String main, File file) throws CompilationException, SnuggleException {
+        test(new BuiltinTypes(), Map.of("main", main), file);
     }
 
 //    public void test(BuiltinTypes types, @Language("TEXT") String main) throws CompilationException, SnuggleException {
     public void test(BuiltinTypes types, String main) throws CompilationException, SnuggleException {
-        test(types, Map.of("main", main));
+        test(types, Map.of("main", main), null);
     }
 
     public void test(Map<String, String> files) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), files);
+        test(new BuiltinTypes(), files, null);
     }
 
-    public void test(BuiltinTypes types, Map<String, String> files) throws CompilationException, SnuggleException {
+    public void test(BuiltinTypes types, Map<String, String> files, File export) throws CompilationException, SnuggleException {
         types.reflect(TestBindings.class);
 
         try {
@@ -447,10 +554,15 @@ public class SnuggleTests {
             var after = System.nanoTime();
             System.out.println("Compilation took " + (after - before) / 1000000 + " ms");
             before = after;
+            SnuggleInstance.INSTRUCTIONS = 0;
             instance.run();
             after = System.nanoTime();
             System.out.println("Running took " + (after - before) / 1000000 + " ms");
-        } catch (CompilationException | SnuggleException e) {
+            System.out.println("Cost was " + SnuggleInstance.INSTRUCTIONS);
+            SnuggleInstance.INSTRUCTIONS = 0; //reset just in case
+            if (export != null)
+                CompileAll.compileAllToJar(export, types, files);
+        } catch (CompilationException | SnuggleException | RuntimeException e) {
             // propagate exceptions
             throw e;
         } catch (Exception e) {

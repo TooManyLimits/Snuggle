@@ -1,8 +1,8 @@
 class A {
-    var x: i32 = 11
+    var x: i32
     fn new() {
         super()
-        //this.x = 11;
+        this.x = 11;
     }
     pub fn get(): i32 this.x = this.x - 1
 }

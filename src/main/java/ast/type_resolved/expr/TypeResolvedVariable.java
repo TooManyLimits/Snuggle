@@ -2,7 +2,7 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.typed.Type;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedVariable;
 import exceptions.compile_time.CompilationException;
@@ -18,15 +18,15 @@ public record TypeResolvedVariable(Loc loc, String name) implements TypeResolved
     }
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         return new TypedVariable(loc, name, checker.lookup(loc, name));
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         TypedExpr e = infer(currentType, checker, typeGenerics);
-        if (!e.type().isSubtype(expected, checker.pool()))
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got " + e.type().name(checker.pool()), loc);
+        if (!e.type().isSubtype(expected))
+            throw new TypeCheckingException("Expected " + expected.name() + ", got " + e.type().name(), loc);
         return e;
     }
 }

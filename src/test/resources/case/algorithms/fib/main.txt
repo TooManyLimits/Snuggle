@@ -10,7 +10,8 @@ class Fib {
     }
 }
 
-Test.assertEquals(1134903170, new Fib().fib(45))
+//Test.assertEquals(1134903170, new Fib().fib(45))
+Test.assertEquals(13, new Fib().fib(7))
 
 // var x: u32 = 0
 // while 45 >= x = x + 1

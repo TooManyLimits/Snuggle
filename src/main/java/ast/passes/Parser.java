@@ -21,6 +21,7 @@ import util.ListUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static lexing.TokenType.*;
 
@@ -111,7 +112,7 @@ public class Parser {
                 throw new ParsingException("Unmatched class definition curly brace {", leftCurlyLoc);
             boolean pubMember = lexer.consume(PUB);
             if (lexer.consume(FN))
-                methods.add(parseMethod(pubMember, typeGenerics));
+                methods.add(parseMethod(isClass, typeName.string(), pubMember, typeGenerics));
             else if (lexer.consume(VAR))
                 fields.add(parseField(pubMember, typeGenerics));
             else
@@ -124,7 +125,7 @@ public class Parser {
     }
 
     //"fn" was already consumed
-    private SnuggleParsedMethodDef parseMethod(boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
+    private SnuggleParsedMethodDef parseMethod(boolean isClass, String thisTypeName, boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
         if (lexer.consume(NEW)) {
             //Constructor mode. Similar, but slightly different.
             String methodName = "new";
@@ -135,7 +136,12 @@ public class Parser {
 
             //TODO: Fix unit type
             //ParsedType returnType = ParsedType.Tuple.UNIT;
-            ParsedType returnType = new ParsedType.Basic("unit", List.of());
+            AtomicInteger i = new AtomicInteger(); //cursed
+            ParsedType returnType =
+                isClass ?
+                    new ParsedType.Basic("unit", List.of()) //Class constructors return unit
+                :
+                    new ParsedType.Basic(thisTypeName, ListUtils.map(typeGenerics, g -> new ParsedType.Generic(i.getAndIncrement(), false))); //Struct constructors return the type itself
 
             ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false);
             //TODO: Static methods, right now just always false
@@ -243,7 +249,7 @@ public class Parser {
                 case BITWISE_XOR -> "bxor";
 
                 //Special
-                case AND, OR -> "SPECIAL_IGNORE";
+                case AND, OR -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
 
                 case EQUAL, NOT_EQUAL -> "eq";
                 case GREATER -> "gt";
@@ -258,22 +264,24 @@ public class Parser {
 
             //Special handling for and/or operations. They can't be method calls
             //because of short-circuiting.
-            //TODO: Remove
-//            if (op == AND || op == OR) {
-//                String tempVarName = "$desugarShortCircuit";
-//                ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
-//                ParsedExpr ifFalse = rhs;
-//                if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
-//                lhs = new ParsedBlock(fullLoc, List.of(
-//                        new ParsedDeclaration(fullLoc, tempVarName, new ParsedType.Basic("bool", List.of()), lhs),
-//                        new ParsedIf(fullLoc,
-//                                new ParsedVariable(fullLoc, tempVarName),
-//                                ifTrue,
-//                                ifFalse
-//                        )
-//                ));
-//                continue;
-//            }
+            //a || b gets converted to { var temp = a; if temp temp else b }
+            //a && b gets converted to { var temp = a; if temp b else temp }
+            //TODO: Remove and replace with better system, such as dedicated AST node
+            if (op == AND || op == OR) {
+                String tempVarName = "$$desugarShortCircuit$$";
+                ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
+                ParsedExpr ifFalse = rhs;
+                if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
+                lhs = new ParsedBlock(fullLoc, List.of(
+                        new ParsedDeclaration(fullLoc, tempVarName, new ParsedType.Basic("bool", List.of()), lhs),
+                        new ParsedIf(fullLoc,
+                                new ParsedVariable(fullLoc, tempVarName),
+                                ifTrue,
+                                ifFalse
+                        )
+                ));
+                continue;
+            }
 
             //Otherwise, operators are method calls
             lhs = new ParsedMethodCall(opLoc, lhs, methodName, List.of(), List.of(rhs));
@@ -326,7 +334,7 @@ public class Parser {
                     Token name = lexer.expect(IDENTIFIER, "Expected methodName after \".\" at " + loc);
                     List<ParsedType> typeArgs = parseTypeArguments(classGenerics, methodGenerics);
                     if (lexer.consume(LEFT_PAREN)) {
-                        List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
+                        List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
                         lhs = new ParsedMethodCall(name.loc(), lhs, name.string(), typeArgs, args);
                     } else {
                         if (typeArgs.size() > 0)
@@ -337,7 +345,7 @@ public class Parser {
                 case LEFT_PAREN -> {
                     //super() is super.new(), while anythingElse() is anythingElse.invoke().
                     String methodName = (lhs instanceof ParsedSuper) ? "new" : "invoke";
-                    List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
+                    List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
                     Loc callLoc = (lhs instanceof ParsedSuper || lhs instanceof ParsedVariable) ? lhs.loc() : loc.merge(lexer.last().loc());
                     lhs = new ParsedMethodCall(callLoc, lhs, methodName, List.of(), args);
                 }
@@ -365,7 +373,7 @@ public class Parser {
                         case POWER_ASSIGN -> "powAssign";
 
                         //Special handling, short-circuiting
-                        case OR_ASSIGN, AND_ASSIGN -> "IGNORE_SPECIAL";
+                        case OR_ASSIGN, AND_ASSIGN -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
 
                         case BITWISE_AND_ASSIGN -> "bandAssign";
                         case BITWISE_OR_ASSIGN -> "borAssign";
@@ -377,13 +385,13 @@ public class Parser {
 
                     //If the left was a field access, then we need to do some variable binding first.
                     if (lhs instanceof ParsedFieldAccess fieldAccess) {
-                        //TODO: Remove
+                        //TODO: Remove and replace with better system, such as dedicated AST node
 
                         //a.b += 5
                         //becomes
                         //{ var temp = a; temp.b = temp.b.plusEquals(5) }
                         //Important that the temp variable is not possible to be a regular identifier, otherwise this could mess with things
-                        String tempVarName = "$desugarAugmentedAssignment";
+                        String tempVarName = "$$desugarAugmentedAssignment$$";
 
                         //Special case for short-circuiting
                         if (operator == OR_ASSIGN || operator == AND_ASSIGN) {
@@ -416,7 +424,7 @@ public class Parser {
                                 )
                         ));
                     } else {
-                        //TODO: Remove
+                        //TODO: Remove and replace with better system, such as dedicated AST node
                         //Special short-circuiting handling
                         if (operator == OR_ASSIGN || operator == AND_ASSIGN)  {
                             ParsedExpr ifTrue = lhs;
@@ -461,15 +469,15 @@ public class Parser {
     }
 
     //The paren was just parsed
-    private List<ParsedExpr> parseArguments(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
-        if (lexer.consume(RIGHT_PAREN))
+    private List<ParsedExpr> parseArguments(TokenType endingType, List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        if (lexer.consume(endingType))
             return List.of();
         Loc parenLoc = lexer.last().loc();
         ArrayList<ParsedExpr> arguments = new ArrayList<>();
         arguments.add(parseExpr(classGenerics, methodGenerics, false));
         while (lexer.consume(COMMA))
             arguments.add(parseExpr(classGenerics, methodGenerics, false));
-        lexer.expect(RIGHT_PAREN, "Expected ) to end args list", parenLoc);
+        lexer.expect(endingType, "Expected " + endingType.exactStrings[0] + " to end args list", parenLoc);
         arguments.trimToSize();
         return arguments;
     }
@@ -562,13 +570,31 @@ public class Parser {
         return new ParsedDeclaration(Loc.merge(varLoc, rhs.loc()), varName, annotatedType, rhs);
     }
 
+    //Token "new" was just parsed
     private ParsedExpr parseConstructor(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc newLoc = lexer.last().loc();
         ParsedType constructedType = parseType("new", lexer.last().loc(), classGenerics, methodGenerics);
-        lexer.expect(LEFT_PAREN, "Expected args for constructor of annotatedType " + constructedType, newLoc);
-        List<ParsedExpr> args = parseArguments(classGenerics, methodGenerics);
-        Loc fullLoc = newLoc.merge(lexer.last().loc());
-        return new ParsedConstructor(fullLoc, constructedType, args);
+
+        //Branch here - either a calling constructor new Type(), or a struct constructor new Type { }
+        if (lexer.consume(LEFT_CURLY)) {
+            List<ParsedExpr> args = parseArguments(RIGHT_CURLY, classGenerics, methodGenerics);
+            if (args.stream().allMatch(a -> a instanceof ParsedAssignment parsedAssignment && parsedAssignment.lhs() instanceof ParsedVariable)) {
+                //Using the named format
+                List<String> argNames = new ArrayList<>(args.size());
+                for (int i = 0; i < args.size(); i++) {
+                    argNames.add(((ParsedVariable) ((ParsedAssignment) args.get(i)).lhs()).name());
+                    args.set(i, ((ParsedAssignment) args.get(i)).rhs());
+                }
+                return new ParsedStructConstructor(newLoc, constructedType, argNames, args);
+            } else {
+                //Unnamed format
+                return new ParsedStructConstructor(newLoc, constructedType, null, args);
+            }
+        } else {
+            lexer.expect(LEFT_PAREN, "Expected ( or { to start constructor of annotatedType " + constructedType, newLoc);
+            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+            return new ParsedConstructor(newLoc, constructedType, args);
+        }
     }
 
     /**
@@ -583,9 +609,9 @@ public class Parser {
         register(false, AND);
         register(false, EQUAL, NOT_EQUAL);
         register(false, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL);
-        register(false, PLUS, MINUS, BITWISE_OR); //a + b + c == (a + b) + c
-        register(false, STAR, SLASH, PERCENT, BITWISE_AND, BITWISE_XOR);
-        register(true, POWER); //a ^ b ^ c == a ^ (b ^ c)
+        register(false, PLUS, MINUS, BITWISE_OR, BITWISE_XOR); //a + b + c == (a + b) + c
+        register(false, STAR, SLASH, PERCENT, BITWISE_AND);
+        register(true, POWER); //a ** b ** c == a ** (b ** c)
     }
 
     private static void register(boolean rightAssociative, TokenType... tokenTypes) {

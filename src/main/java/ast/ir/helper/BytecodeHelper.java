@@ -1,15 +1,18 @@
-package compile;
+package ast.ir.helper;
 
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.UnitType;
+import builtin_types.types.BoolType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
-import exceptions.runtime.SnuggleException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import runtime.Unit;
+import util.ListUtils;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Class with several helpful methods for outputting bytecode
@@ -33,52 +36,46 @@ public class BytecodeHelper {
         visitor.visitInsn(Opcodes.IAND);
     }
 
-    //Dup a value on the stack, and optionally send it down
-    public static void dup(TypeDef typeDef, MethodVisitor visitor, int slotsToSendDown) {
-        int dup2Op = switch (slotsToSendDown) {
-            case 0 -> Opcodes.DUP2;
-            case 1 -> Opcodes.DUP2_X1;
-            case 2 -> Opcodes.DUP2_X2;
-            default -> throw new IllegalStateException("SlotsToSendDown must be 0, 1, or 2");
-        };
-        int dupOp = switch (slotsToSendDown) {
-            case 0 -> Opcodes.DUP;
-            case 1 -> Opcodes.DUP_X1;
-            case 2 -> Opcodes.DUP_X2;
-            default -> throw new IllegalStateException("SlotsToSendDown must be 0, 1, or 2");
-        };
-
-        if (typeDef instanceof BuiltinTypeDef b) {
-            if (b.builtin() instanceof IntegerType i && i.bits == 64)
-                visitor.visitInsn(dup2Op);
-            else if (b.builtin() instanceof FloatType f && f.bits == 64)
-                visitor.visitInsn(dup2Op);
-            else
-                visitor.visitInsn(dupOp);
-        } else {
-            visitor.visitInsn(dupOp);
-        }
-    }
-
-    //Pop an element from the stack
-    public static void pop(TypeDef typeDef, MethodVisitor visitor) {
-        //If output was a double or long, pop 2 slots
-        if (typeDef instanceof BuiltinTypeDef b) {
-            if (b.builtin() instanceof IntegerType i) {
-                if (i.bits == 64) {
-                    visitor.visitInsn(Opcodes.POP2);
-                    return;
-                }
-            } else if (b.builtin() instanceof FloatType f) {
-                if (f.bits == 64) {
-                    visitor.visitInsn(Opcodes.POP2);
-                    return;
+    public static void visitVariable(int index, TypeDef def, boolean store, MethodVisitor visitor) {
+        //Handle plural types first
+        if (def.isPlural()) {
+            if (store) {
+                AtomicInteger mutableIndex = new AtomicInteger(index + def.stackSlots()); //cursed
+                ListUtils.iterBackwards(def.fields(), field -> {
+                    if (field.isStatic()) return;
+                    mutableIndex.addAndGet(-field.type().stackSlots());
+                    visitVariable(mutableIndex.get(), field.type(), store, visitor);
+                });
+            } else {
+                for (FieldDef field : def.fields()) {
+                    if (field.isStatic()) continue;
+                    visitVariable(index, field.type(), store, visitor);
+                    index += field.type().stackSlots();
                 }
             }
         }
-        //Otherwise, just pop 1
-        visitor.visitInsn(Opcodes.POP);
+        //Now other types
+        else if (def.builtin() instanceof IntegerType i) {
+            switch (i.bits) {
+                case 8, 16, 32 -> visitor.visitVarInsn(store ? Opcodes.ISTORE : Opcodes.ILOAD, index);
+                case 64 -> visitor.visitVarInsn(store ? Opcodes.LSTORE : Opcodes.LLOAD, index);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
+        } else if (def.builtin() instanceof FloatType f) {
+            switch (f.bits) {
+                case 32 -> visitor.visitVarInsn(store ? Opcodes.FSTORE : Opcodes.FLOAD, index);
+                case 64 -> visitor.visitVarInsn(store ? Opcodes.DSTORE : Opcodes.DLOAD, index);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
+        } else if (def.builtin() == BoolType.INSTANCE) {
+            visitor.visitVarInsn(store ? Opcodes.ISTORE : Opcodes.ILOAD, index);
+        } else {
+            //Assumed all others are reference types
+            visitor.visitVarInsn(store ? Opcodes.ASTORE :Opcodes.ALOAD, index);
+        }
     }
+
+
 
     public static void pushNone(TypeDef innerType, MethodVisitor visitor) {
         if (innerType.isReferenceType()) {

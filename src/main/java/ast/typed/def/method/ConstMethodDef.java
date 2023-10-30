@@ -1,38 +1,41 @@
 package ast.typed.def.method;
 
-import ast.typed.expr.TypedStaticMethodCall;
-import compile.Compiler;
-import exceptions.compile_time.CompilationException;
-import ast.typed.Type;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
+import ast.typed.expr.TypedStaticMethodCall;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import util.ThrowingFunction;
 
 import java.util.List;
 
-//ConstMethodDef is created from a lambda, essentially, which
-//converts a TypedMethodCall into a TypedExpr.
-//This happens at compile time; ConstMethodDef are essentially macros.
-public record ConstMethodDef(String name, int numGenerics, boolean isStatic, List<Type> paramTypes, Type returnType, ThrowingFunction<TypedMethodCall, TypedExpr, CompilationException> doConst, ThrowingFunction<TypedStaticMethodCall, TypedExpr, CompilationException> doConstStatic) implements MethodDef {
+public record ConstMethodDef(String name, int numGenerics, boolean isStatic, List<TypeDef> paramTypes, TypeDef returnType,
+                             ThrowingFunction<TypedMethodCall, TypedExpr, RuntimeException> doConst,
+                             ThrowingFunction<TypedStaticMethodCall, TypedExpr, RuntimeException> doConstStatic) implements MethodDef {
 
     @Override
-    public boolean isConst() {
-        return true;
+    public TypedExpr constantFold(TypedMethodCall call) {
+        return doConst.apply(call);
     }
 
     @Override
-    public TypedExpr doConst(TypedMethodCall typedCall) throws CompilationException {
-        return doConst.apply(typedCall);
+    public TypedExpr constantFold(TypedStaticMethodCall call) {
+        return doConstStatic.apply(call);
     }
 
     @Override
-    public TypedExpr doConstStatic(TypedStaticMethodCall typedCall) throws CompilationException {
-        return doConstStatic.apply(typedCall);
+    public void checkCode() throws CompilationException {
+        throw new IllegalStateException("Cannot check code of ConstMethodDef - bug in compiler, please report!");
     }
 
     @Override
-    public void compileCall(int opcode, Type owner, Compiler compiler, MethodVisitor visitor) throws CompilationException {
-        throw new IllegalStateException("Cannot compile call to ConstMethodDef. Bug in compiler, please report!");
+    public TypeDef owningType() {
+        throw new IllegalStateException("Should not be asking for owning type of const method def - Bug in compiler, please report!");
+    }
+
+    @Override
+    public void compileCall(boolean isSuperCall, MethodVisitor jvm) {
+        throw new IllegalStateException("Cannot compile call to ConstMethodDef - bug in compiler, please report!");
     }
 }

@@ -4,11 +4,12 @@ import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
 import ast.type_resolved.def.method.SnuggleTypeResolvedMethodDef;
-import ast.typed.Type;
-import ast.typed.def.field.SnuggleFieldDef;
-import ast.typed.def.method.SnuggleMethodDef;
+import ast.typed.def.field.FieldDef;
+import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.ClassDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
+import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.ListUtils;
@@ -27,10 +28,9 @@ public record TypeResolvedStructDef(Loc loc, String name, int numGenerics, List<
     }
 
     @Override
-    public TypeDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException {
-        Type currentType = new Type.Basic(index);
-        List<SnuggleMethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(currentType, checker, generics));
-        List<SnuggleFieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
-        return new StructDef(loc, index, instantiateName(checker, generics), typeInstantiatedMethods, typeInstantiatedFields);
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
+        List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics));
+        List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
+        return new StructDef(loc, TypeResolvedTypeDef.instantiateName(name, generics), typeInstantiatedFields, typeInstantiatedMethods);
     }
 }

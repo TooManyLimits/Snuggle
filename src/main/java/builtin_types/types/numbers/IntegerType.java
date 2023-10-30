@@ -1,13 +1,13 @@
 package builtin_types.types.numbers;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
-import compile.BytecodeHelper;
-import exceptions.compile_time.CompilationException;
+import ast.ir.helper.BytecodeHelper;
+import builtin_types.types.StringType;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -90,29 +90,24 @@ public class IntegerType implements BuiltinType {
      */
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type type = pool.getBasicBuiltin(this);
-        Type boolType = pool.getBasicBuiltin(BoolType.INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef type = checker.getBasicBuiltin(this);
+        TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
 
         return ListUtils.join(List.of(
                 //Regular binary operators
-                DefineConstWithFallback.defineBinary("add", BigInteger::add, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IADD : Opcodes.LADD))),
-                DefineConstWithFallback.defineBinary("sub", BigInteger::subtract, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISUB : Opcodes.LSUB))),
-                DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
-                //IntelliJ is bugged, so it thinks these are errors; really they compile fine
-                DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, doOperationThenConvert(switch (bits) {
+                DefineConstWithFallback.defineBinary("add", BigInteger::add, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IADD : Opcodes.LADD))),
+                DefineConstWithFallback.defineBinary("sub", BigInteger::subtract, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISUB : Opcodes.LSUB))),
+                DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
+                DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "divideUnsigned", "(JJ)J", false);
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
-                DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, doOperationThenConvert(switch (bits) {
+                DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IREM) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "remainderUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LREM) :
@@ -121,75 +116,78 @@ public class IntegerType implements BuiltinType {
                 })),
 
                 //Bitwise binary
-                DefineConstWithFallback.defineBinary("band", BigInteger::and, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IAND : Opcodes.LAND))),
-                DefineConstWithFallback.defineBinary("bor", BigInteger::or, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IOR : Opcodes.LOR))),
-                DefineConstWithFallback.defineBinary("bxor", BigInteger::xor, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IXOR : Opcodes.LXOR))),
+                DefineConstWithFallback.defineBinary("band", BigInteger::and, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IAND : Opcodes.LAND))),
+                DefineConstWithFallback.defineBinary("bor", BigInteger::or, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IOR : Opcodes.LOR))),
+                DefineConstWithFallback.defineBinary("bxor", BigInteger::xor, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IXOR : Opcodes.LXOR))),
 
                 //Unary
-                signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
-                DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, doOperationThenConvert(switch (bits) {
-                    case 8, 16, 32 -> v -> {
+                signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
+                DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, type, doOperationThenConvert(switch (bits) {
+                    case 8, 16, 32 -> (Consumer<MethodVisitor>) (v -> { //Cast is because intellij is bugged, and thinks it's an error without the cast
                         v.visitInsn(Opcodes.ICONST_M1);
                         v.visitInsn(Opcodes.IXOR);
-                    };
-                    case 64 -> v -> {
+                    });
+                    case 64 -> (Consumer<MethodVisitor>) (v -> {
                         v.visitLdcInsn(-1L);
                         v.visitInsn(Opcodes.LXOR);
-                    };
+                    });
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
-//                DefineConstWithFallback.defineUnary("not", b -> b.equals(BigInteger.ZERO), boolType, doOperationThenConvert(v -> {
-//                    Label pushTrue = new Label();
-//                    Label end = new Label();
-//                    if (bits == 64) {
-//                        v.visitInsn(Opcodes.LCMP);
-//                        v.visitInsn(Opcodes.ICONST_0);
-//                    }
-//                    v.visitJumpInsn(Opcodes.IFEQ, pushTrue);
-//                    v.visitInsn(Opcodes.ICONST_0);
-//                    v.visitJumpInsn(Opcodes.GOTO, end);
-//                    v.visitLabel(pushTrue);
-//                    v.visitInsn(Opcodes.ICONST_1);
-//                    v.visitLabel(end);
-//                })),
 
                 //Comparisons
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ))
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, type, boolType, intCompare(Opcodes.IF_ICMPEQ)),
+
+                //Other
+                DefineConstWithFallback.defineUnary("str", Object::toString, type, stringType, v -> {
+                    convert(v);
+                    String desc = switch (bits) {
+                        case 8, 16, 32 -> "I";
+                        case 64 -> "J";
+                        default -> throw new IllegalStateException("Unexpected value: " + bits);
+                    };
+                    desc = "(" + desc + ")Ljava/lang/String;";
+                    v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", desc, false);
+                })
         ));
     }
 
     private Consumer<MethodVisitor> doOperationThenConvert(Consumer<MethodVisitor> doOperation) {
         return v -> {
             doOperation.accept(v);
-            switch (bits) {
-                case 8 -> {
-                    v.visitInsn(Opcodes.I2B);
-                    if (!signed) {
-                        v.visitIntInsn(Opcodes.SIPUSH, 0xff); //cannot be BIPUSH, because it would sign-extend
-                        v.visitInsn(Opcodes.IAND);
-                    }
-                }
-                case 16 -> {
-                    v.visitInsn(Opcodes.I2S);
-                    if (!signed) {
-                        v.visitLdcInsn(0xffff); //Cannot be SIPUSH for same reason as above
-                        v.visitInsn(Opcodes.IAND);
-                    }
-                }
-                case 32, 64 -> {}
-            }
+            convert(v);
         };
     }
+
+    private void convert(MethodVisitor v) {
+        switch (bits) {
+            case 8 -> {
+                v.visitInsn(Opcodes.I2B);
+                if (!signed) {
+                    v.visitIntInsn(Opcodes.SIPUSH, 0xff); //cannot be BIPUSH, because it would sign-extend
+                    v.visitInsn(Opcodes.IAND);
+                }
+            }
+            case 16 -> {
+                v.visitInsn(Opcodes.I2S);
+                if (!signed) {
+                    v.visitLdcInsn(0xffff); //Cannot be SIPUSH for same reason as above
+                    v.visitInsn(Opcodes.IAND);
+                }
+            }
+            case 32, 64 -> {}
+        }
+    }
+
 
     private Consumer<MethodVisitor> intCompare(int intCompareOp) {
         return v -> {
             Label pushTrue = new Label();
             Label end = new Label();
-            if (!signed) {
+            if (!signed && intCompareOp != Opcodes.IF_ICMPEQ) {
                 //Add min_value to both args
                 for (int i = 0; i < 2; i++) {
                     if (bits <= 32) {
@@ -221,22 +219,37 @@ public class IntegerType implements BuiltinType {
     }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
+    public String name() {
+        return name;
+    }
+
+    @Override
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(descriptor);
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
         return descriptor;
     }
 
     @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
-    }
-
-    @Override
-    public boolean extensible() {
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
         return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return bits == 64 ? 2 : 1;
     }
 }

@@ -20,6 +20,7 @@ public record SnuggleParsedMethodDef(Loc loc, boolean pub, boolean isStatic, Str
     public SnuggleTypeResolvedMethodDef resolve(TypeResolver resolver) throws CompilationException {
         return new SnuggleTypeResolvedMethodDef(
                 loc,
+                pub,
                 isStatic,
                 name,
                 numGenerics,

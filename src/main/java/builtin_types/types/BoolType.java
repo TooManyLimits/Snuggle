@@ -1,8 +1,8 @@
 package builtin_types.types;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import exceptions.compile_time.CompilationException;
@@ -17,28 +17,18 @@ public class BoolType implements BuiltinType {
     private BoolType() {}
 
     @Override
-    public String name() {
-        return "bool";
-    }
-
-    @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
-        return "Z";
-    }
-
-    @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type boolType = pool.getBasicBuiltin(INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef boolType = checker.getBasicBuiltin(INSTANCE);
 
         return ListUtils.join(List.of(
                 //eq
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("eq", Boolean::equals, boolType, boolType, v -> {
+                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("eq", Boolean::equals, boolType, boolType, boolType, v -> {
                     v.visitInsn(Opcodes.IXOR);
                     v.visitInsn(Opcodes.ICONST_1);
                     v.visitInsn(Opcodes.IXOR);
                 }),
                 //not
-                DefineConstWithFallback.<Boolean, Boolean>defineUnary("not", a -> !a, boolType, v -> {
+                DefineConstWithFallback.<Boolean, Boolean>defineUnary("not", a -> !a, boolType, boolType, v -> {
                     v.visitInsn(Opcodes.ICONST_1);
                     v.visitInsn(Opcodes.IXOR);
                 })
@@ -46,17 +36,38 @@ public class BoolType implements BuiltinType {
     }
 
     @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
+    public String name() {
+        return "bool";
     }
 
     @Override
-    public boolean extensible() {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of("Z");
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
+        return "Z";
+    }
+
+    @Override
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return 1;
+    }
+
 }

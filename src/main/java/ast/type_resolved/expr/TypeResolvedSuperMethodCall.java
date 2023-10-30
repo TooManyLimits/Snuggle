@@ -3,8 +3,8 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.typed.Type;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedSuperMethodCall;
 import exceptions.compile_time.CompilationException;
@@ -27,12 +27,12 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
     }
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
         TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, null);
-        Type actualReceiverType = bestMethod.receiverType();
+        TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -40,13 +40,13 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         //Almost identical, but passes an expected return type.
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
         TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, expected);
-        Type actualReceiverType = bestMethod.receiverType();
+        TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

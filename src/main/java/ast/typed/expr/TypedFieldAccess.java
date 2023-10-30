@@ -1,30 +1,33 @@
 package ast.typed.expr;
 
-import ast.typed.Type;
+import ast.ir.def.CodeBlock;
+import ast.ir.instruction.objects.GetField;
+import ast.ir.instruction.stack.Dup;
 import ast.typed.def.field.FieldDef;
-import compile.Compiler;
-import compile.ScopeHelper;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
-public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, Type type) implements TypedExpr {
+import java.util.List;
+
+public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef type) implements TypedExpr {
 
     @Override
-    public void compile(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        //Compile the LHS, pushing it on the stack
-        lhs.compile(compiler, env, visitor);
-        //Compile the GETFIELD
-        field.compileAccess(Opcodes.GETFIELD, lhs.type(), compiler, visitor);
-    }
+    public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
 
-    //Compile and prepare for a SETFIELD instruction soon
-    public void compileForSet(Compiler compiler, ScopeHelper env, MethodVisitor visitor) throws CompilationException {
-        //Compile LHS, pushing it on the stack
-        lhs.compile(compiler, env, visitor);
-        //And that's it! The other class will now compile the RHS, and then call
-        //compileAccess() with the SETFIELD opcode.
+        if (lhs.type().isReferenceType()) {
+            //If LHS is a reference type, then don't push our field into the desired stack.
+            //Compile the LHS without any desired fields.
+            lhs.compile(block, null);
+            //Then, get the list of fields (now including our own)
+            List<FieldDef> desiredList = DesiredFieldNode.toList(new DesiredFieldNode(field, desiredFields));
+            block.emit(new GetField(desiredList));
+        } else if (lhs.type().isPlural()) {
+            //If the LHS is a plural type, then we should compile it, appending our own field to the desired stack.
+            desiredFields = new DesiredFieldNode(field, desiredFields);
+            lhs.compile(block, desiredFields);
+        } else {
+            throw new IllegalStateException("Non-reference type has a field, but also isn't plural? Bug in compiler, please report!");
+        }
     }
-
 }

@@ -1,16 +1,17 @@
 package ast.type_resolved.def.type;
 
 import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
-import ast.typed.def.field.SnuggleFieldDef;
+import ast.typed.def.field.FieldDef;
+import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
+import ast.typed.def.type.ClassDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.method.SnuggleTypeResolvedMethodDef;
-import ast.typed.Type;
-import ast.typed.def.type.ClassDef;
 import lexing.Loc;
 import util.ListUtils;
 
@@ -32,12 +33,11 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, Resolv
     }
 
     @Override
-    public ClassDef instantiate(int index, TypeChecker checker, List<Type> generics) throws CompilationException {
-        Type currentType = new Type.Basic(index);
-        Type instantiatedSupertype = supertype == null ? checker.pool().getBasicBuiltin(ObjType.INSTANCE) : checker.pool().getOrInstantiateType(supertype, generics);
-        List<SnuggleMethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(currentType, checker, generics));
-        List<SnuggleFieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
-        return new ClassDef(loc, index, instantiateName(checker, generics), instantiatedSupertype, typeInstantiatedMethods, typeInstantiatedFields);
+    public ClassDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
+        TypeDef instantiatedSupertype = supertype == null ? checker.getBasicBuiltin(ObjType.INSTANCE) : checker.getOrInstantiate(supertype, generics);
+        List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics));
+        List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics));
+        return new ClassDef(loc, TypeResolvedTypeDef.instantiateName(name, generics), instantiatedSupertype, typeInstantiatedFields, typeInstantiatedMethods);
     }
 
 }

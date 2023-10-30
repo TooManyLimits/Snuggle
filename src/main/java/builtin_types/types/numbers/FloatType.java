@@ -1,11 +1,12 @@
 package builtin_types.types.numbers;
 
-import ast.passes.TypePool;
-import ast.typed.Type;
+import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
+import builtin_types.types.StringType;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -40,28 +41,24 @@ public class FloatType implements BuiltinType {
     public static final List<FloatType> ALL_FLOAT_TYPES = List.of(F32, F64);
 
     @Override
-    public String name() {
-        return name;
-    }
-
-    @Override
-    public List<? extends MethodDef> getMethods(List<Type> generics, TypePool pool) throws CompilationException {
-        Type type = pool.getBasicBuiltin(this);
-        Type boolType = pool.getBasicBuiltin(BoolType.INSTANCE);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef type = checker.getBasicBuiltin(this);
+        TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
+        TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
 
         Function<Object, Float> floatConverter = x -> (x instanceof Fraction f) ? f.floatValue() : (Float) x;
         Function<Object, Double> doubleConverter = x -> (x instanceof Fraction f) ? f.doubleValue() : (Double) x;
 
         BinHelper binHelper = (name, floatFunc, doubleFunc, floatConsumer, doubleConsumer) -> {
             if (bits == 32)
-                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, floatConsumer);
-            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, doubleConsumer);
+                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, type, floatConsumer);
+            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, type, doubleConsumer);
         };
 
         CmpHelper cmpHelper = (name, floatFunc, doubleFunc, ifOp) -> {
             if (bits == 32)
-                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, boolType, floatCompare(ifOp));
-            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, boolType, floatCompare(ifOp));
+                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, boolType, floatCompare(ifOp));
+            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, boolType, floatCompare(ifOp));
         };
 
         return ListUtils.join(List.of(
@@ -74,15 +71,15 @@ public class FloatType implements BuiltinType {
 
                 //Unary ops
                 bits == 32 ? //neg
-                    DefineConstWithFallback.defineUnary("neg", (Float f) -> -f, type, v -> v.visitInsn(Opcodes.FNEG)) :
-                    DefineConstWithFallback.defineUnary("neg", (Double d) -> -d, type, v -> v.visitInsn(Opcodes.DNEG)),
+                    DefineConstWithFallback.defineUnary("neg", (Float f) -> -f, type, type, v -> v.visitInsn(Opcodes.FNEG)) :
+                    DefineConstWithFallback.defineUnary("neg", (Double d) -> -d, type, type, v -> v.visitInsn(Opcodes.DNEG)),
                 bits == 32 ? //sqrt
-                        DefineConstWithFallback.defineUnary("sqrt", (Float f) -> (float) Math.sqrt(f), type, v -> {
+                        DefineConstWithFallback.defineUnary("sqrt", (Float f) -> (float) Math.sqrt(f), type, type, v -> {
                             v.visitInsn(Opcodes.F2D);
                             v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Math", "sqrt", "(D)D", false);
                             v.visitInsn(Opcodes.D2F);
                         }) :
-                        DefineConstWithFallback.defineUnary("sqrt", Math::sqrt, type, v ->
+                        DefineConstWithFallback.defineUnary("sqrt", Math::sqrt, type, type, v ->
                                 v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Math", "sqrt", "(D)D", false)),
 
                 //Comparisons
@@ -90,7 +87,11 @@ public class FloatType implements BuiltinType {
                 cmpHelper.get("lt", (a, b) -> a<b, (a, b) -> a<b, Opcodes.IFGE),
                 cmpHelper.get("ge", (a, b) -> a>=b, (a, b) -> a>=b, Opcodes.IFLT),
                 cmpHelper.get("le", (a, b) -> a<=b, (a, b) -> a<=b, Opcodes.IFGT),
-                cmpHelper.get("eq", Float::equals, Double::equals, Opcodes.IFNE)
+                cmpHelper.get("eq", Float::equals, Double::equals, Opcodes.IFNE),
+
+                //Other
+                DefineConstWithFallback.defineUnary("str", Object::toString, type, stringType, v ->
+                        v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(" + descriptor + ")Ljava/lang/String;", false))
         ));
 
     }
@@ -122,25 +123,39 @@ public class FloatType implements BuiltinType {
         };
     }
 
+    @Override
+    public String name() {
+        return name;
+    }
 
     @Override
-    public String getDescriptor(List<Type> generics, TypePool pool) {
+    public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
+        return List.of(descriptor);
+    }
+
+    @Override
+    public String returnDescriptor(TypeChecker checker, List<TypeDef> generics) {
         return descriptor;
     }
 
     @Override
-    public String getRuntimeName(List<Type> generics, TypePool pool) {
-        return null;
-    }
-
-    @Override
-    public boolean extensible() {
+    public boolean isReferenceType(TypeChecker checker, List<TypeDef> generics) {
         return false;
     }
 
     @Override
-    public boolean isReferenceType(List<Type> generics, TypePool pool) {
+    public boolean isPlural(TypeChecker checker, List<TypeDef> generics) {
         return false;
+    }
+
+    @Override
+    public boolean extensible(TypeChecker checker, List<TypeDef> generics) {
+        return false;
+    }
+
+    @Override
+    public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
+        return bits == 64 ? 2 : 1;
     }
 
     @FunctionalInterface

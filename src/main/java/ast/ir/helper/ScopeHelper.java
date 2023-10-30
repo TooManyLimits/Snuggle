@@ -1,6 +1,5 @@
-package compile;
+package ast.ir.helper;
 
-import ast.typed.Type;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.numbers.FloatType;
@@ -23,31 +22,31 @@ public class ScopeHelper {
     private int curIndex = 0;
     private final MapStack<String, Integer> localVariables = new MapStack<>();
 
-    public int declare(Loc loc, Compiler compiler, String name, Type type) throws CompilationException {
-        TypeDef def = compiler.getTypeDef(type);
-        int slots = 1;
-        if (def instanceof BuiltinTypeDef b && (
-                (b.builtin() instanceof IntegerType i && i.bits == 64) ||
-                (b.builtin() instanceof FloatType f && f.bits == 64)
-        )) slots = 2;
-        return declare(loc, name, slots);
+    public int declare(Loc loc, String name, TypeDef type) {
+        if (type.isPlural()) {
+            return declare(loc, name, type.stackSlots());
+        } else if ((type.builtin() instanceof IntegerType i && i.bits == 64) ||
+                (type.builtin() instanceof FloatType f && f.bits == 64)) {
+            return declare(loc, name, 2);
+        } else {
+            return declare(loc, name, 1);
+        }
     }
 
     // long and double use 2 slots, everything else uses 1
     // (yes, references *do* only use 1, despite being 64 bits,
     // I think it's for backwards compatibility or something)
-    public int declare(Loc loc, String name, int slots) throws CompilationException {
-        if (slots < 1 || slots > 2) throw new IllegalArgumentException("Illegal slot count? Bug in compiler, please report");
+    public int declare(Loc loc, String name, int slots) {
         if (localVariables.putIfAbsent(name, curIndex) != null)
-            throw new AlreadyDeclaredException("Variable \"" + name + "\" is already declared in this scope", loc);
+            throw new IllegalStateException("Variable \"" + name + "\" is already declared in this scope - but this should have been caught earlier? Bug in compiler, please report!");
         curIndex += slots;
         return curIndex - slots;
     }
 
-    public int lookup(Loc loc, String name) throws CompilationException {
+    public int lookup(Loc loc, String name) {
         Integer index = localVariables.get(name);
         if (index == null)
-            throw new UndeclaredVariableException("Variable \"" + name + "\" is not declared in this scope", loc);
+            throw new IllegalStateException("Variable \"" + name + "\" is not declared in this scope - but this should have been caught earlier? Bug in compiler, please report!");
         return index;
     }
 

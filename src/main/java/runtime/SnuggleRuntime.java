@@ -8,6 +8,8 @@ import exceptions.runtime.SnuggleException;
  * compiled code.
  */
 public interface SnuggleRuntime {
+
+
     //Run the code
     void run() throws SnuggleException;
 

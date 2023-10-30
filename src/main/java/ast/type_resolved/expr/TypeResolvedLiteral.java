@@ -1,11 +1,11 @@
 package ast.type_resolved.expr;
 
+import ast.typed.def.type.TypeDef;
 import builtin_types.types.numbers.FloatLiteralType;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.typed.Type;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.types.numbers.FloatType;
@@ -13,6 +13,7 @@ import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.Fraction;
 import util.IntLiteralData;
 
 import java.math.BigDecimal;
@@ -29,16 +30,16 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
     }
 
     @Override
-    public TypedLiteral infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedLiteral infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         Object newValue = (value instanceof IntLiteralData data) ? data.value() : value;
-        return new TypedLiteral(loc, newValue, checker.pool().getOrInstantiateType(resolved, List.of()));
+        return new TypedLiteral(loc, newValue, checker.getOrInstantiate(resolved, List.of()));
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         TypedLiteral e = infer(currentType, checker, typeGenerics);
-        Type intLiteralType = checker.pool().getBasicBuiltin(IntLiteralType.INSTANCE);
-        Type floatLiteralType = checker.pool().getBasicBuiltin(FloatLiteralType.INSTANCE);
+        TypeDef intLiteralType = checker.getBasicBuiltin(IntLiteralType.INSTANCE);
+        TypeDef floatLiteralType = checker.getBasicBuiltin(FloatLiteralType.INSTANCE);
         if (e.type().equals(intLiteralType)) {
             //Check int
             BigInteger value = (BigInteger) e.obj();
@@ -49,27 +50,27 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
 
             //Expected other int type?
             for (IntegerType t : IntegerType.ALL_INT_TYPES)
-                if (checker.pool().getBasicBuiltin(t).equals(expected))
+                if (checker.getBasicBuiltin(t).equals(expected))
                     return new TypedLiteral(e.loc(), value, expected);
 
             //Expected float type?
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
-                if (checker.pool().getBasicBuiltin(t).equals(expected))
-                    return new TypedLiteral(e.loc(), new BigDecimal(value), expected);
+                if (checker.getBasicBuiltin(t).equals(expected))
+                    return new TypedLiteral(e.loc(), new Fraction(value, BigInteger.ONE), expected);
 
             //Didn't expect any of those numeric types? Error
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got int literal", loc);
+            throw new TypeCheckingException("Expected " + expected.name() + ", got int literal", loc);
         } else if (e.type().equals(floatLiteralType)) {
             //Practically same structure as above IntLiteral version ^
             if (expected.equals(floatLiteralType))
                 return e;
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
-                if (checker.pool().getBasicBuiltin(t).equals(expected))
+                if (checker.getBasicBuiltin(t).equals(expected))
                     return new TypedLiteral(e.loc(), value, expected);
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got float literal", loc);
+            throw new TypeCheckingException("Expected " + expected.name() + ", got float literal", loc);
         }
-        if (!e.type().isSubtype(expected, checker.pool()))
-            throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", got " + e.type().name(checker.pool()), loc);
+        if (!e.type().isSubtype(expected))
+            throw new TypeCheckingException("Expected " + expected.name() + ", got " + e.type().name(), loc);
         return e;
     }
 

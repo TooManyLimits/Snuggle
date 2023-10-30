@@ -1,11 +1,11 @@
 package ast.type_resolved.expr;
 
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedLiteral;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.typed.Type;
 import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
@@ -23,7 +23,7 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     }
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         //Look up best method
         TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
         TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, null);
@@ -32,13 +32,11 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
         //Create the call
         TypedMethodCall call = new TypedMethodCall(loc, typedReceiver, matchingMethod, typedArgs, matchingMethod.returnType());
         //Const fold
-        if (matchingMethod.isConst())
-            return matchingMethod.doConst(call);
-        return call;
+        return matchingMethod.constantFold(call);
     }
 
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         //Look up best method
         TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
         TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, expected);
@@ -46,16 +44,14 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Get the typed method call
         TypedMethodCall call = new TypedMethodCall(loc, typedReceiver, matchingMethod, typedArgs, matchingMethod.returnType());
+
         //Const fold
-        if (matchingMethod.isConst()) {
-            TypedExpr res = matchingMethod.doConst(call);
+        TypedExpr res = matchingMethod.constantFold(call);
+        if (res instanceof TypedLiteral typedLiteral) {
             //Pull type upwards if necessary; reasoning is explained in TypedLiteral
-            if (res instanceof TypedLiteral typedLiteral) {
-                return typedLiteral.pullTypeUpwards(expected);
-            }
-            return res;
+            return typedLiteral.pullTypeUpwards(expected);
         }
-        return call;
+        return res;
     }
 
 

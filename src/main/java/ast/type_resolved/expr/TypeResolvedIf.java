@@ -3,8 +3,8 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.TypeCheckingHelper;
-import ast.typed.Type;
 import ast.typed.def.type.BuiltinTypeDef;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedConstructor;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedIf;
@@ -28,8 +28,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
     }
 
     @Override
-    public TypedExpr infer(Type currentType, TypeChecker checker, List<Type> typeGenerics) throws CompilationException {
-        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE));
         //If the expr doesn't have a false branch, then the output type of the expression is Option<output of ifTrue>
         //If the expr does have a false branch, then the output types of the branches must match, and the output type
         //of the if-expression is that type.
@@ -48,7 +48,7 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
                     return ifFalse.infer(currentType, checker, typeGenerics);
                 //Otherwise, if there's no false branch, need to return an empty Option<>.
                 //Need to know the generic for the option, so infer the ifTrue branch and grab its type.
-                Type trueType = ifTrue.infer(currentType, checker, typeGenerics).type();
+                TypeDef trueType = ifTrue.infer(currentType, checker, typeGenerics).type();
                 return TypeCheckingHelper.getEmptyOption(loc, trueType, checker);
             }
         }
@@ -71,9 +71,9 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
 
     //Works similarly to infer(), but with some infers replaced with checks.
     @Override
-    public TypedExpr check(Type currentType, TypeChecker checker, List<Type> typeGenerics, Type expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         //Check condition is bool
-        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.pool().getBasicBuiltin(BoolType.INSTANCE));
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE));
         //Check if constant
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
 
@@ -82,12 +82,11 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
                 return (b ? ifTrue : ifFalse).check(currentType, checker, typeGenerics, expected);
 
             //Otherwise, we need to make sure that the expected type is, in fact, an Option.
-            if (!(checker.pool().getTypeDef(expected) instanceof BuiltinTypeDef expectedBuiltin))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
-            if (!(expectedBuiltin.builtin() == OptionType.INSTANCE))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            if (!(expected.builtin() == OptionType.INSTANCE))
+                throw new TypeCheckingException("Expected " + expected.name() + ", but if-expression without else-branch results in Option", loc);
+
             //Once we know it is, get the inner type of the option.
-            Type innerType = expectedBuiltin.generics().get(0);
+            TypeDef innerType = ((BuiltinTypeDef) expected.get()).generics.get(0);
 
             TypedConstructor constructor; //output
             if (b) {
@@ -102,8 +101,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
             }
 
             //Finally, ensure this option is what was wanted.
-            if (!constructor.type().isSubtype(expected, checker.pool()))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression resulted in " + constructor.type().name(checker.pool()), loc);
+            if (!constructor.type().isSubtype(expected))
+                throw new TypeCheckingException("Expected " + expected.name() + ", but if-expression resulted in " + constructor.type().name(), loc);
             return constructor;
         }
 
@@ -115,12 +114,10 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         } else {
             //If there's only one branch, only check it for the inner type.
             //Make sure that the expected type is an Option:
-            if (!(checker.pool().getTypeDef(expected) instanceof BuiltinTypeDef expectedBuiltin))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
-            if (!(expectedBuiltin.builtin() == OptionType.INSTANCE))
-                throw new TypeCheckingException("Expected " + expected.name(checker.pool()) + ", but if-expression without else-branch results in Option", loc);
+            if (!(expected.builtin() == OptionType.INSTANCE))
+                throw new TypeCheckingException("Expected " + expected.name() + ", but if-expression without else-branch results in Option", loc);
             //Once we know it is, get the inner type of the option
-            Type innerType = expectedBuiltin.generics().get(0);
+            TypeDef innerType = ((BuiltinTypeDef) expected.get()).generics.get(0);
             //Check the true branch for the inner type of the option
             TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, innerType);
             //Wrap the true branch in an option constructor
