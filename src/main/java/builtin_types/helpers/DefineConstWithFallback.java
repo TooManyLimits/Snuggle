@@ -18,10 +18,10 @@ public class DefineConstWithFallback {
     /**
      * Prefixes the given name with "n_"
      */
-    private static BytecodeMethodDef defineBytecodeBinary(String name, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
+    private static BytecodeMethodDef defineBytecodeBinary(String name, TypeDef owningType, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
         //The bytecode arithmetic operators are prefixed with n_ like this, so they don't conflict
         //with the const version.
-        return new BytecodeMethodDef("n_" + name, false, List.of(argType), returnType, bytecode);
+        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(argType), returnType, bytecode);
     }
 
     private static <A, B, T> ConstMethodDef defineConstBinary(String name, BiFunction<A, B, T> func, Function<Object, A> receiverConverter, Function<Object, B> argConverter, TypeDef argType, TypeDef returnType, BytecodeMethodDef fallback) {
@@ -38,22 +38,22 @@ public class DefineConstWithFallback {
         }, null);
     }
 
-    public static <A, B, T> List<MethodDef> defineBinary(String name, BiFunction<A, B, T> func, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
-        BytecodeMethodDef bytecodeVersion = defineBytecodeBinary(name, argType, returnType, doOperation);
+    public static <A, B, T> List<MethodDef> defineBinary(String name, BiFunction<A, B, T> func, TypeDef owningType, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
+        BytecodeMethodDef bytecodeVersion = defineBytecodeBinary(name, owningType, argType, returnType, doOperation);
         ConstMethodDef constVersion = defineConstBinary(name, func, x -> (A) x, x -> (B) x, argType, returnType, bytecodeVersion);
         return List.of(bytecodeVersion, constVersion);
     }
 
-    public static <A, B, T> List<MethodDef> defineBinaryWithConverter(String name, BiFunction<A, B, T> func, Function<Object, A> receiverConverter, Function<Object, B> argConverter, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
-        BytecodeMethodDef bytecodeVersion = defineBytecodeBinary(name, argType, returnType, doOperation);
+    public static <A, B, T> List<MethodDef> defineBinaryWithConverter(String name, BiFunction<A, B, T> func, Function<Object, A> receiverConverter, Function<Object, B> argConverter,TypeDef owningType, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
+        BytecodeMethodDef bytecodeVersion = defineBytecodeBinary(name, owningType, argType, returnType, doOperation);
         ConstMethodDef constVersion = defineConstBinary(name, func, receiverConverter, argConverter, argType, returnType, bytecodeVersion);
         return List.of(bytecodeVersion, constVersion);
     }
 
-    private static BytecodeMethodDef defineBytecodeUnary(String name, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
+    private static BytecodeMethodDef defineBytecodeUnary(String name, TypeDef owningType, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
         //The bytecode arithmetic operators are prefixed with n_ like this, so they don't conflict
         //with the const version.
-        return new BytecodeMethodDef("n_" + name, false, List.of(), returnType, bytecode);
+        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(), returnType, bytecode);
     }
 
     private static <A, T> ConstMethodDef defineConstUnary(String name, Function<A, T> func, Function<Object, A> converter, TypeDef returnType, BytecodeMethodDef fallback) {
@@ -68,14 +68,14 @@ public class DefineConstWithFallback {
         }, null);
     }
 
-    public static <A, T> List<MethodDef> defineUnary(String name, Function<A, T> func, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
-        BytecodeMethodDef bytecodeVersion = defineBytecodeUnary(name, returnType, doOperation);
+    public static <A, T> List<MethodDef> defineUnary(String name, Function<A, T> func, TypeDef owningType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
+        BytecodeMethodDef bytecodeVersion = defineBytecodeUnary(name, owningType, returnType, doOperation);
         ConstMethodDef constVersion = defineConstUnary(name, func, x -> (A) x, returnType, bytecodeVersion);
         return List.of(bytecodeVersion, constVersion);
     }
 
-    public static <A, T> List<MethodDef> defineUnaryWithConverter(String name, Function<A, T> func, Function<Object, A> converter, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
-        BytecodeMethodDef bytecodeVersion = defineBytecodeUnary(name, returnType, doOperation);
+    public static <A, T> List<MethodDef> defineUnaryWithConverter(String name, Function<A, T> func, Function<Object, A> converter, TypeDef owningType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
+        BytecodeMethodDef bytecodeVersion = defineBytecodeUnary(name, owningType, returnType, doOperation);
         ConstMethodDef constVersion = defineConstUnary(name, func, converter, returnType, bytecodeVersion);
         return List.of(bytecodeVersion, constVersion);
     }

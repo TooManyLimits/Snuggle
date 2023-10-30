@@ -86,7 +86,7 @@ public class SnuggleTests {
             throw new UncheckedIOException(e);
         }
 
-        test(new BuiltinTypes(), files);
+        test(new BuiltinTypes(), files, null);
     }
 
     @Test
@@ -106,7 +106,7 @@ public class SnuggleTests {
                 System.print(new Vec3(1, 2, 3).str())
                 System.print(new Vec3(16, 4, 10).z)
                 System.print({new Vec3(2f32 * 3 + 1, 1, -10f32) + new Vec3(4, 10, 21)}.str())
-                """);
+                """, null); //new File("TestStruct.jar"));
     }
 
     @Test
@@ -476,19 +476,23 @@ public class SnuggleTests {
 
 //    public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {
     public void test(String main) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), Map.of("main", main));
+        test(new BuiltinTypes(), Map.of("main", main), null);
+    }
+
+    public void test(String main, File file) throws CompilationException, SnuggleException {
+        test(new BuiltinTypes(), Map.of("main", main), file);
     }
 
 //    public void test(BuiltinTypes types, @Language("TEXT") String main) throws CompilationException, SnuggleException {
     public void test(BuiltinTypes types, String main) throws CompilationException, SnuggleException {
-        test(types, Map.of("main", main));
+        test(types, Map.of("main", main), null);
     }
 
     public void test(Map<String, String> files) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), files);
+        test(new BuiltinTypes(), files, null);
     }
 
-    public void test(BuiltinTypes types, Map<String, String> files) throws CompilationException, SnuggleException {
+    public void test(BuiltinTypes types, Map<String, String> files, File export) throws CompilationException, SnuggleException {
         types.reflect(TestBindings.class);
 
         try {
@@ -503,6 +507,8 @@ public class SnuggleTests {
             System.out.println("Running took " + (after - before) / 1000000 + " ms");
             System.out.println("Cost was " + SnuggleInstance.INSTRUCTIONS);
             SnuggleInstance.INSTRUCTIONS = 0; //reset just in case
+            if (export != null)
+                CompileAll.compileAllToJar(export, types, files);
         } catch (CompilationException | SnuggleException | RuntimeException e) {
             // propagate exceptions
             throw e;

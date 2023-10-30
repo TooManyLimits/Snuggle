@@ -24,6 +24,7 @@ public class ArrayType implements BuiltinType {
 
     @Override
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+        TypeDef type = checker.getGenericBuiltin(this, generics);
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
 //        Type u32 = pool.getBasicBuiltin(IntegerType.I32);
         TypeDef unit = checker.getBasicBuiltin(UnitType.INSTANCE);
@@ -34,24 +35,24 @@ public class ArrayType implements BuiltinType {
 
         return ListUtils.join(List.of(
                 //new Array<T>(u32)
-                List.of(new BytecodeMethodDef("new", false, List.of(u32), unit, v -> {
+                List.of(new BytecodeMethodDef("new", false, type, List.of(u32), unit, v -> {
                     if (opcodes.isReference)
                         v.visitTypeInsn(Opcodes.ANEWARRAY, typeName);
                     else
                         v.visitIntInsn(Opcodes.NEWARRAY, opcodes.newOpcodeArg());
                 })),
                 //arr.len() -> u32
-                DefineConstWithFallback.defineUnary("len", (List<?> x) -> x.size(), u32, v -> {
+                DefineConstWithFallback.defineUnary("len", (List<?> x) -> x.size(), type, u32, v -> {
                     v.visitInsn(Opcodes.ARRAYLENGTH);
                 }),
                 //arr.get(u32) -> elementType
                 //arr[u32] -> elementType
-                DefineConstWithFallback.defineBinary("get", (List<?> x, BigInteger i) -> x.get(i.intValue()), u32, elementType, v -> {
+                DefineConstWithFallback.defineBinary("get", (List<?> x, BigInteger i) -> x.get(i.intValue()), type, u32, elementType, v -> {
                     v.visitInsn(opcodes.loadOpcode);
                 }),
                 //arr.set(u32, elementType) -> elementType
                 //(arr[u32] = elementType) -> elementType
-                List.of(new BytecodeMethodDef("set", false, List.of(u32, elementType), elementType, v -> {
+                List.of(new BytecodeMethodDef("set", false, type, List.of(u32, elementType), elementType, v -> {
                     v.visitInsn(opcodes.dupOpcode);
                     v.visitInsn(opcodes.storeOpcode);
                 }))

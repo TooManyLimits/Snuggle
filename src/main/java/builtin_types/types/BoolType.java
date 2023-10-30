@@ -22,13 +22,13 @@ public class BoolType implements BuiltinType {
 
         return ListUtils.join(List.of(
                 //eq
-                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("eq", Boolean::equals, boolType, boolType, v -> {
+                DefineConstWithFallback.<Boolean, Boolean, Boolean>defineBinary("eq", Boolean::equals, boolType, boolType, boolType, v -> {
                     v.visitInsn(Opcodes.IXOR);
                     v.visitInsn(Opcodes.ICONST_1);
                     v.visitInsn(Opcodes.IXOR);
                 }),
                 //not
-                DefineConstWithFallback.<Boolean, Boolean>defineUnary("not", a -> !a, boolType, v -> {
+                DefineConstWithFallback.<Boolean, Boolean>defineUnary("not", a -> !a, boolType, boolType, v -> {
                     v.visitInsn(Opcodes.ICONST_1);
                     v.visitInsn(Opcodes.IXOR);
                 })

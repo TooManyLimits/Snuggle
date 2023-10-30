@@ -34,7 +34,7 @@ public class OptionType implements BuiltinType {
         if (innerType.isReferenceType()) {
             return List.of(
                     //.get(): gets the value if present, panics if not present
-                    new BytecodeMethodDef("get", false, List.of(), innerType, v -> {
+                    new BytecodeMethodDef("get", false, thisType, List.of(), innerType, v -> {
                         //If non-null, jump over the error throw
                         Label afterError = new Label();
                         v.visitInsn(Opcodes.DUP);
@@ -50,7 +50,7 @@ public class OptionType implements BuiltinType {
                         //If error message is known at compile time, then bake it into the method definition
                         if (call.args().get(0) instanceof TypedLiteral literal) {
                             if (literal.obj() instanceof String constantErrorMessage) {
-                                return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, List.of(), innerType, v -> {
+                                return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, thisType, List.of(), innerType, v -> {
                                     //If non-null, jump over the error throw
                                     Label afterError = new Label();
                                     v.visitInsn(Opcodes.DUP);
@@ -65,7 +65,7 @@ public class OptionType implements BuiltinType {
                                 throw new IllegalStateException("Method get() expects string, but was literal and not string? Bug in compiler, please report!");
                             }
                         } else {
-                            return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, List.of(stringType), innerType, v -> {
+                            return new TypedMethodCall(call.loc(), call.receiver(), new BytecodeMethodDef("get", false, thisType, List.of(stringType), innerType, v -> {
                                 //Stack is [this, String]
                                 v.visitInsn(Opcodes.SWAP); //[String, this]
                                 v.visitInsn(Opcodes.DUP); //[String, this, this]
@@ -87,10 +87,10 @@ public class OptionType implements BuiltinType {
                             }), call.args(), innerType);
                         }
                     }, null),
-                    new BytecodeMethodDef("new", false, List.of(), unitType, v -> {
+                    new BytecodeMethodDef("new", false, thisType, List.of(), unitType, v -> {
                         v.visitInsn(Opcodes.ACONST_NULL); //Literally just push null lmao
                     }),
-                    new BytecodeMethodDef("new", false, List.of(innerType), unitType, v -> {
+                    new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, v -> {
                         //Literally just do nothing lmao
                     })
             );

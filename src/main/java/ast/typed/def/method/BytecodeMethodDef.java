@@ -7,7 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 import java.util.List;
 import java.util.function.Consumer;
 
-public record BytecodeMethodDef(String name, boolean isStatic, List<TypeDef> paramTypes, TypeDef returnType, Consumer<MethodVisitor> bytecode) implements MethodDef {
+public record BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, Consumer<MethodVisitor> bytecode) implements MethodDef {
 
     @Override
     public int numGenerics() {
@@ -16,7 +16,7 @@ public record BytecodeMethodDef(String name, boolean isStatic, List<TypeDef> par
 
     @Override
     public TypeDef owningType() {
-        throw new IllegalStateException("Should not be asking for owning type of bytecode method def - Bug in compiler, please report!");
+        return owningType;
     }
 
     @Override

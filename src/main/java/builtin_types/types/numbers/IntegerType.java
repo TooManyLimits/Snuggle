@@ -97,17 +97,17 @@ public class IntegerType implements BuiltinType {
 
         return ListUtils.join(List.of(
                 //Regular binary operators
-                DefineConstWithFallback.defineBinary("add", BigInteger::add, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IADD : Opcodes.LADD))),
-                DefineConstWithFallback.defineBinary("sub", BigInteger::subtract, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISUB : Opcodes.LSUB))),
-                DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
-                DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, doOperationThenConvert(switch (bits) {
+                DefineConstWithFallback.defineBinary("add", BigInteger::add, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IADD : Opcodes.LADD))),
+                DefineConstWithFallback.defineBinary("sub", BigInteger::subtract, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISUB : Opcodes.LSUB))),
+                DefineConstWithFallback.defineBinary("mul", BigInteger::multiply, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IMUL : Opcodes.LMUL))),
+                DefineConstWithFallback.defineBinary("div", BigInteger::divide, type, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "divideUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LDIV) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Long", "divideUnsigned", "(JJ)J", false);
                     default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
                 })),
-                DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, doOperationThenConvert(switch (bits) {
+                DefineConstWithFallback.defineBinary("rem", BigInteger::remainder, type, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> signed ? v -> v.visitInsn(Opcodes.IREM) :
                             v -> v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "remainderUnsigned", "(II)I", false);
                     case 64 -> signed ? v -> v.visitInsn(Opcodes.LREM) :
@@ -116,13 +116,13 @@ public class IntegerType implements BuiltinType {
                 })),
 
                 //Bitwise binary
-                DefineConstWithFallback.defineBinary("band", BigInteger::and, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IAND : Opcodes.LAND))),
-                DefineConstWithFallback.defineBinary("bor", BigInteger::or, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IOR : Opcodes.LOR))),
-                DefineConstWithFallback.defineBinary("bxor", BigInteger::xor, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IXOR : Opcodes.LXOR))),
+                DefineConstWithFallback.defineBinary("band", BigInteger::and, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IAND : Opcodes.LAND))),
+                DefineConstWithFallback.defineBinary("bor", BigInteger::or, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IOR : Opcodes.LOR))),
+                DefineConstWithFallback.defineBinary("bxor", BigInteger::xor, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IXOR : Opcodes.LXOR))),
 
                 //Unary
-                signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
-                DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, doOperationThenConvert(switch (bits) {
+                signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
+                DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, type, doOperationThenConvert(switch (bits) {
                     case 8, 16, 32 -> (Consumer<MethodVisitor>) (v -> { //Cast is because intellij is bugged, and thinks it's an error without the cast
                         v.visitInsn(Opcodes.ICONST_M1);
                         v.visitInsn(Opcodes.IXOR);
@@ -135,14 +135,14 @@ public class IntegerType implements BuiltinType {
                 })),
 
                 //Comparisons
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
-                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, boolType, intCompare(Opcodes.IF_ICMPEQ)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("gt", (a, b) -> a.compareTo(b) > 0, type, type, boolType, intCompare(Opcodes.IF_ICMPGT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("lt", (a, b) -> a.compareTo(b) < 0, type, type, boolType, intCompare(Opcodes.IF_ICMPLT)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("ge", (a, b) -> a.compareTo(b) >= 0, type, type, boolType, intCompare(Opcodes.IF_ICMPGE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("le", (a, b) -> a.compareTo(b) <= 0, type, type, boolType, intCompare(Opcodes.IF_ICMPLE)),
+                DefineConstWithFallback.<BigInteger, BigInteger, Boolean>defineBinary("eq", (a, b) -> a.compareTo(b) == 0, type, type, boolType, intCompare(Opcodes.IF_ICMPEQ)),
 
                 //Other
-                DefineConstWithFallback.defineUnary("str", Object::toString, stringType, v -> {
+                DefineConstWithFallback.defineUnary("str", Object::toString, type, stringType, v -> {
                     convert(v);
                     String desc = switch (bits) {
                         case 8, 16, 32 -> "I";

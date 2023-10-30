@@ -60,8 +60,6 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<Field
     @Override
     public long cost() {
         //If special case, more instructions
-        if (methodToCall.isConstructor() && methodToCall.owningType().isPlural())
-            return 2 + methodToCall.owningType().stackSlots() / 2;
         if (methodToCall.returnType().isPlural())
             return 2 + methodToCall.returnType().stackSlots() / 2;
         return 1; //Say it costs 1 to call by default

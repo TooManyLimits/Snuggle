@@ -11,6 +11,7 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +32,10 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
                     break;
                 indexOffset += fieldAccess.field().type().stackSlots();
             }
+            lhs = fieldAccess.lhs();
             if (lhs.type().isReferenceType())
                 break;
-            lhs = fieldAccess.lhs();
+
         }
 
         //Now, assert that the lhs is either:
@@ -43,7 +45,7 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
             throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" on this struct; as this struct is neither a local variable nor a field of a reference type!", lhs.loc());
 
         //If fieldsToFollow.size() > 0, then this is a field set; otherwise, it's a local variable.
-        if (lhs instanceof TypedVariable typedVariable) {
+        if (lhs instanceof TypedVariable typedVariable && (fieldsToFollow.size() == 0 || typedVariable.type().isPlural())) {
             //Local variable. Get the mapped index and compile the rhs.
             int mappedIndex = code.env.lookup(loc, typedVariable.name()) + indexOffset;
             rhs.compile(code, null);
@@ -58,7 +60,7 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
             code.emit(new Dup(lhs.type())); //Dup it
             rhs.compile(code, null); //Compile rhs
             code.emit(new SetField(fieldsToFollow)); //Set field
-            code.emit(new GetField(DesiredFieldNode.toList(desiredFields))); //Fetch the desired value back
+            code.emit(new GetField(ListUtils.join(fieldsToFollow, DesiredFieldNode.toList(desiredFields)))); //Fetch the desired value back
         } else {
             throw new IllegalStateException("Bug in compiler - illegal state in TypedAssignment. Please report!");
         }

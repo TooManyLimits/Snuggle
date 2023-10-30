@@ -51,14 +51,14 @@ public class FloatType implements BuiltinType {
 
         BinHelper binHelper = (name, floatFunc, doubleFunc, floatConsumer, doubleConsumer) -> {
             if (bits == 32)
-                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, floatConsumer);
-            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, doubleConsumer);
+                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, type, floatConsumer);
+            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, type, doubleConsumer);
         };
 
         CmpHelper cmpHelper = (name, floatFunc, doubleFunc, ifOp) -> {
             if (bits == 32)
-                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, boolType, floatCompare(ifOp));
-            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, boolType, floatCompare(ifOp));
+                return DefineConstWithFallback.defineBinaryWithConverter(name, floatFunc, floatConverter, floatConverter, type, type, boolType, floatCompare(ifOp));
+            return DefineConstWithFallback.defineBinaryWithConverter(name, doubleFunc, doubleConverter, doubleConverter, type, type, boolType, floatCompare(ifOp));
         };
 
         return ListUtils.join(List.of(
@@ -71,15 +71,15 @@ public class FloatType implements BuiltinType {
 
                 //Unary ops
                 bits == 32 ? //neg
-                    DefineConstWithFallback.defineUnary("neg", (Float f) -> -f, type, v -> v.visitInsn(Opcodes.FNEG)) :
-                    DefineConstWithFallback.defineUnary("neg", (Double d) -> -d, type, v -> v.visitInsn(Opcodes.DNEG)),
+                    DefineConstWithFallback.defineUnary("neg", (Float f) -> -f, type, type, v -> v.visitInsn(Opcodes.FNEG)) :
+                    DefineConstWithFallback.defineUnary("neg", (Double d) -> -d, type, type, v -> v.visitInsn(Opcodes.DNEG)),
                 bits == 32 ? //sqrt
-                        DefineConstWithFallback.defineUnary("sqrt", (Float f) -> (float) Math.sqrt(f), type, v -> {
+                        DefineConstWithFallback.defineUnary("sqrt", (Float f) -> (float) Math.sqrt(f), type, type, v -> {
                             v.visitInsn(Opcodes.F2D);
                             v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Math", "sqrt", "(D)D", false);
                             v.visitInsn(Opcodes.D2F);
                         }) :
-                        DefineConstWithFallback.defineUnary("sqrt", Math::sqrt, type, v ->
+                        DefineConstWithFallback.defineUnary("sqrt", Math::sqrt, type, type, v ->
                                 v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Math", "sqrt", "(D)D", false)),
 
                 //Comparisons
@@ -90,7 +90,7 @@ public class FloatType implements BuiltinType {
                 cmpHelper.get("eq", Float::equals, Double::equals, Opcodes.IFNE),
 
                 //Other
-                DefineConstWithFallback.defineUnary("str", Object::toString, stringType, v ->
+                DefineConstWithFallback.defineUnary("str", Object::toString, type, stringType, v ->
                         v.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/String", "valueOf", "(" + descriptor + ")Ljava/lang/String;", false))
         ));
 

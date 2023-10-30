@@ -28,7 +28,7 @@ public class ReflectedMethod {
     private final String origName, name, owner, descriptor;
     private final boolean inlined, isStatic, isVoid;
     private final List<ThrowingFunction<TypeChecker, TypeDef, RuntimeException>> paramTypeGetters;
-    private final ThrowingFunction<TypeChecker, TypeDef, RuntimeException> returnTypeGetter;
+    private final ThrowingFunction<TypeChecker, TypeDef, RuntimeException> ownerTypeGetter, returnTypeGetter;
     private final Consumer<MethodVisitor> bytecode;
 
     ReflectedMethod(Method method) {
@@ -43,6 +43,7 @@ public class ReflectedMethod {
         descriptor = org.objectweb.asm.Type.getMethodDescriptor(method);
 
         paramTypeGetters = ListUtils.map(List.of(method.getAnnotatedParameterTypes()), ReflectedMethod::getTypeGetter);
+        ownerTypeGetter = pool -> pool.getReflectedBuiltin(method.getDeclaringClass());
         returnTypeGetter = getTypeGetter(method.getAnnotatedReturnType());
 
         bytecode = getBytecode();
@@ -52,6 +53,7 @@ public class ReflectedMethod {
         return new BytecodeMethodDef(
                 name,
                 isStatic,
+                ownerTypeGetter.apply(pool),
                 ListUtils.map(paramTypeGetters, g -> g.apply(pool)),
                 returnTypeGetter.apply(pool),
                 bytecode
