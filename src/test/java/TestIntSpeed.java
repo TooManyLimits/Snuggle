@@ -1,5 +1,10 @@
 public class TestIntSpeed {
 
+    public static void main(String[] args) {
+        byte x = -5;
+        System.out.println(x >> 1);
+    }
+
     public static void test() {
         long before = System.nanoTime();
 

@@ -46,6 +46,8 @@ public enum TokenType {
     BITWISE_OR_ASSIGN("|="),
     BITWISE_XOR_ASSIGN("^="),
     BITWISE_NOT_ASSIGN("~="),
+    LEFT_SHIFT_ASSIGN("<<="),
+    RIGHT_SHIFT_ASSIGN(">>="),
     AND_ASSIGN("&&="),
     OR_ASSIGN("||="),
 

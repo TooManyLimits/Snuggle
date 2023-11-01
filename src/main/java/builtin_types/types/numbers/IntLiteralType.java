@@ -135,6 +135,9 @@ public class IntLiteralType implements BuiltinType {
                 generateBinary("bor", BigInteger::or, mappedIntLiteralType, mappedIntTypes, checker),
                 generateBinary("bxor", BigInteger::xor, mappedIntLiteralType, mappedIntTypes, checker),
 
+                generateBinary("shl", (a, b) -> a.shiftLeft(b.intValue()), mappedIntLiteralType, mappedIntTypes, checker),
+                generateBinary("shr", (a, b) -> a.shiftRight(b.intValue()), mappedIntLiteralType, mappedIntTypes, checker),
+
                 generateComparison("gt", (a, b) -> a.compareTo(b) > 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
                 generateComparison("lt", (a, b) -> a.compareTo(b) < 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),
                 generateComparison("ge", (a, b) -> a.compareTo(b) >= 0, mappedIntLiteralType, mappedBoolType, mappedIntTypes, checker),

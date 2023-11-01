@@ -88,6 +88,16 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testBitShifts() throws CompilationException, SnuggleException {
+        test("""
+                var x: i32 = 10
+                Test.assertEquals(40, x << 2)
+                Test.assertEquals(1, x >> 3)
+                System << "its c++ time"
+                """);
+    }
+
+    @Test
     public void testStructArrays() throws CompilationException, SnuggleException {
         test("""
                 struct Vec3 {

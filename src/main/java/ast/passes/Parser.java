@@ -253,8 +253,18 @@ public class Parser {
                 case AND, OR -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
 
                 case EQUAL, NOT_EQUAL -> "eq";
-                case GREATER -> "gt";
-                case LESS -> "lt";
+                case GREATER -> {
+                    if (lexer.consume(GREATER)) //Bit shift
+                        yield "shr";
+                    else
+                        yield "gt";
+                }
+                case LESS -> {
+                    if (lexer.consume(LESS)) //Bit shift
+                        yield "shl";
+                    else
+                        yield "lt";
+                }
                 case GREATER_EQUAL -> "ge";
                 case LESS_EQUAL -> "le";
                 default -> throw new IllegalStateException("parseBinary found invalid token \"" + op.exactStrings[0] + "\". Bug in compiler, please report!");
@@ -380,6 +390,9 @@ public class Parser {
                         case BITWISE_OR_ASSIGN -> "borAssign";
                         case BITWISE_XOR_ASSIGN -> "bxorAssign";
                         case BITWISE_NOT_ASSIGN -> "bnotAssign";
+
+                        case LEFT_SHIFT_ASSIGN -> "shlAssign";
+                        case RIGHT_SHIFT_ASSIGN -> "shrAssign";
 
                         default -> throw new IllegalStateException("Parsing augmented assignment found invalid token \"" + operator.exactStrings[0] + "\". Bug in compiler, please report!");
                     };

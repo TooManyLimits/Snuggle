@@ -29,8 +29,10 @@ public class Lexer {
             "/\\*(\\*(?!/)|[^*])*\\*/" + "|" + //https://stackoverflow.com/questions/16160190/regular-expression-to-find-c-style-block-comments
             //Unique 2-character operators and ASSIGN variants, **, &&, ||, **=, &&=, ||=
             "(?:(\\*\\*)|&&|\\|\\|)=?" + "|" +
-            //Other 2-character symbols, $[  ![  #(  ..
-            "\\$\\[|!\\[|#\\(|\\.\\." + "|" +
+            //Assign variants for bit shifts, <<= and >>=
+            ">>=|<<=" + "|" +
+            //Other 2-character symbols, ..
+            "\\.\\." + "|" +
             //1-character operators and versions with = after
             //ex. + and +=, < and <=, ! and !=, = and ==, even though these are very different situations
             "[-+*/%&|^~=><!]=?" + "|" +

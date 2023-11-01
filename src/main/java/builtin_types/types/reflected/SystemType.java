@@ -11,26 +11,6 @@ public class SystemType {
     @SnuggleBlacklist
     public static final BuiltinType INSTANCE = new ReflectedBuiltin(SystemType.class);
 
-    public static long i2l(int i) { return i; }
-    public static int l2i(long i) { return (int) i; }
-    public static byte i2b(int i) { return (byte) i; }
-    public static byte l2b(long i) { return (byte) i; }
-    public static int b2i(byte i) { return i; }
-
-    public static int shl(int x, int bits) { return x << bits; }
-    @Rename("shl")
-    public static int shl_u2(int x, @Unsigned int bits) { return x << bits; }
-    public static int shr(int x, int bits) { return x >> bits; }
-    @Rename("shr")
-    public static int shr_u2(int x, @Unsigned int bits) { return x >> bits; }
-    public static long shl(long x, int bits) { return x << bits; }
-    public static long shr(long x, int bits) { return x >> bits; }
-    public static int ushr(int x, int bits) { return x >>> bits; }
-    @Rename("ushr")
-    public static int ushr_u1(@Unsigned int x, int bits) { return x >>> bits; }
-    public static long ushr(long x, int bits) { return x >>> bits; }
-
-
     public static void print(float f) { System.out.println(f); }
     public static void print(double d) { System.out.println(d); }
     public static void print(byte b) { System.out.println(b); }
@@ -49,6 +29,9 @@ public class SystemType {
     public static void print(boolean b) { System.out.println(b); }
 
     public static void print(String s) { System.out.println(s); }
+
+    //C++ time
+    public static void shl(String s) { System.out.println(s); }
 
     public static void print(Object o) { System.out.println(o); }
 

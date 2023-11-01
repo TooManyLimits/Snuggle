@@ -16,7 +16,9 @@ import util.ListUtils;
 
 import java.math.BigInteger;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class IntegerType implements BuiltinType {
 
@@ -119,6 +121,23 @@ public class IntegerType implements BuiltinType {
                 DefineConstWithFallback.defineBinary("band", BigInteger::and, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IAND : Opcodes.LAND))),
                 DefineConstWithFallback.defineBinary("bor", BigInteger::or, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IOR : Opcodes.LOR))),
                 DefineConstWithFallback.defineBinary("bxor", BigInteger::xor, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.IXOR : Opcodes.LXOR))),
+
+                //Bit shifts
+                DefineConstWithFallback.defineBinary("shl", switch (bits) {
+                    case 8, 16, 32 -> (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> a.shiftLeft(b.intValue() & 0x1f); //Mask 5 bits like java does
+                    case 64 -> (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> a.shiftLeft(b.intValue() & 0x3f); //Mask 6 bits like java does
+                    default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+                }, type, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.ISHL : Opcodes.LSHL))),
+
+                DefineConstWithFallback.defineBinary("shr", switch (bits) {
+                    case 8, 16, 32 -> signed ?
+                            (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> a.shiftRight(b.intValue() & 0x1f) :
+                            (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> BigInteger.valueOf(a.intValue() >>> b.intValue());
+                    case 64 -> signed ?
+                            (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> a.shiftRight(b.intValue() & 0x3f) :
+                            (BiFunction<BigInteger, BigInteger, BigInteger>) (a, b) -> BigInteger.valueOf(a.longValue() >>> b.longValue());
+                    default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+                }, type, type, type, v -> v.visitInsn(bits <= 32 ? (signed ? Opcodes.ISHR : Opcodes.IUSHR) : (signed ? Opcodes.LSHR : Opcodes.LUSHR))),
 
                 //Unary
                 signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
