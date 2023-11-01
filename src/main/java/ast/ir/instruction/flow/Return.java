@@ -1,5 +1,6 @@
 package ast.ir.instruction.flow;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
@@ -15,7 +16,7 @@ import util.ListUtils;
 public record Return(MethodDef methodDef, TypeDef returnType) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         if (returnType.isPlural()) {
             //Plural returns need to set some static fields
             storePluralFieldsRecurse(jvm, returnType, "", returnType);

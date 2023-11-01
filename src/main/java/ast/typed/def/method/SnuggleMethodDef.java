@@ -2,6 +2,7 @@ package ast.typed.def.method;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.flow.Return;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
@@ -63,7 +64,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
 
 
     @Override
-    public void compileCall(boolean isSupercall, MethodVisitor jvm) {
+    public void compileCall(boolean isSupercall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) {
         int instruction = Opcodes.INVOKEVIRTUAL; //Virtual by default
         if (isStatic() || owningType().isPlural())
             instruction = Opcodes.INVOKESTATIC; //Static methods, or methods on plural types, are static java-side

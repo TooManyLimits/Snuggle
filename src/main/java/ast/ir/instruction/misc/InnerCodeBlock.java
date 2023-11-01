@@ -7,7 +7,7 @@ import org.objectweb.asm.MethodVisitor;
 
 public record InnerCodeBlock(CodeBlock codeBlock) implements Instruction {
     @Override
-    public void accept(MethodVisitor jvm) throws CompilationException {
+    public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
         //Write the inner codeBlock
         codeBlock.writeJvmBytecode(jvm);
     }

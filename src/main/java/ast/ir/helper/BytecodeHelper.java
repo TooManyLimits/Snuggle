@@ -1,8 +1,8 @@
 package ast.ir.helper;
 
 import ast.typed.def.field.FieldDef;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
+import builtin_types.types.ArrayType;
 import builtin_types.types.BoolType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
@@ -12,6 +12,7 @@ import org.objectweb.asm.Type;
 import runtime.Unit;
 import util.ListUtils;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -97,6 +98,41 @@ public class BytecodeHelper {
             }
         } else {
             throw new IllegalStateException("Unrecognized type \"" + def.name() + "\" - didn't meet any condition? Bug in compiler, please report!");
+        }
+    }
+
+    //Size starts on the stack. At the end, the array(s) then the size are on the stack.
+    public static void newArray(MethodVisitor jvm, TypeDef elemType) {
+        if (elemType.isPlural()) {
+            for (FieldDef field : elemType.fields()) {
+                newArray(jvm, field.type()); //[some arrays, size]
+            }
+        } else if (elemType.isReferenceType()) {
+            jvm.visitTypeInsn(Opcodes.ANEWARRAY, elemType.name());
+        } else if (elemType.builtin() instanceof IntegerType i) {
+            jvm.visitInsn(Opcodes.DUP);
+            switch (i.bits) {
+                case 8 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BYTE);
+                case 16 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_SHORT);
+                case 32 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_INT);
+                case 64 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
+            jvm.visitInsn(Opcodes.SWAP);
+        } else if (elemType.builtin() instanceof BoolType) {
+            jvm.visitInsn(Opcodes.DUP);
+            jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_BOOLEAN);
+            jvm.visitInsn(Opcodes.SWAP);
+        } else if (elemType.builtin() instanceof FloatType f) {
+            jvm.visitInsn(Opcodes.DUP);
+            switch (f.bits) {
+                case 32 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_FLOAT);
+                case 64 -> jvm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_DOUBLE);
+                default -> throw new IllegalStateException("Illegal bit count, bug in compiler, please report!");
+            }
+            jvm.visitInsn(Opcodes.SWAP);
+        } else {
+            throw new IllegalStateException("Unrecognized type \"" + elemType.name() + "\" - didn't meet any condition? Bug in compiler, please report!");
         }
     }
 

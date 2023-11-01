@@ -1,5 +1,6 @@
 package builtin_types.reflect;
 
+import ast.ir.def.CodeBlock;
 import ast.passes.TypeChecker;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
@@ -21,6 +22,7 @@ import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ReflectedMethod {
@@ -56,6 +58,7 @@ public class ReflectedMethod {
                 ownerTypeGetter.apply(pool),
                 ListUtils.map(paramTypeGetters, g -> g.apply(pool)),
                 returnTypeGetter.apply(pool),
+                false,
                 bytecode
         );
     }

@@ -1,5 +1,8 @@
 package ast.typed.def.method;
 
+import ast.ir.def.CodeBlock;
+import ast.ir.helper.ScopeHelper;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.GenericTypeDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
@@ -29,7 +32,10 @@ public interface MethodDef {
     void checkCode() throws CompilationException;
 
     //Compile a call to this method. The receiver (if applicable) and the arguments are on the stack.
-    void compileCall(boolean isSuperCall, MethodVisitor jvm);
+    //block is rarely used, except for core builtin types.
+    //desiredFields indicates, for builtin functions that return plural types, and leave their output on the stack:
+    //it indicates which fields should actually be put onto the stack. Also only used in core builtin types.
+    void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm);
 
     //Constant-fold the method. By default, does nothing and just returns the input.
     default TypedExpr constantFold(TypedMethodCall call) { return call; }

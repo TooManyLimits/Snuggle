@@ -1,5 +1,7 @@
 package ast.typed.def.method;
 
+import ast.ir.def.CodeBlock;
+import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
@@ -35,7 +37,7 @@ public record ConstMethodDef(String name, int numGenerics, boolean isStatic, Lis
     }
 
     @Override
-    public void compileCall(boolean isSuperCall, MethodVisitor jvm) {
+    public void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) {
         throw new IllegalStateException("Cannot compile call to ConstMethodDef - bug in compiler, please report!");
     }
 }

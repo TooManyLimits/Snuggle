@@ -1,5 +1,6 @@
 package ast.ir.instruction.objects;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
@@ -11,7 +12,7 @@ import org.objectweb.asm.Opcodes;
 public record New(TypeDef typeDef) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         jvm.visitTypeInsn(Opcodes.NEW, typeDef.runtimeName());
         jvm.visitInsn(Opcodes.DUP);
         //Assumed that constructor will be called right after this.

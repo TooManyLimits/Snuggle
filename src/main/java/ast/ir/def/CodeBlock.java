@@ -56,7 +56,7 @@ public class CodeBlock {
         jvmBytecode.visitFieldInsn(Opcodes.PUTSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
 
         for (Instruction i : instructions)
-            i.accept(jvmBytecode);
+            i.accept(this, jvmBytecode);
     }
 
 

@@ -1,5 +1,6 @@
 package ast.ir.instruction.objects;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
@@ -17,7 +18,7 @@ import org.objectweb.asm.Opcodes;
 public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         TypeDef from = from().get();
         TypeDef to = to().get();
         //[from] is on the stack.

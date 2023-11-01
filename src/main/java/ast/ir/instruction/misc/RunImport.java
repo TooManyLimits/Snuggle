@@ -1,5 +1,6 @@
 package ast.ir.instruction.misc;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.helper.NameHelper;
 import ast.ir.instruction.Instruction;
 import exceptions.compile_time.CompilationException;
@@ -11,7 +12,7 @@ import org.objectweb.asm.Opcodes;
 public record RunImport(String fileName) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         //Get info
         String filesClass = NameHelper.getFilesClassName();
         String fieldName = NameHelper.getImportFieldName(fileName);

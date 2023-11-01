@@ -1,12 +1,8 @@
 package ast.ir.helper;
 
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
-import exceptions.compile_time.AlreadyDeclaredException;
-import exceptions.compile_time.CompilationException;
-import exceptions.compile_time.UndeclaredVariableException;
 import lexing.Loc;
 import util.MapStack;
 
@@ -19,7 +15,7 @@ import java.util.Stack;
 public class ScopeHelper {
 
     private final Stack<Integer> indicesStack = new Stack<>();
-    private int curIndex = 0;
+    private int curIndex = 0, maxIndex = 0;
     private final MapStack<String, Integer> localVariables = new MapStack<>();
 
     public int declare(Loc loc, String name, TypeDef type) {
@@ -33,6 +29,11 @@ public class ScopeHelper {
         }
     }
 
+    //Get the max index this has gone to
+    public int maxIndex() {
+        return maxIndex;
+    }
+
     // long and double use 2 slots, everything else uses 1
     // (yes, references *do* only use 1, despite being 64 bits,
     // I think it's for backwards compatibility or something)
@@ -40,6 +41,7 @@ public class ScopeHelper {
         if (localVariables.putIfAbsent(name, curIndex) != null)
             throw new IllegalStateException("Variable \"" + name + "\" is already declared in this scope - but this should have been caught earlier? Bug in compiler, please report!");
         curIndex += slots;
+        maxIndex = Math.max(maxIndex, curIndex);
         return curIndex - slots;
     }
 

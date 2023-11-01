@@ -91,7 +91,7 @@ class MD5 {
             TABLE_T.set(62, 718787259);
             TABLE_T.set(63, -343485551);
         }
-        var messageLenBytes: u32 = message.len();
+        var messageLenBytes: u32 = message.size();
         var numBlocks: i32 = { System.ushr({ messageLenBytes + 8 }, 6) } + 1;
         var totalLen: u32 = System.shl(numBlocks, 6u32) as u32;
         var paddingBytes: Array<i8> = new Array<i8>(totalLen - messageLenBytes);
@@ -101,7 +101,7 @@ class MD5 {
             var i: u32 = 0;
 
             while i < 8 {
-                paddingBytes.set(paddingBytes.len() - 8 + i, System.l2b(messageLenBits));
+                paddingBytes.set(paddingBytes.size() - 8 + i, System.l2b(messageLenBits));
                 messageLenBits = System.ushr(messageLenBits, 8);
                 i = i + 1;
             };

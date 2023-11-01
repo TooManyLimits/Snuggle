@@ -1,5 +1,6 @@
 package ast.ir.instruction.vars;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
@@ -13,7 +14,7 @@ import org.objectweb.asm.Opcodes;
 public record LoadThis(TypeDef type) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         jvm.visitVarInsn(Opcodes.ALOAD, 0);
     }
 

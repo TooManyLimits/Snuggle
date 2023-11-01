@@ -1,5 +1,6 @@
 package builtin_types.helpers;
 
+import ast.ir.def.CodeBlock;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
@@ -9,6 +10,7 @@ import ast.typed.expr.TypedMethodCall;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,7 +23,7 @@ public class DefineConstWithFallback {
     private static BytecodeMethodDef defineBytecodeBinary(String name, TypeDef owningType, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
         //The bytecode arithmetic operators are prefixed with n_ like this, so they don't conflict
         //with the const version.
-        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(argType), returnType, bytecode);
+        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(argType), returnType, true, bytecode);
     }
 
     private static <A, B, T> ConstMethodDef defineConstBinary(String name, BiFunction<A, B, T> func, Function<Object, A> receiverConverter, Function<Object, B> argConverter, TypeDef argType, TypeDef returnType, BytecodeMethodDef fallback) {
@@ -53,7 +55,7 @@ public class DefineConstWithFallback {
     private static BytecodeMethodDef defineBytecodeUnary(String name, TypeDef owningType, TypeDef returnType, Consumer<MethodVisitor> bytecode) {
         //The bytecode arithmetic operators are prefixed with n_ like this, so they don't conflict
         //with the const version.
-        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(), returnType, bytecode);
+        return new BytecodeMethodDef("n_" + name, false, owningType, List.of(), returnType, true, bytecode);
     }
 
     private static <A, T> ConstMethodDef defineConstUnary(String name, Function<A, T> func, Function<Object, A> converter, TypeDef returnType, BytecodeMethodDef fallback) {

@@ -20,7 +20,7 @@ public class StringType implements BuiltinType {
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
         TypeDef stringType = checker.getBasicBuiltin(INSTANCE);
         return List.of(
-                new BytecodeMethodDef("add", false, stringType, List.of(stringType), stringType, v -> {
+                new BytecodeMethodDef("add", false, stringType, List.of(stringType), stringType, false, v -> {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 })
         );

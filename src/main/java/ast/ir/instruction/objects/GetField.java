@@ -1,5 +1,6 @@
 package ast.ir.instruction.objects;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
@@ -16,7 +17,7 @@ import java.util.List;
 public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) throws CompilationException {
+    public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
 
         FieldDef firstField = fieldsToFollow.get(0);
         FieldDef lastField = fieldsToFollow.get(fieldsToFollow.size() - 1);

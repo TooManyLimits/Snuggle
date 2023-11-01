@@ -21,7 +21,7 @@ public class ObjType implements BuiltinType {
         TypeDef thisType = checker.getBasicBuiltin(INSTANCE);
         TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(
-                new BytecodeMethodDef("new", false, thisType, List.of(), unitType, v ->
+                new BytecodeMethodDef("new", false, thisType, List.of(), unitType, false, v ->
                         v.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false))
         );
     }

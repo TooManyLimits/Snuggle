@@ -1,5 +1,6 @@
 package ast.ir.instruction.stack;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
@@ -22,7 +23,7 @@ import java.math.BigInteger;
 public record Push(Loc loc, Object obj, TypeDef type) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) throws CompilationException {
+    public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
         Object obj = obj();
         TypeDef type = type().get();
 

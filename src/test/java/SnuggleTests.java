@@ -4,12 +4,10 @@ import exceptions.compile_time.ParsingException;
 import exceptions.compile_time.TooManyMethodsException;
 import exceptions.compile_time.TypeCheckingException;
 import exceptions.runtime.SnuggleException;
-import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import runtime.SnuggleInstance;
-import runtime.SnuggleRuntime;
 import util.CompileAll;
 
 import java.io.File;
@@ -87,6 +85,33 @@ public class SnuggleTests {
         }
 
         test(new BuiltinTypes(), files, null);
+    }
+
+    @Test
+    public void testStructArrays() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec3 {
+                    var x: f32
+                    var y: f32
+                    var z: f32
+                    fn eq(o: Vec3): bool
+                        x == o.x && y == o.y && z == o.z
+                    fn add(o: Vec3): Vec3
+                        new Vec3 { x + o.x, y + o.y, z + o.z }
+                    fn str(): String
+                        x.str() + ", " + y.str() + ", " + z.str()
+                }
+                
+                var arr = new Array<Vec3>(4)
+                arr.set(0, new Vec3 {10, 20, 30})
+                arr.set(1, new Vec3 {40, 50, 60})
+                arr.set(3, new Vec3 {100, 110, 120})
+                arr.set(2, new Vec3 {70, 80, 90})
+                
+                System.print(arr.get(0).x)
+                System.print({arr.get(2) + arr.get(3)}.str())
+                Test.assertTrue(arr.get(0) + arr.get(1) == new Vec3 {50, 70, 90})
+                """);
     }
 
     @Test
@@ -174,10 +199,10 @@ public class SnuggleTests {
                     fn push(elem: T) {
                         backing.set(size, elem)
                         size = size + 1;
-                        if size == backing.len() {
+                        if size == backing.size() {
                             var newBacking = new Array<T>(size * 2);
                             var i: u32 = 0
-                            while i < backing.len() {
+                            while i < backing.size() {
                                 newBacking.set(i, backing.get(i))
                                 i = i + 1;
                             }
@@ -186,7 +211,7 @@ public class SnuggleTests {
                     }
                     fn get(index: u32): T backing.get(index)
                     fn size(): u32 size
-                    fn backingSize(): u32 backing.len()
+                    fn backingSize(): u32 backing.size()
                 }
                 
                 var a = new List<u32>()
@@ -349,10 +374,10 @@ public class SnuggleTests {
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
-                        if this.size == this.backing.len() {
+                        if this.size == this.backing.size() {
                             var newBacking = new Array<T>(this.size * 2);
                             var i: u32 = 0
-                            while i < this.backing.len() {
+                            while i < this.backing.size() {
                                 newBacking.set(i, this.backing.get(i))
                                 i = i + 1;
                             }
@@ -361,7 +386,7 @@ public class SnuggleTests {
                     }
                     fn get(index: u32): T this.backing.get(index)
                     fn size(): u32 this.size
-                    fn backingSize(): u32 this.backing.len()
+                    fn backingSize(): u32 this.backing.size()
                 }
                 
                 class FakeVarargsPrinter<T> {
@@ -510,10 +535,10 @@ public class SnuggleTests {
                     fn push(elem: T) {
                         this.backing.set(this.size, elem)
                         this.size = this.size + 1;
-                        if this.size == this.backing.len() {
+                        if this.size == this.backing.size() {
                             var newBacking = new Array<T>(this.size * 2);
                             var i: u32 = 0
-                            while i < this.backing.len() {
+                            while i < this.backing.size() {
                                 newBacking.set(i, this.backing.get(i))
                                 i = i + 1;
                             }
@@ -522,7 +547,7 @@ public class SnuggleTests {
                     }
                     fn get(index: u32): T this.backing.get(index)
                     fn size(): u32 this.size
-                    fn backingSize(): u32 this.backing.len()
+                    fn backingSize(): u32 this.backing.size()
                 }
                 
                 var a = new List<u32>()

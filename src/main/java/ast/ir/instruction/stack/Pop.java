@@ -1,5 +1,6 @@
 package ast.ir.instruction.stack;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
@@ -12,10 +13,10 @@ import util.ListUtils;
 public record Pop(TypeDef type) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         if (type.isPlural()) {
             ListUtils.iterBackwards(type.fields(),
-                    f -> new Pop(f.type()).accept(jvm)
+                    f -> new Pop(f.type()).accept(block, jvm)
             );
         } else {
             if (type.stackSlots() == 1)

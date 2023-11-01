@@ -1,7 +1,9 @@
 package ast.ir.instruction.objects;
 
+import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
+import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import org.objectweb.asm.MethodVisitor;
@@ -16,13 +18,15 @@ import java.util.List;
 public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<FieldDef> desiredFields) implements Instruction {
 
     @Override
-    public void accept(MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) {
         //Call the method:
-        methodToCall.compileCall(isSuperCall, jvm);
+        methodToCall.compileCall(isSuperCall, block, desiredFields, jvm);
 
         //If the method needs special handling afterwards (for plural types) then add more bytecodes
         if (methodToCall.returnType().isPlural()) {
-            fetchPluralFields(jvm, methodToCall.returnType());
+            //If it's a bytecode method that leaves its return on the stack, no need to fetch plural fields
+            if (!(methodToCall instanceof BytecodeMethodDef b) || !b.leavesReturnOnStack())
+                fetchPluralFields(jvm, methodToCall.returnType());
         }
     }
 
