@@ -88,6 +88,54 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testTruthy() throws CompilationException, SnuggleException {
+        test("""
+                struct GreaterThanTen {
+                    var value: f32
+                    fn truthy(): bool
+                        value > 10
+                }
+                
+                var x = new GreaterThanTen { 5 }
+                var y = new GreaterThanTen { 15 }
+                System.print(if x "x is over 10" else "x is under 10")
+                System.print(if y "y is over 10" else "y is under 10")
+                Test.assertFalse(x.truthy())
+                Test.assertFalse(if x true else false)
+                Test.assertTrue(y.truthy())
+                Test.assertTrue(if y true else false)
+                """);
+    }
+
+    @Test
+    public void testIsSubtype() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec2 {var x: f32 var y: f32}
+                class IsMyGenericI32<T> {
+                    fn new() super()
+                    fn amI(): bool
+                        is T i32
+                }
+                class IsSameGeneric<A, B> {
+                    fn new() super()
+                    fn isSame(): bool
+                        is A B && is B A
+                }
+                
+                Test.assertTrue(is String Obj)
+                Test.assertFalse(is Obj String)
+                Test.assertFalse(is i64 i32)
+                Test.assertTrue(is Array<Array<String>> Obj)
+                Test.assertFalse(is Array<Vec2> Obj)
+                Test.assertFalse(new IsMyGenericI32<f32>().amI())
+                Test.assertTrue(new IsMyGenericI32<i32>().amI())
+                Test.assertFalse(new IsSameGeneric<Obj, String>().isSame())
+                Test.assertFalse(new IsSameGeneric<String, Obj>().isSame())
+                Test.assertTrue(new IsSameGeneric<Vec2, Vec2>().isSame())
+                """);
+    }
+
+    @Test
     public void testBitShifts() throws CompilationException, SnuggleException {
         test("""
                 var x: i32 = 10
@@ -138,13 +186,13 @@ public class SnuggleTests {
                 var maybe = new GetMaybe()
                 
                 var perhaps = maybe.get(62896882877)
-                System.print(if perhaps.is()
+                System.print(if perhaps
                         "It was! The value is " + perhaps.get().str()
                     else
                         "It was not :( No value")
                 
                 perhaps = maybe.get(20978632037)
-                System.print(if perhaps.is()
+                System.print(if perhaps
                         "It was! The value is " + perhaps.get().str()
                     else
                         "It was not :( No value")

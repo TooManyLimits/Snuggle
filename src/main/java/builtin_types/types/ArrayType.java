@@ -17,6 +17,7 @@ import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ArrayType implements BuiltinType {
 
@@ -373,7 +374,16 @@ public class ArrayType implements BuiltinType {
     }
 
     @Override
+    public Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) {
+        if (!isPlural(checker, generics))
+            return Set.of(checker.getBasicBuiltin(ObjType.INSTANCE));
+        return Set.of();
+    }
+
+    @Override
     public TypeDef getInheritanceSupertype(TypeChecker checker, List<TypeDef> generics) {
-        return checker.getBasicBuiltin(ObjType.INSTANCE);
+        if (!isPlural(checker, generics))
+            return checker.getBasicBuiltin(ObjType.INSTANCE);
+        return null;
     }
 }

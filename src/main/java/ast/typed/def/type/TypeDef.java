@@ -53,7 +53,7 @@ public interface TypeDef {
 
     //Default helpful methods
     default boolean isSubtype(TypeDef other) {
-        if (this == other) return true;
+        if (this.get() == other.get()) return true;
         for (TypeDef supertype : typeCheckingSupertypes())
             if (supertype.isSubtype(other))
                 return true;

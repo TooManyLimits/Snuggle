@@ -61,6 +61,7 @@ public enum TokenType {
 
     //Other binary
     AS("as"),
+    IS("is"),
 
     //Unary
     NOT("!"),

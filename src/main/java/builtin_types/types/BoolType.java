@@ -31,6 +31,10 @@ public class BoolType implements BuiltinType {
                 DefineConstWithFallback.<Boolean, Boolean>defineUnary("not", a -> !a, boolType, boolType, v -> {
                     v.visitInsn(Opcodes.ICONST_1);
                     v.visitInsn(Opcodes.IXOR);
+                }),
+                //truthy
+                DefineConstWithFallback.defineUnary("truthy", a -> a, boolType, boolType, v -> {
+                    //Do nothing
                 })
         ));
     }

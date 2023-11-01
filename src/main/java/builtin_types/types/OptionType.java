@@ -96,7 +96,7 @@ public class OptionType implements BuiltinType {
                     new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, true, v -> {
                         //Literally just do nothing lmao
                     }),
-                    new BytecodeMethodDef("is", false, thisType, List.of(), boolType, true, v -> {
+                    new BytecodeMethodDef("truthy", false, thisType, List.of(), boolType, true, v -> {
                         Label ifPresent = new Label();
                         Label done = new Label();
                         v.visitJumpInsn(Opcodes.IFNONNULL, ifPresent);
@@ -171,7 +171,7 @@ public class OptionType implements BuiltinType {
                         //Just wrap the value with true lol
                         v.visitInsn(Opcodes.ICONST_1);
                     }),
-                    new BytecodeMethodDef("is", false, thisType, List.of(), boolType, true, v -> {
+                    new BytecodeMethodDef("truthy", false, thisType, List.of(), boolType, true, v -> {
                         //Stack is [value, bool]
                         Label ifPresent = new Label();
                         Label done = new Label();

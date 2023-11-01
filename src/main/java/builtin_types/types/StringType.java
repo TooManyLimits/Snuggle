@@ -10,6 +10,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.util.List;
+import java.util.Set;
 
 public class StringType implements BuiltinType {
 
@@ -64,6 +65,11 @@ public class StringType implements BuiltinType {
     @Override
     public int stackSlots(TypeChecker checker, List<TypeDef> generics) {
         return 1;
+    }
+
+    @Override
+    public Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) {
+        return Set.of(checker.getBasicBuiltin(ObjType.INSTANCE));
     }
 
     @Override

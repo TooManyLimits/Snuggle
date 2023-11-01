@@ -509,6 +509,14 @@ public class Parser {
                     FLOAT_LITERAL -> new ParsedLiteral(lexer.last().loc(), lexer.last().value());
             case NEW -> parseConstructor(classGenerics, methodGenerics);
 
+            //Other
+            case IS -> {
+                Loc startLoc = lexer.last().loc();
+                ParsedType type1 = parseType("is", startLoc, classGenerics, methodGenerics);
+                ParsedType type2 = parseType("is", startLoc, classGenerics, methodGenerics);
+                yield new ParsedIsSubtype(startLoc.merge(lexer.last().loc()), type1, type2);
+            }
+
             //Identifiers
             case IDENTIFIER -> new ParsedVariable(lexer.last().loc(), lexer.last().string());
             case THIS -> new ParsedVariable(lexer.last().loc(), "this");
@@ -540,6 +548,7 @@ public class Parser {
     private ParsedExpr parseIf(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc ifLoc = lexer.last().loc();
         ParsedExpr cond = parseExpr(classGenerics, methodGenerics, false);
+        cond = new ParsedMethodCall(cond.loc(), cond, "truthy", List.of(), List.of()); //truthy
         ParsedExpr ifTrue = parseExpr(classGenerics, methodGenerics, false);
         ParsedExpr ifFalse = lexer.consume(ELSE) ? parseExpr(classGenerics, methodGenerics, false) : null;
 
@@ -550,6 +559,7 @@ public class Parser {
     private ParsedExpr parseWhile(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc whileLoc = lexer.last().loc();
         ParsedExpr cond = parseExpr(classGenerics, methodGenerics, false);
+        cond = new ParsedMethodCall(cond.loc(), cond, "truthy", List.of(), List.of()); //truthy
         ParsedExpr body = parseExpr(classGenerics, methodGenerics, false);
         Loc fullLoc = whileLoc.merge(body.loc());
         return new ParsedWhile(fullLoc, cond, body);
