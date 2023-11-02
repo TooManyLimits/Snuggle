@@ -113,7 +113,7 @@ public class SnuggleTests {
                 struct Vec2 {var x: f32 var y: f32}
                 class IsMyGenericI32<T> {
                     fn new() super()
-                    fn amI(): bool
+                    fn isIt(): bool
                         is T i32
                 }
                 class IsSameGeneric<A, B> {
@@ -127,8 +127,8 @@ public class SnuggleTests {
                 Test.assertFalse(is i64 i32)
                 Test.assertTrue(is Array<Array<String>> Obj)
                 Test.assertFalse(is Array<Vec2> Obj)
-                Test.assertFalse(new IsMyGenericI32<f32>().amI())
-                Test.assertTrue(new IsMyGenericI32<i32>().amI())
+                Test.assertFalse(new IsMyGenericI32<f32>().isIt())
+                Test.assertTrue(new IsMyGenericI32<i32>().isIt())
                 Test.assertFalse(new IsSameGeneric<Obj, String>().isSame())
                 Test.assertFalse(new IsSameGeneric<String, Obj>().isSame())
                 Test.assertTrue(new IsSameGeneric<Vec2, Vec2>().isSame())

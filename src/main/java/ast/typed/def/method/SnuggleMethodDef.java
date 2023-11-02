@@ -22,8 +22,9 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     public TypedExpr constantFold(TypedMethodCall call) {
         if (isStatic) throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
         //If the body is just a literal, then constant fold the method call into that literal
-        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody)
-            return literalBody;
+        //ACTUALLY NO, SINCE RECEIVER COULD HAVE SIDE EFFECTS
+//        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody)
+//            return literalBody;
         if (!inline) return call;
         //TODO: Add inlining
         return call;
@@ -32,8 +33,8 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     @Override
     public TypedExpr constantFold(TypedStaticMethodCall call) {
         if (!isStatic) throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
-        //If the body is just a literal, then constant fold the method call into that literal
-        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody)
+        //If the body is just a literal, then constant fold the method call into that literal. (Also no args allowed, since those could have side effects)
+        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody && paramTypes.size() == 0)
             return literalBody;
         if (!inline) return call;
         //TODO: Add inlining
