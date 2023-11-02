@@ -30,6 +30,8 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
+        if (currentType.inheritanceSupertype() == null)
+            throw new ParsingException("Attempt to use super, but type \"" + currentType.name() + "\" has no supertype", loc);
         //Lookup best method
         TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, null);
         TypeDef actualReceiverType = bestMethod.receiverType();

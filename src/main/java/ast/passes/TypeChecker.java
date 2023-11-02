@@ -144,6 +144,28 @@ public class TypeChecker {
         return new TypedAST(checker.allTypeDefs, typedFiles);
     }
 
+    //Helper to check multiple method names, given as a list, in order.
+    //If all of them fail, then error.
+    //Throw a new error message, with the first error as the cause.
+    public BestMethodInfo tryMultipleMethodsForBest(Loc loc, TypeDef currentType, TypeDef receiverType, List<String> methodNames, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType) throws CompilationException {
+        //Regular case, size = 1, just call the method normally and don't wrap in our weird error message
+        if (methodNames.size() == 1)
+            return getBestMethod(loc, currentType, receiverType, methodNames.get(0), args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType);
+
+        //Otherwise, do something else
+        List<CompilationException> es = new ArrayList<>();
+        for (String methodName : methodNames) {
+            try {
+                //If any succeeds, it gets returned
+                return getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType);
+            } catch (CompilationException e) {
+                es.add(e);
+            }
+        }
+        //If we finish the loop and none of them succeeded, then give our own error
+        throw new TypeCheckingException("Unable to choose best method for any of: " + methodNames + ". Causes: " + ListUtils.map(es, Throwable::getMessage), loc);
+    }
+
     /**
      * Helper method to deal with method overload resolution!
      * <p>
@@ -174,7 +196,7 @@ public class TypeChecker {
         //Keep track of info for no-matching-method errors
         boolean foundCheckError = false;
         TypeCheckingException onlyCheckError = null;
-        List<MethodDef> thrownOutDueToWrongReturnType = null;
+        List<MethodDef> thrownOutDueToWrongReturnType = new ArrayList<>();
 
         //Get the list of methods to look through:
         List<? extends MethodDef> methodsToCheck;
@@ -182,7 +204,7 @@ public class TypeChecker {
             TypeDef def = receiverType;
             receiverType = def.inheritanceSupertype();
             if (receiverType == null)
-                throw new NoSuitableMethodException("Cannot use super, as this type has no supertype!", loc);
+                throw new IllegalStateException("Cannot use super, as this type has no supertype? Bug in compiler, please report!");
             def = receiverType;
             methodsToCheck = def.methods();
         } else {
@@ -212,8 +234,6 @@ public class TypeChecker {
             if (expectedReturnType != null) {
                 //We have an expected type, so skip anything whose return type doesn't fit it
                 if (!def.returnType().isSubtype(expectedReturnType)) {
-                    if (thrownOutDueToWrongReturnType == null)
-                        thrownOutDueToWrongReturnType = new ArrayList<>();
                     thrownOutDueToWrongReturnType.add(def);
                     continue;
                 }
@@ -279,7 +299,7 @@ public class TypeChecker {
             if (foundCheckError && onlyCheckError != null) {
                 //In this case, throw the only check error we ran into:
                 throw onlyCheckError;
-            } else if (thrownOutDueToWrongReturnType != null) {
+            } else if (thrownOutDueToWrongReturnType.size() > 0) {
                 //Need to look through the methods that were thrown out due to wrong return type, and use this
                 //info to craft a nice error message for this situation.
                 StringBuilder previouslyMatchingReturnTypes = new StringBuilder();
@@ -303,13 +323,7 @@ public class TypeChecker {
                     throw new TypeCheckingException("Expected method \"" + methodName + "\" to return " + expectedTypeName + ", but only found options " + previouslyMatchingReturnTypes, loc);
                 }
             }
-            if (methodName.equals("new")) {
-                if (isSuperCall)
-                    throw new NoSuitableMethodException("Unable to find suitable super() constructor for provided args", loc);
-                else
-                    throw new NoSuitableMethodException("Unable to find suitable constructor for provided args", loc);
-            } else
-                throw new NoSuitableMethodException("Unable to find suitable method \"" + methodName + "\" on type \"" + receiverType.name() + "\" with provided args", loc);
+            throw new NoSuitableMethodException(methodName, isSuperCall, receiverType, loc);
         }
 
         //Exactly one method must have matched:
@@ -336,7 +350,7 @@ public class TypeChecker {
         Arrays.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)));
         //If the first 2 are equally specific, error
         if (matchingMethods.get(arr[0]).compareSpecificity(matchingMethods.get(arr[1])) == 0)
-            throw new TooManyMethodsException("Unable to determine which overload of \"" + methodName + "\" to call based on provided args and context", loc);
+            throw new TooManyMethodsException(methodName, loc);
         return arr[0];
     }
 

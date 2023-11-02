@@ -66,7 +66,7 @@ public class FloatLiteralType implements BuiltinType {
             } else {
                 throw new IllegalStateException("Calling float literal method on non-float-literal? Bug in compiler, please report");
             }
-        }, null);
+        }, null, null);
     }
 
     //Generate many binary methods
@@ -115,7 +115,7 @@ public class FloatLiteralType implements BuiltinType {
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
             }
-        }, null);
+        }, null, null);
     }
 
     //Generate multiple unary methods

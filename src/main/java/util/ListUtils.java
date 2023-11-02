@@ -27,6 +27,20 @@ public class ListUtils {
         return result;
     }
 
+    public static <R, E extends Throwable> List<R> generate(int size, ThrowingFunction<Integer, R, E> func) throws E {
+        ArrayList<R> result = new ArrayList<>(size);
+        for (int i = 0; i < size; i++)
+            result.add(func.apply(i));
+        return result;
+    }
+
+    public static <T, R, E extends Throwable> List<R> mapIndexed(List<T> list, ThrowingBiFunction<T, Integer, R, E> func) throws E {
+        ArrayList<R> result = new ArrayList<>(list.size());
+        for (int i = 0; i < list.size(); i++)
+            result.add(func.apply(list.get(i), i));
+        return result;
+    }
+
     public static <T, E extends Throwable> List<T> filter(List<T> list, ThrowingFunction<T, Boolean, E> func) throws E {
         ArrayList<T> result = new ArrayList<>();
         for (T elem : list)

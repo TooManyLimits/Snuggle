@@ -14,7 +14,7 @@ import java.util.List;
 
 public record ConstMethodDef(String name, int numGenerics, boolean isStatic, List<TypeDef> paramTypes, TypeDef returnType,
                              ThrowingFunction<TypedMethodCall, TypedExpr, RuntimeException> doConst,
-                             ThrowingFunction<TypedStaticMethodCall, TypedExpr, RuntimeException> doConstStatic) implements MethodDef {
+                             ThrowingFunction<TypedStaticMethodCall, TypedExpr, RuntimeException> doConstStatic, MethodDef delegate) implements MethodDef {
 
     @Override
     public TypedExpr constantFold(TypedMethodCall call) {
@@ -24,6 +24,13 @@ public record ConstMethodDef(String name, int numGenerics, boolean isStatic, Lis
     @Override
     public TypedExpr constantFold(TypedStaticMethodCall call) {
         return doConstStatic.apply(call);
+    }
+
+    @Override
+    public MethodDef delegate() {
+        if (this.delegate == null)
+            throw new IllegalStateException("This ConstMethodDef has no delegate - bug in compiler, please report!");
+        return delegate;
     }
 
     @Override

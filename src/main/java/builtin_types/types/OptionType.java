@@ -89,7 +89,7 @@ public class OptionType implements BuiltinType {
                                 v.visitInsn(Opcodes.POP); //[this]
                             }), call.args(), innerType);
                         }
-                    }, null),
+                    }, null, null),
                     new BytecodeMethodDef("new", false, thisType, List.of(), unitType, true, v -> {
                         v.visitInsn(Opcodes.ACONST_NULL); //Literally just push null lmao
                     }),
@@ -172,7 +172,7 @@ public class OptionType implements BuiltinType {
                                 v.visitInsn(Opcodes.POP); //[value]
                             }), call.args(), innerType);
                         }
-                    }, null),
+                    }, null, null),
                     new BytecodeMethodDef("new", false, thisType, List.of(), unitType, true, v -> {
                         //Push a default innerType on the stack, then push false, then continue along
                         BytecodeHelper.pushDefaultValue(v, innerType);

@@ -2,11 +2,13 @@ package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.objects.GetField;
+import ast.ir.instruction.objects.MethodCall;
 import ast.ir.instruction.objects.SetField;
 import ast.ir.instruction.stack.Dup;
 import ast.ir.instruction.vars.LoadLocal;
 import ast.ir.instruction.vars.StoreLocal;
 import ast.typed.def.field.FieldDef;
+import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
@@ -16,12 +18,12 @@ import util.ListUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-//lhs starts as one of:
-//- TypedFieldAccess
-//- TypedVariable
-//- TypedStaticFieldAccess
-public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+//a.x += b
+//a.x is lhs, b is rhs
+//a.x = a.x.method(b)
+public record TypedAugmentedFieldAssignment(Loc loc, MethodDef method, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
 
+    //Very similar to TypedAssignment's code, slightly different things emitted to the CodeBlock arg
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
 
@@ -54,46 +56,40 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
         // - null
         // - Outputs a reference type
         if (!(lhs instanceof TypedVariable || lhs == null || lhs.type().isReferenceType()))
-            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" here; as this is not a local variable, a field of a reference type, or a static field!", lhs.loc());
+            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" on this struct; as this struct is neither a local variable nor a field of a reference type!", lhs.loc());
 
+        //If fieldsToFollow.size() > 0, then this is a field set; otherwise, it's a local variable.
         if (lhs instanceof TypedVariable typedVariable && (fieldsToFollow.size() == 0 || typedVariable.type().isPlural())) {
             //Local variable. Get the mapped index and compile the rhs.
             int mappedIndex = code.env.lookup(loc, typedVariable.name()) + indexOffset;
-            rhs.compile(code, null);
+            code.emit(new LoadLocal(mappedIndex, type)); //Load the local
+            rhs.compile(code, null); //Compile the rhs
+            code.emit(new MethodCall(false, method, List.of())); //Call the method
             code.emit(new StoreLocal(mappedIndex, type)); //Store the local
 
-            DefIndexPair desiredIndex = getDesiredIndexOffset(type, mappedIndex, desiredFields); //Get the desired index/type
-            code.emit(new LoadLocal(desiredIndex.index, desiredIndex.def.get())); //Load-local with that
+            TypedAssignment.DefIndexPair desiredIndex = TypedAssignment.getDesiredIndexOffset(type, mappedIndex, desiredFields); //Get the desired index/type
+            code.emit(new LoadLocal(desiredIndex.index(), desiredIndex.def().get())); //Load-local with that
 
         } else if (fieldsToFollow.size() > 0 && lhs != null && lhs.type().isReferenceType()) {
             //Setting field of a reference type
             lhs.compile(code, null); //Compile lhs
-            code.emit(new Dup(lhs.type())); //Dup it
+            code.emit(new Dup(lhs.type())); //Dup it twice
+            code.emit(new Dup(lhs.type()));
+            code.emit(new GetField(fieldsToFollow)); //Get field x
             rhs.compile(code, null); //Compile rhs
+            code.emit(new MethodCall(false, method, List.of())); //Call the method
             code.emit(new SetField(fieldsToFollow)); //Set field
             code.emit(new GetField(ListUtils.join(fieldsToFollow, DesiredFieldNode.toList(desiredFields)))); //Fetch the desired value back
         } else if (lhs == null) {
             //Setting static field
+            code.emit(new GetField(fieldsToFollow)); //Get field
             rhs.compile(code, null); //Compile rhs
+            code.emit(new MethodCall(false, method, List.of())); //Call the method
             code.emit(new SetField(fieldsToFollow)); //Set field
             code.emit(new GetField(ListUtils.join(fieldsToFollow, DesiredFieldNode.toList(desiredFields)))); //Fetch the desired value back
         } else {
             throw new IllegalStateException("Bug in compiler - illegal state in TypedAssignment. Please report!");
         }
-    }
-    public record DefIndexPair(TypeDef def, int index) {} //Return type from below
-    public static DefIndexPair getDesiredIndexOffset(TypeDef curDef, int curIndex, DesiredFieldNode desiredFields) {
-        if (desiredFields == null)
-            return new DefIndexPair(curDef, curIndex);
-        List<FieldDef> fieldDefs = curDef.fields();
-        for (FieldDef fieldDef : fieldDefs) {
-            if (fieldDef == desiredFields.field()) {
-                return getDesiredIndexOffset(fieldDef.type(), curIndex, desiredFields.next());
-            } else {
-                if (!fieldDef.isStatic())
-                    curIndex += fieldDef.type().stackSlots();
-            }
-        }
-        throw new IllegalStateException("Should have found field by now - bug in compiler, please report!");
+
     }
 }

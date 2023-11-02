@@ -13,7 +13,9 @@ import lexing.Loc;
 
 import java.util.List;
 
-public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String methodName, List<ResolvedType> genericArgs, List<TypeResolvedExpr> args) implements TypeResolvedExpr {
+public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, List<String> methodNames, List<ResolvedType> genericArgs, List<TypeResolvedExpr> args) implements TypeResolvedExpr {
+
+
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
         for (ResolvedType genericArg : genericArgs)
@@ -26,7 +28,7 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         //Look up best method
         TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, null);
+        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, null);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create the call
@@ -39,7 +41,7 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
         //Look up best method
         TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, expected);
+        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, expected);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Get the typed method call

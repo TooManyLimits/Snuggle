@@ -40,6 +40,7 @@ public interface MethodDef {
     //Constant-fold the method. By default, does nothing and just returns the input.
     default TypedExpr constantFold(TypedMethodCall call) { return call; }
     default TypedExpr constantFold(TypedStaticMethodCall call) { return call; }
+    default MethodDef delegate() { return this; }
 
     default boolean isConstructor() { return name().equals("new"); }
 

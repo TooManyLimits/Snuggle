@@ -1,6 +1,5 @@
 package ast.passes;
 
-import ast.ir.instruction.flow.Return;
 import ast.parsed.ParsedType;
 import ast.parsed.def.field.SnuggleParsedFieldDef;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
@@ -112,10 +111,20 @@ public class Parser {
             if (lexer.check(EOF))
                 throw new ParsingException("Unmatched class definition curly brace {", leftCurlyLoc);
             boolean pubMember = lexer.consume(PUB);
-            if (lexer.consume(FN))
-                methods.add(parseMethod(isClass, typeName.string(), pubMember, typeGenerics));
+            //"type fn" or "type var" (static)
+            if (lexer.consume(TYPE)) {
+                if (lexer.consume(FN))
+                    methods.add(parseMethod(isClass, true, typeName.string(), pubMember, typeGenerics));
+                else if (lexer.consume(VAR))
+                    fields.add(parseField(pubMember, true, typeGenerics));
+                else
+                    throw new ParsingException("Expected \"fn\" or \"var\" after \"type\"", lexer.last().loc());
+            }
+            //Regular functions/fields (not static)
+            else if (lexer.consume(FN))
+                methods.add(parseMethod(isClass, false, typeName.string(), pubMember, typeGenerics));
             else if (lexer.consume(VAR))
-                fields.add(parseField(pubMember, typeGenerics));
+                fields.add(parseField(pubMember, false, typeGenerics));
             else
                 throw new ParsingException("Expected method def, found " + lexer.peek().type(), lexer.peek().loc());
         }
@@ -126,8 +135,10 @@ public class Parser {
     }
 
     //"fn" was already consumed
-    private SnuggleParsedMethodDef parseMethod(boolean isClass, String thisTypeName, boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
+    private SnuggleParsedMethodDef parseMethod(boolean isClass, boolean isStatic, String thisTypeName, boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
         if (lexer.consume(NEW)) {
+            if (isStatic)
+                throw new ParsingException("Constructors cannot be static", lexer.last().loc());
             //Constructor mode. Similar, but slightly different.
             String methodName = "new";
             Loc methodLoc = lexer.last().loc();
@@ -145,7 +156,6 @@ public class Parser {
                     new ParsedType.Basic(thisTypeName, ListUtils.map(typeGenerics, g -> new ParsedType.Generic(i.getAndIncrement(), false))); //Struct constructors return the type itself
 
             ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false);
-            //TODO: Static methods, right now just always false
             List<String> paramNames = ListUtils.map(params, ParsedParam::name);
             List<ParsedType> paramTypes = ListUtils.map(params, ParsedParam::type);
             return new SnuggleParsedMethodDef(methodLoc, pub, false, methodName, methodGenerics.size(), paramNames, paramTypes, returnType, body);
@@ -160,10 +170,9 @@ public class Parser {
         ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : new ParsedType.Basic("unit", List.of());
 
         ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false);
-        //TODO: Static methods, right now just always false
         List<String> paramNames = ListUtils.map(params, ParsedParam::name);
         List<ParsedType> paramTypes = ListUtils.map(params, ParsedParam::type);
-        return new SnuggleParsedMethodDef(methodName.loc(), pub, false, methodName.string(), methodGenerics.size(), paramNames, paramTypes, returnType, body);
+        return new SnuggleParsedMethodDef(methodName.loc(), pub, isStatic, methodName.string(), methodGenerics.size(), paramNames, paramTypes, returnType, body);
     }
 
     // Parse a params list, not to be confused with an args list
@@ -191,7 +200,7 @@ public class Parser {
     private record ParsedParam(String name, ParsedType type) {}
 
     //"var" was already consumed
-    private SnuggleParsedFieldDef parseField(boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
+    private SnuggleParsedFieldDef parseField(boolean pub, boolean isStatic, List<GenericDef> typeGenerics) throws CompilationException {
         Loc varLoc = lexer.last().loc();
         Token fieldName = lexer.expect(IDENTIFIER, "Expected field name after \"var\", but got " + lexer.peek().type());
         Loc colonLoc = lexer.expect(COLON, "Expected type annotation for field " + fieldName.string(), fieldName.loc()).loc();
@@ -199,8 +208,7 @@ public class Parser {
         ParsedExpr initializer = null;
         if (lexer.consume(ASSIGN))
             initializer = parseExpr(typeGenerics, List.of(), false);
-        //TODO: Make static possible. Currently always false.
-        return new SnuggleParsedFieldDef(varLoc.merge(lexer.last().loc()), pub, false, fieldName.string(), annotatedType, initializer);
+        return new SnuggleParsedFieldDef(varLoc.merge(lexer.last().loc()), pub, isStatic, fieldName.string(), annotatedType, initializer);
     }
 
     /**
@@ -321,11 +329,13 @@ public class Parser {
             return new ParsedMethodCall(operatorLoc, operand, methodName, List.of(), List.of());
         }
 
-        return parseCall(classGenerics, methodGenerics, canBeDeclaration);
+        return parseCallOrFieldOrAssignment(classGenerics, methodGenerics, canBeDeclaration);
     }
 
-    private ParsedExpr parseCall(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
+    private ParsedExpr parseCallOrFieldOrAssignment(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
+        //Get the lhs
         ParsedExpr lhs = parseUnit(classGenerics, methodGenerics, canBeDeclaration);
+        //Any of these equal-precedence "call" operations can happen left-to-right
         while (lexer.consume(LEFT_PAREN, DOT, LEFT_SQUARE)) {
             TokenType op = lexer.last().type();
             Loc loc = lexer.last().loc();
@@ -350,108 +360,74 @@ public class Parser {
                     lhs = new ParsedMethodCall(callLoc, lhs, methodName, List.of(), args);
                 }
                 case LEFT_SQUARE -> {
-                    throw new IllegalStateException("Indexing is not yet implemented");
+                    List<ParsedExpr> args = parseArguments(RIGHT_SQUARE, classGenerics, methodGenerics);
+                    Loc indexLoc = lhs.loc().merge(lexer.last().loc());
+                    lhs = new ParsedMethodCall(indexLoc, lhs, "get", List.of(), args);
                 }
             }
         }
 
-        //Check for assignment after, of any annotatedType (augmented or not)
-        if (lexer.consumeBetween(ASSIGN, OR_ASSIGN)) {
-            TokenType operator = lexer.last().type();
-            Loc operatorLoc = lexer.last().loc();
-            if ((lhs instanceof ParsedVariable || lhs instanceof ParsedFieldAccess)) {
-                ParsedExpr rhs = parseExpr(classGenerics, methodGenerics, canBeDeclaration);
-                Loc fullLoc = Loc.merge(lhs.loc(), rhs.loc());
-                //Potentially modify expression, if this is augmented
-                if (operator != ASSIGN) {
-                    String methodName = switch (operator) {
-                        case PLUS_ASSIGN -> "addAssign";
-                        case MINUS_ASSIGN -> "subAssign";
-                        case TIMES_ASSIGN -> "mulAssign";
-                        case DIVIDE_ASSIGN -> "divAssign";
-                        case MODULO_ASSIGN -> "remAssign";
-                        case POWER_ASSIGN -> "powAssign";
-
-                        //Special handling, short-circuiting
-                        case OR_ASSIGN, AND_ASSIGN -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
-
-                        case BITWISE_AND_ASSIGN -> "bandAssign";
-                        case BITWISE_OR_ASSIGN -> "borAssign";
-                        case BITWISE_XOR_ASSIGN -> "bxorAssign";
-                        case BITWISE_NOT_ASSIGN -> "bnotAssign";
-
-                        case LEFT_SHIFT_ASSIGN -> "shlAssign";
-                        case RIGHT_SHIFT_ASSIGN -> "shrAssign";
-
-                        default -> throw new IllegalStateException("Parsing augmented assignment found invalid token \"" + operator.exactStrings[0] + "\". Bug in compiler, please report!");
-                    };
-
-                    //If the left was a field access, then we need to do some variable binding first.
-                    if (lhs instanceof ParsedFieldAccess fieldAccess) {
-                        //TODO: Remove and replace with better system, such as dedicated AST node
-
-                        //a.b += 5
-                        //becomes
-                        //{ var temp = a; temp.b = temp.b.plusEquals(5) }
-                        //Important that the temp variable is not possible to be a regular identifier, otherwise this could mess with things
-                        String tempVarName = "$$desugarAugmentedAssignment$$";
-
-                        //Special case for short-circuiting
-                        if (operator == OR_ASSIGN || operator == AND_ASSIGN) {
-                            ParsedExpr ifTrue = new ParsedFieldAccess(fullLoc, new ParsedVariable(fullLoc, tempVarName), fieldAccess.name());
-                            ParsedExpr ifFalse = new ParsedAssignment(fullLoc, new ParsedFieldAccess(fullLoc, new ParsedVariable(fullLoc, tempVarName), fieldAccess.name()), rhs);
-                            return new ParsedBlock(fullLoc, List.of(
-                                    new ParsedDeclaration(fullLoc, tempVarName, null, fieldAccess.lhs()),
-                                    new ParsedIf(fullLoc,
-                                            new ParsedFieldAccess(fullLoc, new ParsedVariable(fullLoc, tempVarName), fieldAccess.name()),
-                                            ifTrue,
-                                            ifFalse
-                                    )
-                            ));
-                        }
-
-                        return new ParsedBlock(fullLoc, List.of(
-                                //Declare the temp variable
-                                new ParsedDeclaration(fullLoc, tempVarName, null, fieldAccess.lhs()),
-                                //Assignment
-                                new ParsedAssignment(fullLoc,
-                                        //Target of assignment is temp.fieldName
-                                        new ParsedFieldAccess(fullLoc, new ParsedVariable(fullLoc, tempVarName), fieldAccess.name()),
-                                        //rhs is the method call
-                                        new ParsedMethodCall(fullLoc,
-                                                new ParsedFieldAccess(fullLoc, new ParsedVariable(fullLoc, tempVarName), fieldAccess.name()),
-                                                methodName,
-                                                List.of(),
-                                                List.of(rhs)
-                                        )
-                                )
-                        ));
-                    } else {
-                        //TODO: Remove and replace with better system, such as dedicated AST node
-                        //Special short-circuiting handling
-                        if (operator == OR_ASSIGN || operator == AND_ASSIGN)  {
-                            ParsedExpr ifTrue = lhs;
-                            ParsedExpr ifFalse = new ParsedAssignment(fullLoc, lhs, rhs);
-                            if (operator == AND_ASSIGN) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
-                            //Just comepletely return here
-                            return new ParsedIf(fullLoc,
-                                    lhs,
-                                    ifTrue,
-                                    ifFalse
-                            );
-                        }
-                        //It was a variable, so we can just call the method, and assign.
-                        rhs = new ParsedMethodCall(operatorLoc, lhs, methodName, List.of(), List.of(rhs));
-                    }
-                }
-                //Merge the locations and create assignment
-                lhs = new ParsedAssignment(fullLoc, lhs, rhs);
-            } else {
-                throw new ParsingException("Invalid assignment (" + operator.exactStrings[0] +  "). Can only assign to variables and fields.", operatorLoc);
+        //Once it's done, check for an assignment (or augmented assignment)
+        if (lexer.consume(ASSIGN)) {
+            Loc eqLoc = lexer.last().loc();
+            //Regular assignment, = operator.
+            //Parse the rhs:
+            ParsedExpr rhs = parseExpr(classGenerics, methodGenerics, canBeDeclaration);
+            //Assert the lhs to be a Variable, FieldAccess, or MethodCall("get")
+            if (lhs instanceof ParsedVariable || lhs instanceof ParsedFieldAccess) {
+                return new ParsedAssignment(eqLoc, lhs, rhs);
+            } else if (lhs instanceof ParsedMethodCall parsedCall && parsedCall.methodName().equals("get")) {
+                //If lhs was a "get", transform to a "set"
+                //a[0] = 1
+                //a.get(0) = 1
+                //a.set(0, 1)
+                return new ParsedMethodCall(
+                        eqLoc,
+                        parsedCall.receiver(),
+                        "set",
+                        parsedCall.genericArgs(), //Usually empty
+                        ListUtils.join(parsedCall.args(), List.of(rhs))
+                );
             }
-        }
+            //If it wasn't any case, error
+            throw new ParsingException("Invalid assignment (=). Can only assign to variables, fields, and [] results.", eqLoc);
+        } else if (lexer.consumeBetween(PLUS_ASSIGN, RIGHT_SHIFT_ASSIGN)) {
+            //Don't count ||= or &&= in this case, since they use special short circuit handling
+            TokenType op = lexer.last().type(); //Get the operator
+            Loc opLoc = lexer.last().loc(); //And its loc
+            //Choose method names via switch statement
+            String fallback = switch (op) {
+                case PLUS_ASSIGN -> "add";
+                case MINUS_ASSIGN -> "sub";
+                case TIMES_ASSIGN -> "mul";
+                case DIVIDE_ASSIGN -> "div";
+                case MODULO_ASSIGN -> "rem";
+                case POWER_ASSIGN -> "pow";
 
-        return lhs;
+                case BITWISE_AND_ASSIGN -> "band";
+                case BITWISE_OR_ASSIGN -> "bor";
+                case BITWISE_XOR_ASSIGN -> "bxor";
+
+                case LEFT_SHIFT_ASSIGN -> "shl";
+                case RIGHT_SHIFT_ASSIGN -> "shr";
+                default -> throw new IllegalStateException("Parsing augmented assignment found invalid token \"" + op.exactStrings[0] + "\". Bug in compiler, please report!");
+            };
+            String methodName = fallback + "Assign"; //Assignment versions are just the same as regular, but with "Assign" appended
+
+            //Parse the rhs:
+            ParsedExpr rhs = parseCallOrFieldOrAssignment(classGenerics, methodGenerics, canBeDeclaration);
+            //Assert and return
+            if (lhs instanceof ParsedVariable || lhs instanceof ParsedFieldAccess || lhs instanceof ParsedMethodCall parsedCall && parsedCall.methodName().equals("get")) {
+                return new ParsedAugmentedAssignment(opLoc, methodName, fallback, lhs, rhs);
+            }
+            //If it wasn't any case, error
+            throw new ParsingException("Invalid assignment (" + op.exactStrings[0] + "). Can only assign to variables, fields, and [] results.", opLoc);
+        } else if (lexer.consumeBetween(AND_ASSIGN, OR_ASSIGN)) {
+            //Special case short circuiting &&=, ||=
+            throw new ParsingException("||= and &&= operators not yet implemented", lexer.last().loc());
+        } else {
+            return lhs;
+        }
     }
 
     //If there's a <, then parses annotatedType arguments list

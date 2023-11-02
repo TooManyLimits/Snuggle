@@ -15,7 +15,11 @@ public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef t
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
 
-        if (lhs.type().isReferenceType()) {
+        if (lhs == null) {
+            //Static field
+            List<FieldDef> desiredList = DesiredFieldNode.toList(new DesiredFieldNode(field, desiredFields));
+            block.emit(new GetField(desiredList));
+        } else if (lhs.type().isReferenceType()) {
             //If LHS is a reference type, then don't push our field into the desired stack.
             //Compile the LHS without any desired fields.
             lhs.compile(block, null);

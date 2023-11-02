@@ -57,7 +57,7 @@ public class IntLiteralType implements BuiltinType {
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
             }
-        }, null);
+        }, null, null);
     }
 
     //Generate many binary methods
@@ -105,7 +105,7 @@ public class IntLiteralType implements BuiltinType {
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
             }
-        }, null);
+        }, null, null);
     }
 
     private <T> List<MethodDef> generateUnary(String name, Function<BigInteger, T> func, TypeDef mappedIntLiteralType, List<TypeDef> mappedIntTypes) {

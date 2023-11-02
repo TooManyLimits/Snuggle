@@ -37,7 +37,7 @@ public class DefineConstWithFallback {
                 //Otherwise, delegate to the fallback implementation
                 return new TypedMethodCall(call.loc(), call.receiver(), fallback, call.args(), returnType);
             }
-        }, null);
+        }, null, fallback);
     }
 
     public static <A, B, T> List<MethodDef> defineBinary(String name, BiFunction<A, B, T> func, TypeDef owningType, TypeDef argType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {
@@ -67,7 +67,7 @@ public class DefineConstWithFallback {
                 //Otherwise, delegate to the fallback implementation
                 return new TypedMethodCall(call.loc(), call.receiver(), fallback, call.args(), returnType);
             }
-        }, null);
+        }, null, fallback);
     }
 
     public static <A, T> List<MethodDef> defineUnary(String name, Function<A, T> func, TypeDef owningType, TypeDef returnType, Consumer<MethodVisitor> doOperation) {

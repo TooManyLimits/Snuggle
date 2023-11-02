@@ -50,7 +50,7 @@ public record ParsedMethodCall(Loc loc, ParsedExpr receiver, String methodName, 
         return new TypeResolvedMethodCall(
                 loc,
                 receiver.resolve(resolver),
-                methodName,
+                List.of(methodName),
                 ListUtils.map(genericArgs, g -> g.resolve(loc, resolver)),
                 ListUtils.map(args, a -> a.resolve(resolver))
         );

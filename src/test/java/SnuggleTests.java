@@ -88,6 +88,96 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testCrimes() throws CompilationException, SnuggleException {
+        test("""
+                class Crime {
+                    type var val: i32
+                    type fn get(): i32
+                        Crime.val
+                    type fn subAssign(x: i32): i32
+                        Crime.val -= x
+                    type fn set(x: i32): i32
+                        Crime.val = x * x
+                    type fn get(a: i32, b: i32): i32
+                        a * b
+                    type fn invoke(x: i32): i32
+                        x * x * x
+                }
+                
+                Test.assertEquals(200, Crime[10, 20])
+                Crime[] = 15
+                Test.assertEquals(225, Crime[])
+                Crime -= 10
+                Test.assertEquals(215, Crime[])
+                Test.assertEquals(64, Crime(4))
+                """);
+    }
+
+    @Test
+    public void testEvenShorterList() throws CompilationException, SnuggleException {
+        test("""
+                class List<T> {
+                    var backing: Array<T>
+                    var size: u32
+                    fn new() {
+                        super()
+                        backing = new Array<T>(5)
+                        size = 0;
+                    }
+                    fn addAssign(elem: T): List<T> {
+                        backing[size] = elem
+                        size += 1
+                        if size == #backing {
+                            var newBacking = new Array<T>(size * 2)
+                            var i: u32 = 0
+                            while i < #backing {
+                                newBacking[i] = backing[i]
+                                i += 1
+                            }
+                            backing = newBacking
+                        }
+                        this
+                    }
+                    fn get(index: u32): T backing[index]
+                    fn size(): u32 size
+                    fn backingSize(): u32 #backing
+                }
+                
+                var a = new List<u32>()
+                a += 1
+                a += 3
+                a += 5
+                a += 2
+                a += 7
+                a += 4
+                
+                var i: u32 = 0
+                while i < #a {
+                    System.print(a[i])
+                    i += 1
+                }
+                
+                Test.assertEquals(1, a[0])
+                Test.assertEquals(3, a[1])
+                Test.assertEquals(5, a[2])
+                Test.assertEquals(2, a[3])
+                Test.assertEquals(7, a[4])
+                Test.assertEquals(4, a[5])
+                """);
+    }
+
+    @Test
+    public void testAugmentedBasic() throws CompilationException, SnuggleException {
+        test("""
+                var x = 10u32
+                System.print(x)
+                x += 10
+                System.print(x)
+                Test.assertEquals(20, x)
+                """);
+    }
+
+    @Test
     public void testTruthy() throws CompilationException, SnuggleException {
         test("""
                 struct GreaterThanTen {
@@ -628,6 +718,12 @@ public class SnuggleTests {
                     i = i + 1;
                 }
                 
+                Test.assertEquals(1, a.get(0))
+                Test.assertEquals(3, a.get(1))
+                Test.assertEquals(5, a.get(2))
+                Test.assertEquals(2, a.get(3))
+                Test.assertEquals(7, a.get(4))
+                Test.assertEquals(4, a.get(5))
                 """);
     }
 
