@@ -1,5 +1,7 @@
 package util;
 
+import java.util.function.Function;
+
 //Runs the getter on first get() attempt, and caches result
 public class LateInit<T, E extends Throwable> {
 
@@ -14,10 +16,19 @@ public class LateInit<T, E extends Throwable> {
     public T get() throws E {
         if (filled)
             return cachedResult;
-        filled = true;
         cachedResult = getter.get();
+        filled = true;
         return cachedResult;
     }
+
+    public <R> R tryGet(Function<T, R> func) {
+        try {
+            return func.apply(get());
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
 
     public T getAlreadyFilled() {
         if (filled)

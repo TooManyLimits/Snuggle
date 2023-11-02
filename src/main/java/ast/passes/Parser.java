@@ -275,22 +275,11 @@ public class Parser {
 
             //Special handling for and/or operations. They can't be method calls
             //because of short-circuiting.
-            //a || b gets converted to { var temp = a; if temp temp else b }
-            //a && b gets converted to { var temp = a; if temp b else temp }
-            //TODO: Remove and replace with better system, such as dedicated AST node
             if (op == AND || op == OR) {
-                String tempVarName = "$$desugarShortCircuit$$";
-                ParsedExpr ifTrue = new ParsedVariable(fullLoc, tempVarName);
-                ParsedExpr ifFalse = rhs;
-                if (op == AND) {ParsedExpr temp = ifTrue; ifTrue = ifFalse; ifFalse = temp; } //swap branches if AND
-                lhs = new ParsedBlock(fullLoc, List.of(
-                        new ParsedDeclaration(fullLoc, tempVarName, new ParsedType.Basic("bool", List.of()), lhs),
-                        new ParsedIf(fullLoc,
-                                new ParsedVariable(fullLoc, tempVarName),
-                                ifTrue,
-                                ifFalse
-                        )
-                ));
+                lhs = new ParsedLogicalBinOp(fullLoc, op == AND,
+                        wrapTruthy(lhs),
+                        wrapTruthy(rhs)
+                );
                 continue;
             }
 
@@ -300,7 +289,6 @@ public class Parser {
             //Special !=
             if (op == NOT_EQUAL)
                 lhs = new ParsedMethodCall(opLoc, lhs, "not", List.of(), List.of());
-
         }
 
         return lhs;
@@ -510,7 +498,7 @@ public class Parser {
             case NEW -> parseConstructor(classGenerics, methodGenerics);
 
             //Other
-            case IS -> {
+            case IS -> { //is Type1 Type2
                 Loc startLoc = lexer.last().loc();
                 ParsedType type1 = parseType("is", startLoc, classGenerics, methodGenerics);
                 ParsedType type2 = parseType("is", startLoc, classGenerics, methodGenerics);
@@ -547,8 +535,7 @@ public class Parser {
 
     private ParsedExpr parseIf(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc ifLoc = lexer.last().loc();
-        ParsedExpr cond = parseExpr(classGenerics, methodGenerics, false);
-        cond = new ParsedMethodCall(cond.loc(), cond, "truthy", List.of(), List.of()); //truthy
+        ParsedExpr cond = wrapTruthy(parseExpr(classGenerics, methodGenerics, false));
         ParsedExpr ifTrue = parseExpr(classGenerics, methodGenerics, false);
         ParsedExpr ifFalse = lexer.consume(ELSE) ? parseExpr(classGenerics, methodGenerics, false) : null;
 
@@ -558,8 +545,7 @@ public class Parser {
 
     private ParsedExpr parseWhile(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc whileLoc = lexer.last().loc();
-        ParsedExpr cond = parseExpr(classGenerics, methodGenerics, false);
-        cond = new ParsedMethodCall(cond.loc(), cond, "truthy", List.of(), List.of()); //truthy
+        ParsedExpr cond = wrapTruthy(parseExpr(classGenerics, methodGenerics, false));
         ParsedExpr body = parseExpr(classGenerics, methodGenerics, false);
         Loc fullLoc = whileLoc.merge(body.loc());
         return new ParsedWhile(fullLoc, cond, body);
@@ -681,6 +667,10 @@ public class Parser {
         } else {
             return wrapOptions(new ParsedType.Basic(head, List.of()), numOptions);
         }
+    }
+
+    private static ParsedMethodCall wrapTruthy(ParsedExpr expr) {
+        return new ParsedMethodCall(expr.loc(), expr, "truthy", List.of(), List.of()); //truthy
     }
 
     //Generic parsing stuff
