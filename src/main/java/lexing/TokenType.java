@@ -66,8 +66,8 @@ public enum TokenType {
     //Unary
     NOT("!"),
     BITWISE_NOT("~"),
-
     QUESTION_MARK("?"),
+    HASHTAG("#"),
 
     //Brackets
     LEFT_PAREN("("),

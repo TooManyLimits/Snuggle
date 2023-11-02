@@ -256,20 +256,20 @@ public class SnuggleTests {
                     }
                     fn push(elem: T) {
                         backing.set(size, elem)
-                        size = size + 1;
-                        if size == backing.size() {
-                            var newBacking = new Array<T>(size * 2);
+                        size = size + 1
+                        if size == #backing {
+                            var newBacking = new Array<T>(size * 2)
                             var i: u32 = 0
-                            while i < backing.size() {
+                            while i < #backing {
                                 newBacking.set(i, backing.get(i))
-                                i = i + 1;
+                                i = i + 1
                             }
-                            backing = newBacking;
-                        } else {}
+                            backing = newBacking
+                        };
                     }
                     fn get(index: u32): T backing.get(index)
                     fn size(): u32 size
-                    fn backingSize(): u32 backing.size()
+                    fn backingSize(): u32 #backing
                 }
                 
                 var a = new List<u32>()
@@ -283,9 +283,15 @@ public class SnuggleTests {
                 var i: u32 = 0
                 while i < a.backingSize() {
                     System.print(a.get(i))
-                    i = i + 1;
+                    i = i + 1
                 }
                 
+                Test.assertEquals(1, a.get(0))
+                Test.assertEquals(3, a.get(1))
+                Test.assertEquals(5, a.get(2))
+                Test.assertEquals(2, a.get(3))
+                Test.assertEquals(7, a.get(4))
+                Test.assertEquals(4, a.get(5))
                 
                 """);
     }

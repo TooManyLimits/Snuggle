@@ -308,11 +308,12 @@ public class Parser {
     }
 
     private ParsedExpr parseUnary(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
-        if (lexer.consume(MINUS, NOT, BITWISE_NOT)) {
+        if (lexer.consume(MINUS, NOT, BITWISE_NOT, HASHTAG)) {
             String methodName = switch (lexer.last().type()) {
                 case MINUS -> "neg";
                 case NOT -> "not";
                 case BITWISE_NOT -> "bnot";
+                case HASHTAG -> "size";
                 default -> throw new IllegalStateException("parseUnary found invalid token \"" + lexer.last().type() + "\". Bug in compiler, please report!");
             };
             Loc operatorLoc = lexer.last().loc();
