@@ -670,7 +670,7 @@ public class Parser {
     }
 
     private static ParsedMethodCall wrapTruthy(ParsedExpr expr) {
-        return new ParsedMethodCall(expr.loc(), expr, "truthy", List.of(), List.of()); //truthy
+        return new ParsedMethodCall(expr.loc(), expr, "bool", List.of(), List.of()); //truthy
     }
 
     //Generic parsing stuff

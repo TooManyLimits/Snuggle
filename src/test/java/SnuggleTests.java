@@ -92,7 +92,7 @@ public class SnuggleTests {
         test("""
                 struct GreaterThanTen {
                     var value: f32
-                    fn truthy(): bool
+                    fn bool(): bool
                         value > 10
                 }
                 
@@ -100,9 +100,9 @@ public class SnuggleTests {
                 var y = new GreaterThanTen { 15 }
                 System.print(if x "x is over 10" else "x is under 10")
                 System.print(if y "y is over 10" else "y is under 10")
-                Test.assertFalse(x.truthy())
+                Test.assertFalse(x.bool())
                 Test.assertFalse(if x true else false)
-                Test.assertTrue(y.truthy())
+                Test.assertTrue(y.bool())
                 Test.assertTrue(if y true else false)
                 """);
     }
@@ -186,13 +186,13 @@ public class SnuggleTests {
                 var maybe = new GetMaybe()
                 
                 var perhaps = maybe.get(62896882877)
-                System.print(if perhaps
+                System.print(if perhaps.isPresent()
                         "It was! The value is " + perhaps.get().str()
                     else
                         "It was not :( No value")
                 
                 perhaps = maybe.get(20978632037)
-                System.print(if perhaps
+                System.print(if perhaps.isPresent()
                         "It was! The value is " + perhaps.get().str()
                     else
                         "It was not :( No value")

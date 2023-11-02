@@ -96,7 +96,18 @@ public class OptionType implements BuiltinType {
                     new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, true, v -> {
                         //Literally just do nothing lmao
                     }),
-                    new BytecodeMethodDef("truthy", false, thisType, List.of(), boolType, true, v -> {
+                    new BytecodeMethodDef("bool", false, thisType, List.of(), boolType, true, v -> {
+                        Label ifPresent = new Label();
+                        Label done = new Label();
+                        v.visitJumpInsn(Opcodes.IFNONNULL, ifPresent);
+                        v.visitInsn(Opcodes.ICONST_0);
+                        v.visitJumpInsn(Opcodes.GOTO, done);
+                        v.visitLabel(ifPresent);
+                        v.visitInsn(Opcodes.ICONST_1);
+                        v.visitLabel(done);
+                    }),
+                    //Same method def, just under the name "isPresent" instead in case people don't like calling .bool()
+                    new BytecodeMethodDef("isPresent", false, thisType, List.of(), boolType, true, v -> {
                         Label ifPresent = new Label();
                         Label done = new Label();
                         v.visitJumpInsn(Opcodes.IFNONNULL, ifPresent);
@@ -171,7 +182,21 @@ public class OptionType implements BuiltinType {
                         //Just wrap the value with true lol
                         v.visitInsn(Opcodes.ICONST_1);
                     }),
-                    new BytecodeMethodDef("truthy", false, thisType, List.of(), boolType, true, v -> {
+                    new BytecodeMethodDef("bool", false, thisType, List.of(), boolType, true, v -> {
+                        //Stack is [value, bool]
+                        Label ifPresent = new Label();
+                        Label done = new Label();
+                        v.visitJumpInsn(Opcodes.IFNE, ifPresent); //[value]
+                        new Pop(innerType).accept(null, v); //Pop inner off the stack: []. Pop doesn't use CodeBlock param.
+                        v.visitInsn(Opcodes.ICONST_0); //Push false: [false]
+                        v.visitJumpInsn(Opcodes.GOTO, done);
+                        v.visitLabel(ifPresent); //[value]
+                        new Pop(innerType).accept(null, v); //Pop inner off the stack: []. Pop doesn't use CodeBlock param.
+                        v.visitInsn(Opcodes.ICONST_1); //Push true: [true]
+                        v.visitLabel(done); //[true] or [false]
+                    }),
+                    //Same method def, different name "isPresent" in case people don't like .bool()
+                    new BytecodeMethodDef("isPresent", false, thisType, List.of(), boolType, true, v -> {
                         //Stack is [value, bool]
                         Label ifPresent = new Label();
                         Label done = new Label();

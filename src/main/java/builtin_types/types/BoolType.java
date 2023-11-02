@@ -33,7 +33,7 @@ public class BoolType implements BuiltinType {
                     v.visitInsn(Opcodes.IXOR);
                 }),
                 //truthy
-                DefineConstWithFallback.defineUnary("truthy", a -> a, boolType, boolType, v -> {
+                DefineConstWithFallback.defineUnary("bool", a -> a, boolType, boolType, v -> {
                     //Do nothing
                 })
         ));
