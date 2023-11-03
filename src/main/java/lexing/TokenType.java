@@ -89,7 +89,7 @@ public enum TokenType {
     //Declarations and such
     VAR("var"),
     NEW("new"),
-    TYPE("type"),
+    STATIC("static"),
 
     PUB("pub"),
     IMPORT("import"),

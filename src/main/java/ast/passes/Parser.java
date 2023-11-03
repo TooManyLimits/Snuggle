@@ -111,14 +111,14 @@ public class Parser {
             if (lexer.check(EOF))
                 throw new ParsingException("Unmatched class definition curly brace {", leftCurlyLoc);
             boolean pubMember = lexer.consume(PUB);
-            //"type fn" or "type var" (static)
-            if (lexer.consume(TYPE)) {
+            //"static fn" or "static var"
+            if (lexer.consume(STATIC)) {
                 if (lexer.consume(FN))
                     methods.add(parseMethod(isClass, true, typeName.string(), pubMember, typeGenerics));
                 else if (lexer.consume(VAR))
                     fields.add(parseField(pubMember, true, typeGenerics));
                 else
-                    throw new ParsingException("Expected \"fn\" or \"var\" after \"type\"", lexer.last().loc());
+                    throw new ParsingException("Expected \"fn\" or \"var\" after \"static\"", lexer.last().loc());
             }
             //Regular functions/fields (not static)
             else if (lexer.consume(FN))

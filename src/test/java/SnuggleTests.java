@@ -91,16 +91,16 @@ public class SnuggleTests {
     public void testCrimes() throws CompilationException, SnuggleException {
         test("""
                 class Crime {
-                    type var val: i32
-                    type fn get(): i32
+                    static var val: i32
+                    static fn get(): i32
                         Crime.val
-                    type fn subAssign(x: i32): i32
+                    static fn subAssign(x: i32): i32
                         Crime.val -= x
-                    type fn set(x: i32): i32
+                    static fn set(x: i32): i32
                         Crime.val = x * x
-                    type fn get(a: i32, b: i32): i32
+                    static fn get(a: i32, b: i32): i32
                         a * b
-                    type fn invoke(x: i32): i32
+                    static fn invoke(x: i32): i32
                         x * x * x
                 }
                 
