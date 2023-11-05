@@ -88,15 +88,12 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testWhar() throws CompilationException, SnuggleException {
+    public void testMaybeUninit() throws CompilationException, SnuggleException {
         test("""
-                class Thingi<T> {
-                    fn new(x: T) {
-                        super()
-                        System.print(x)
-                    }
-                }
-                new Thingi<i32>(5)
+                var x = new Array<MaybeUninit<String>>(1)[0]
+                var y = new MaybeUninit<String>("hi")
+                System.print(y[])
+                System.print(x[])
                 """);
     }
 

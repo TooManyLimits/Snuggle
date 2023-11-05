@@ -1,19 +1,13 @@
 package ast.type_resolved.def.type;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.helper.BytecodeHelper;
 import ast.ir.instruction.objects.GetField;
 import ast.ir.instruction.objects.MethodCall;
-import ast.ir.instruction.objects.New;
 import ast.ir.instruction.objects.SetField;
 import ast.ir.instruction.stack.Pop;
 import ast.ir.instruction.stack.Push;
-import ast.parsed.ParsedType;
-import ast.parsed.def.method.SnuggleParsedMethodDef;
-import ast.parsed.def.type.ParsedTypeDef;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
-import ast.passes.TypeResolver;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.method.SnuggleTypeResolvedMethodDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
@@ -21,12 +15,10 @@ import ast.typed.def.field.BuiltinFieldDef;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
-import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.EnumDef;
 import ast.typed.def.type.TypeDef;
-import ast.typed.expr.DesiredFieldNode;
-import ast.typed.expr.TypedExpr;
 import builtin_types.types.ArrayType;
+import builtin_types.types.MaybeUninit;
 import builtin_types.types.UnitType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
@@ -117,9 +109,9 @@ public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumPro
                     propertyTypes[i] = propertyType;
                     propertyArraySetters[i] = ListUtils.find(arrayType.methods(), m -> m.name().equals("set"));
                 } else {
-                    //No new() method, so let's do something horrifying and inhumane instead
-                    TypeDef valuetypeified = ArrayType.valuetypeify(checker, propertyType);
-                    arrayType = checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(valuetypeified));
+                    //No new() method, so wrap in a MaybeUninit
+                    TypeDef maybeUninit = checker.getGenericBuiltin(MaybeUninit.INSTANCE, List.of(propertyType));
+                    arrayType = checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(maybeUninit));
                     if ((newMethod = ListUtils.find(arrayType.methods(), m -> m.name().equals("new"))) != null) {
                         //Has a new method, so let's call it
                         staticInitBlock.emit(new MethodCall(false, newMethod, List.of()));
