@@ -88,6 +88,22 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testShortestList() throws CompilationException, SnuggleException {
+        test("""
+                //It's so short, it's only 1 line of code (in this file, anyway)
+                import "List"
+                
+                var x = new List<String>()
+                x.push("hello").push("cutie").push("applejuice").push(":D")
+                
+                Test.assertEquals(4, #x)
+                Test.assertEquals("cutie", x[1])
+                x[2] = "juic"
+                Test.assertEquals("juic", x[2])
+                """);
+    }
+
+    @Test
     public void testMaybeUninit() throws CompilationException, SnuggleException {
         test("""
                 var x = new Array<MaybeUninit<String>>(1)[0]

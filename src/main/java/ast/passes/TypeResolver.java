@@ -8,12 +8,12 @@ import ast.parsed.prog.ParsedFile;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedImport;
-import ast.type_resolved.expr.TypeResolvedMethodCall;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.type_resolved.prog.TypeResolvedFile;
 import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
 import builtin_types.reflect.ReflectedBuiltin;
+import builtin_types.snuggle.SnuggleDefinedType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.DuplicateNamesException;
 import exceptions.compile_time.ImportException;
@@ -60,10 +60,19 @@ public class TypeResolver {
 
     //Use the static method above.
     private TypeResolver(BuiltinTypes builtinTypes, ParsedAST parsedAST) throws CompilationException {
-        //Globally defined types
+
+        Set<String> fileNames = new HashSet<>(ListUtils.map(parsedAST.files(), ParsedFile::name));
+
+        //Insert the snuggle-defined builtins into the ParsedAST
+        for (SnuggleDefinedType snuggleDefined : builtinTypes.getSnuggleDefined())
+            //Only add the file if there's not already a file with that name
+            if (!fileNames.contains(snuggleDefined.parsedFile.name()))
+                parsedAST.files().add(snuggleDefined.parsedFile);
+
+        //Globally defined builtin types
         builtins = new IdentityHashMap<>();
         reflectedBuiltins = new IdentityHashMap<>();
-        for (BuiltinType builtin : builtinTypes.getAll()) {
+        for (BuiltinType builtin : builtinTypes.getBuiltins()) {
             int mapping = register(new BuiltinParsedTypeDef(builtin));
             if (builtin.nameable()) {
                 //Require that all nameable builtin types have distinct names

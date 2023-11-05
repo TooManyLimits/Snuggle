@@ -44,11 +44,15 @@ public class Parser {
         if (!files.containsKey("main"))
             throw new IllegalArgumentException("Expected main file, but could not find any");
         //Parse files
-        List<ParsedFile> parsedFiles = new ArrayList<>(files.size());
+        ArrayList<ParsedFile> parsedFiles = new ArrayList<>(files.size());
         for (var file : files.entrySet())
             parsedFiles.add(new Parser(file.getValue()).parseFile(file.getKey()));
         //Return
         return new ParsedAST(parsedFiles);
+    }
+
+    public static ParsedFile parseFile(String name, Lexer lexer) throws CompilationException {
+        return new Parser(lexer).parseFile(name);
     }
 
     private final Lexer lexer;

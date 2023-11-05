@@ -1,6 +1,9 @@
 package builtin_types;
 
+import ast.parsed.prog.ParsedFile;
 import builtin_types.reflect.ReflectedBuiltin;
+import builtin_types.snuggle.ListType;
+import builtin_types.snuggle.SnuggleDefinedType;
 import builtin_types.types.*;
 import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
@@ -18,6 +21,7 @@ import java.util.*;
 public class BuiltinTypes {
 
     private final Set<BuiltinType> registeredTypes = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<SnuggleDefinedType> registeredSnuggleTypes = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public BuiltinTypes() {
         //By default, adds in all the standard types.
@@ -29,6 +33,12 @@ public class BuiltinTypes {
         return this;
     }
 
+    public BuiltinTypes addType(SnuggleDefinedType snuggleDefined) {
+        registeredSnuggleTypes.add(snuggleDefined);
+        return this;
+    }
+
+
     public BuiltinTypes reflect(Class<?> clazz) {
         return addType(new ReflectedBuiltin(clazz));
     }
@@ -38,8 +48,16 @@ public class BuiltinTypes {
         return this;
     }
 
+    public BuiltinTypes removeType(SnuggleDefinedType builtinType) {
+        registeredSnuggleTypes.remove(builtinType);
+        return this;
+    }
+
     public BuiltinTypes addStandardTypes() {
-        //addType(SystemType.INSTANCE);
+        //Add snuggle-defined types:
+        addType(ListType.INSTANCE);
+
+        //Add builtin java-defined types:
         addType(SystemType.INSTANCE);
 
         addType(OptionType.INSTANCE);
@@ -67,8 +85,12 @@ public class BuiltinTypes {
         return this;
     }
 
-    public Collection<BuiltinType> getAll() {
+    public Collection<BuiltinType> getBuiltins() {
         return registeredTypes;
+    }
+
+    public Collection<SnuggleDefinedType> getSnuggleDefined() {
+        return registeredSnuggleTypes;
     }
 
 }

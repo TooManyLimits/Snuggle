@@ -61,7 +61,8 @@ public class TypeChecker {
     private final List<TypeDef> allTypeDefs = new ArrayList<>();
 
     public Collection<TypeDef> getAllInstantiated(ResolvedType.Basic basic) {
-        return cache.get(basic.index()).values();
+        Map<List<TypeDef>, TypeDef> cached = cache.get(basic.index());
+        return cached == null ? List.of() : cached.values();
     }
 
     //Converts from ResolvedType to TypeDef.
