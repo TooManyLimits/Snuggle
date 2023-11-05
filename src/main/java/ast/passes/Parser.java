@@ -4,6 +4,7 @@ import ast.parsed.ParsedType;
 import ast.parsed.def.field.SnuggleParsedFieldDef;
 import ast.parsed.def.method.SnuggleParsedMethodDef;
 import ast.parsed.def.type.ParsedClassDef;
+import ast.parsed.def.type.ParsedEnumDef;
 import ast.parsed.def.type.ParsedStructDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.*;
@@ -71,10 +72,12 @@ public class Parser {
             imports.add(parseImport());
         //Parse types
         List<ParsedTypeDef> parsedTypeDefs = new ArrayList<>();
-        while (lexer.check(PUB, CLASS, STRUCT)) {
+        while (lexer.check(PUB, CLASS, STRUCT, ENUM)) {
             boolean pub = lexer.consume(PUB);
             if (lexer.consume(CLASS, STRUCT))
                 parsedTypeDefs.add(parseClassOrStruct(lexer.last().type() == CLASS, pub));
+            else if (lexer.consume(ENUM))
+                parsedTypeDefs.add(parseEnum(pub));
             else
                 throw new ParsingException("Expected annotatedType def, found " + lexer.peek().type(), lexer.peek().loc());
         }
@@ -91,7 +94,7 @@ public class Parser {
     private ParsedTypeDef parseClassOrStruct(boolean isClass, boolean pub) throws CompilationException {
         //Get type name
         String typeTypeString = isClass ? "class" : "struct";
-        Token typeName = lexer.expect(IDENTIFIER, "Expected " + typeTypeString + " name after \"" + typeTypeString + "\", but got " + lexer.peek().type(), lexer.last().loc());
+        Token typeName = lexer.expect(IDENTIFIER, "Expected name after \"" + typeTypeString + "\", but got " + lexer.peek().type(), lexer.last().loc());
         //Parse generics and their bounds
         List<GenericDef> typeGenerics = parseGenerics();
         //Parse the supertype, if there is one (colon)
@@ -109,24 +112,26 @@ public class Parser {
         ArrayList<SnuggleParsedFieldDef> fields = new ArrayList<>();
         while (!lexer.consume(RIGHT_CURLY)) {
             if (lexer.check(EOF))
-                throw new ParsingException("Unmatched class definition curly brace {", leftCurlyLoc);
+                throw new ParsingException("Unmatched " + typeTypeString + " definition curly brace {", leftCurlyLoc);
             boolean pubMember = lexer.consume(PUB);
             //"static fn" or "static var"
             if (lexer.consume(STATIC)) {
                 if (lexer.consume(FN))
-                    methods.add(parseMethod(isClass, true, typeName.string(), pubMember, typeGenerics));
+                    methods.add(parseMethod(isClass ? TypeType.CLASS : TypeType.STRUCT, true, typeName.string(), pubMember, List.of()));
                 else if (lexer.consume(VAR))
-                    fields.add(parseField(pubMember, true, typeGenerics));
+                    fields.add(parseField(isClass, pubMember, true, List.of()));
+                else if (lexer.consume(LEFT_CURLY))
+                    methods.add(new SnuggleParsedMethodDef(lexer.last().loc(), false, true, "#init", 0, List.of(), List.of(), new ParsedType.Basic("unit", List.of()), parseBlock(List.of(), List.of())));
                 else
-                    throw new ParsingException("Expected \"fn\" or \"var\" after \"static\"", lexer.last().loc());
+                    throw new ParsingException("Expected \"fn\", \"var\", or initializer block after \"static\"", lexer.last().loc());
             }
             //Regular functions/fields (not static)
             else if (lexer.consume(FN))
-                methods.add(parseMethod(isClass, false, typeName.string(), pubMember, typeGenerics));
+                methods.add(parseMethod(isClass ? TypeType.CLASS : TypeType.STRUCT, false, typeName.string(), pubMember, typeGenerics));
             else if (lexer.consume(VAR))
-                fields.add(parseField(pubMember, false, typeGenerics));
+                fields.add(parseField(isClass, pubMember, false, typeGenerics));
             else
-                throw new ParsingException("Expected method def, found " + lexer.peek().type(), lexer.peek().loc());
+                throw new ParsingException("Expected method or field definition for " + typeTypeString + " \"" + typeName.string() + "\", found " + lexer.peek().type(), lexer.peek().loc());
         }
         if (isClass)
             return new ParsedClassDef(typeName.loc(), pub, typeName.string(), typeGenerics.size(), (ParsedType.Basic) superType, methods, fields);
@@ -134,8 +139,98 @@ public class Parser {
             return new ParsedStructDef(typeName.loc(), pub, typeName.string(), typeGenerics.size(), methods, fields);
     }
 
+    //"enum" was already consumed
+    private ParsedTypeDef parseEnum(boolean pub) throws CompilationException {
+        Loc loc = lexer.last().loc();
+        //Get type name
+        String typeName = lexer.expect(IDENTIFIER, "Expected name after \"enum\", but got " + lexer.peek().type(), lexer.last().loc()).string();
+        //Get the enum properties
+        List<ParsedEnumDef.ParsedEnumProperty> properties = parseEnumProperties(loc, typeName);
+        //Set up more lists
+        ArrayList<ParsedEnumDef.ParsedEnumElement> elements = new ArrayList<>();
+        ArrayList<SnuggleParsedMethodDef> methods = new ArrayList<>();
+        //Loop through the body
+        Loc leftCurlyLoc = lexer.expect(LEFT_CURLY, "Expected { to begin body for enum " + typeName).loc();
+        while (!lexer.consume(RIGHT_CURLY)) {
+            if (lexer.check(EOF))
+                throw new ParsingException("Unmatched enum definition curly brace {", leftCurlyLoc);
+
+            if (lexer.consume(PUB)) {
+                if (lexer.consume(VAR))
+                    throw new ParsingException("Cannot add fields to enum definition", lexer.last().loc()); //Nice error message in case someone tries that
+                else if (lexer.consume(STATIC)) {
+                    if (lexer.consume(VAR))
+                        throw new ParsingException("Cannot add fields to enum definition", lexer.last().loc());
+                    else if (lexer.consume(FN))
+                        methods.add(parseMethod(TypeType.ENUM, true, typeName, true, List.of()));
+                } else if (lexer.consume(FN)) {
+                    methods.add(parseMethod(TypeType.ENUM, false, typeName, true, List.of()));
+                } else {
+                    throw new ParsingException("Expected function definition after \"pub\" inside enum \"" + typeName + "\"", loc);
+                }
+            } else if (lexer.consume(VAR))
+                throw new ParsingException("Cannot add fields to enum definition", lexer.last().loc());
+            else if (lexer.consume(STATIC)) {
+                if (lexer.consume(VAR))
+                    throw new ParsingException("Cannot add fields to enum definition", lexer.last().loc());
+                else if (lexer.consume(FN))
+                    methods.add(parseMethod(TypeType.ENUM, true, typeName, false, List.of()));
+            }
+            else if (lexer.consume(FN))
+                methods.add(parseMethod(TypeType.ENUM, false, typeName, false, List.of()));
+            else if (lexer.consume(IDENTIFIER)) {
+                String name = lexer.last().string();
+                Loc elemLoc = lexer.last().loc();
+
+                //Parse the left paren (maybe), parse the arguments
+                List<ParsedExpr> args;
+                if (lexer.consume(LEFT_PAREN))
+                    args = parseArguments(RIGHT_PAREN, List.of(), List.of());
+                else
+                    args = List.of();
+
+                //If it doesn't match up, then error
+                if (args.size() != properties.size())
+                    throw new ParsingException("Enum element \"" + name + "\" has incorrect number of args - the enum has " + properties.size() + " properties, but only " + args.size() + " args were provided.", elemLoc);
+                elements.add(new ParsedEnumDef.ParsedEnumElement(name, args));
+            } else {
+                throw new ParsingException("Expected enum element or method definition, found " + lexer.peek().type(), lexer.peek().loc());
+            }
+        }
+        elements.trimToSize();
+        methods.trimToSize();
+        return new ParsedEnumDef(loc, pub, typeName, properties, elements, methods);
+    }
+
+    //
+    private List<ParsedEnumDef.ParsedEnumProperty> parseEnumProperties(Loc loc, String enumName) throws CompilationException {
+        //No parens -> no properties
+        if (!lexer.consume(LEFT_PAREN))
+            return List.of();
+        //There was a paren, so let's start parsing
+        ArrayList<ParsedEnumDef.ParsedEnumProperty> parsedProperties = new ArrayList<>();
+        while (!lexer.consume(RIGHT_PAREN)) {
+            boolean pub = lexer.consume(PUB);
+            String name = lexer.expect(IDENTIFIER, "Expected name for enum property of \"" + enumName + "\", but got " + lexer.peek().type(), loc).string();
+            Loc colonLoc = lexer.expect(COLON, "Enum property \"" + name + "\" in \"" + enumName + "\" is missing a annotatedType annotation").loc();
+            ParsedType type = parseType(":", colonLoc, List.of(), List.of());
+            parsedProperties.add(new ParsedEnumDef.ParsedEnumProperty(pub, name, type));
+            if (!lexer.consume(COMMA)) {
+                //If no comma, break
+                lexer.expect(RIGHT_PAREN, "Expected ) to end enum properties list for enum \"" + enumName + "\", but got " + lexer.peek().type(), loc);
+                break;
+            }
+        }
+        parsedProperties.trimToSize();
+        return parsedProperties;
+    }
+
+    enum TypeType {
+        CLASS, STRUCT, ENUM
+    }
+
     //"fn" was already consumed
-    private SnuggleParsedMethodDef parseMethod(boolean isClass, boolean isStatic, String thisTypeName, boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
+    private SnuggleParsedMethodDef parseMethod(TypeType typeType, boolean isStatic, String thisTypeName, boolean pub, List<GenericDef> typeGenerics) throws CompilationException {
         if (lexer.consume(NEW)) {
             if (isStatic)
                 throw new ParsingException("Constructors cannot be static", lexer.last().loc());
@@ -144,16 +239,16 @@ public class Parser {
             Loc methodLoc = lexer.last().loc();
             List<GenericDef> methodGenerics = parseGenerics();
             lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName + "\"", methodLoc);
-            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, new Token(methodLoc, IDENTIFIER, methodName));
+            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodLoc, "method \"" + methodName + "\"");
 
             //TODO: Fix unit type
             //ParsedType returnType = ParsedType.Tuple.UNIT;
             AtomicInteger i = new AtomicInteger(); //cursed
-            ParsedType returnType =
-                isClass ?
-                    new ParsedType.Basic("unit", List.of()) //Class constructors return unit
-                :
-                    new ParsedType.Basic(thisTypeName, ListUtils.map(typeGenerics, g -> new ParsedType.Generic(i.getAndIncrement(), false))); //Struct constructors return the type itself
+            ParsedType returnType = switch (typeType) {
+                case CLASS -> new ParsedType.Basic("unit", List.of()); //Class constructors return unit
+                case STRUCT -> new ParsedType.Basic(thisTypeName, ListUtils.map(typeGenerics, g -> new ParsedType.Generic(i.getAndIncrement(), false))); //Struct constructors return the type itself
+                case ENUM -> throw new ParsingException("Cannot create constructor for enum", methodLoc);
+            };
 
             ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false);
             List<String> paramNames = ListUtils.map(params, ParsedParam::name);
@@ -163,7 +258,7 @@ public class Parser {
         Token methodName = lexer.expect(IDENTIFIER, "Expected method methodName after \"fn\", but got " + lexer.peek().type());
         List<GenericDef> methodGenerics = parseGenerics();
         lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName.string() + "\"", methodName.loc());
-        List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName);
+        List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName.loc(), "method \"" + methodName + "\"");
 
         //TODO: Fix unit type
         //ParsedType returnType = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
@@ -177,22 +272,22 @@ public class Parser {
 
     // Parse a params list, not to be confused with an args list
     // The "(" was already consumed
-    private List<ParsedParam> parseParams(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, Token methodName) throws CompilationException {
+    private List<ParsedParam> parseParams(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, Loc loc, String name) throws CompilationException {
         if (lexer.consume(RIGHT_PAREN))
             return List.of();
         ArrayList<ParsedParam> params = new ArrayList<>();
 
         //Parse one at least, then continue parsing while we have commas
-        String paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc()).string();
-        Loc colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc()).loc();
+        String paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for " + name, loc).string();
+        Loc colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in " + name + " is missing a annotatedType annotation", loc).loc();
         params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         while (lexer.consume(COMMA)) {
-            paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc()).string();
-            colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in method \"" + methodName.string() + "\" is missing a annotatedType annotation", methodName.loc()).loc();
+            paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for " + name, loc).string();
+            colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in " + name + " is missing a annotatedType annotation", loc).loc();
             params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         }
         //Expect a closing paren
-        lexer.expect(RIGHT_PAREN, "Expected ) to end params list for method \"" + methodName.string() + "\"", methodName.loc());
+        lexer.expect(RIGHT_PAREN, "Expected ) to end params list for " + name, loc);
         //Return
         return params;
     }
@@ -200,14 +295,17 @@ public class Parser {
     private record ParsedParam(String name, ParsedType type) {}
 
     //"var" was already consumed
-    private SnuggleParsedFieldDef parseField(boolean pub, boolean isStatic, List<GenericDef> typeGenerics) throws CompilationException {
+    private SnuggleParsedFieldDef parseField(boolean isClass, boolean pub, boolean isStatic, List<GenericDef> typeGenerics) throws CompilationException {
         Loc varLoc = lexer.last().loc();
         Token fieldName = lexer.expect(IDENTIFIER, "Expected field name after \"var\", but got " + lexer.peek().type());
         Loc colonLoc = lexer.expect(COLON, "Expected type annotation for field " + fieldName.string(), fieldName.loc()).loc();
         ParsedType annotatedType = parseType(":", colonLoc, typeGenerics, List.of());
         ParsedExpr initializer = null;
         if (lexer.consume(ASSIGN))
-            initializer = parseExpr(typeGenerics, List.of(), false);
+            if (isClass)
+                initializer = parseExpr(typeGenerics, List.of(), false);
+            else
+                throw new ParsingException("Unexpected \"=\" : Struct fields cannot cannot have initializers!", lexer.last().loc());
         return new SnuggleParsedFieldDef(varLoc.merge(lexer.last().loc()), pub, isStatic, fieldName.string(), annotatedType, initializer);
     }
 
@@ -528,6 +626,7 @@ public class Parser {
         return new ParsedWhile(fullLoc, cond, body);
     }
 
+    //"{" has already been parsed
     private ParsedExpr parseBlock(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc loc = lexer.last().loc();
         //Empty block, return with List.of()

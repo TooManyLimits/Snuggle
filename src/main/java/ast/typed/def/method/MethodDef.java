@@ -2,6 +2,7 @@ package ast.typed.def.method;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.helper.ScopeHelper;
+import ast.ir.instruction.misc.RunBytecode;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.GenericTypeDef;
 import ast.typed.def.type.StructDef;
@@ -13,6 +14,8 @@ import ast.typed.expr.TypedMethodCall;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public interface MethodDef {
 
@@ -35,7 +38,7 @@ public interface MethodDef {
     //block is rarely used, except for core builtin types.
     //desiredFields indicates, for builtin functions that return plural types, and leave their output on the stack:
     //it indicates which fields should actually be put onto the stack. Also only used in core builtin types.
-    void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm);
+    void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) throws CompilationException;
 
     //Constant-fold the method. By default, does nothing and just returns the input.
     default TypedExpr constantFold(TypedMethodCall call) { return call; }
@@ -55,6 +58,12 @@ public interface MethodDef {
             for (String s : p.getDescriptor())
                 b.append(s);
         return b.append(")").append(returnTypeDescriptor).toString();
+    }
+
+    //Get a bytecode-defined transformation to be applied to the i'th argument in the call.
+    //Null by default, does nothing.
+    default RunBytecode getArgumentTransformer(int index) {
+        return null;
     }
 
     //Compare specificity of this method's args with another method's args.

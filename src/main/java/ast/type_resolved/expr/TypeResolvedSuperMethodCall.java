@@ -38,7 +38,7 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
-        return new TypedSuperMethodCall(loc, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
+        return new TypedSuperMethodCall(loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
     }
 
     @Override
@@ -52,6 +52,6 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
-        return new TypedSuperMethodCall(loc, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
+        return new TypedSuperMethodCall(loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
     }
 }

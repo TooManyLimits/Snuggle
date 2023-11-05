@@ -240,6 +240,13 @@ public class OptionType implements BuiltinType {
     }
 
     @Override
+    public String runtimeName(TypeChecker checker, List<TypeDef> generics) {
+        if (generics.get(0).isReferenceType())
+            return generics.get(0).runtimeName();
+        return BuiltinType.super.runtimeName(checker, generics);
+    }
+
+    @Override
     public List<String> descriptor(TypeChecker checker, List<TypeDef> generics) {
         if (generics.get(0).isReferenceType())
             return generics.get(0).getDescriptor();

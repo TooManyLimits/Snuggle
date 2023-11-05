@@ -21,6 +21,6 @@ public record ParsedFieldAccess(Loc loc, ParsedExpr lhs, String name) implements
             }
         }
         //Otherwise, regular field
-        return new TypeResolvedFieldAccess(loc, lhs.resolve(resolver), name);
+        return new TypeResolvedFieldAccess(loc, lhs.resolve(resolver), name, false);
     }
 }

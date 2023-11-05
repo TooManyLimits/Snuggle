@@ -33,7 +33,7 @@ public class LateInit<T, E extends Throwable> {
     public T getAlreadyFilled() {
         if (filled)
             return cachedResult;
-        throw new IllegalStateException("Attempt to getAlreadyFilled() on LateInit, but it was not already filled!");
+        throw new IllegalStateException("Attempt to getAlreadyFilled() on LateInit, but it was not already filled! Bug in compiler, please report!");
     }
 
     @Override

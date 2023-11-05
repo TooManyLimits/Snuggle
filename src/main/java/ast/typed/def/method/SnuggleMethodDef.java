@@ -22,7 +22,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     public TypedExpr constantFold(TypedMethodCall call) {
         if (isStatic) throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
         //If the body is just a literal, then constant fold the method call into that literal
-        //ACTUALLY NO, SINCE RECEIVER COULD HAVE SIDE EFFECTS
+        //ACTUALLY NO, SINCE RECEIVER/ARGS COULD HAVE SIDE EFFECTS
 //        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody)
 //            return literalBody;
         if (!inline) return call;

@@ -1,5 +1,6 @@
 package ast.type_resolved.expr;
 
+import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.BoolType;
 import exceptions.compile_time.CompilationException;
@@ -20,7 +21,7 @@ public record TypeResolvedImport(Loc loc, String fileName) implements TypeResolv
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         return new TypedImport(loc, fileName, bool);
     }

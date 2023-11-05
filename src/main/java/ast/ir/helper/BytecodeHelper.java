@@ -107,8 +107,10 @@ public class BytecodeHelper {
             for (FieldDef field : elemType.fields()) {
                 newArray(jvm, field.type()); //[some arrays, size]
             }
-        } else if (elemType.isReferenceType()) {
-            jvm.visitTypeInsn(Opcodes.ANEWARRAY, elemType.name());
+        } else if (elemType.isReferenceType() || elemType.isOptionalReferenceType()) {
+            jvm.visitInsn(Opcodes.DUP);
+            jvm.visitTypeInsn(Opcodes.ANEWARRAY, elemType.runtimeName());
+            jvm.visitInsn(Opcodes.SWAP);
         } else if (elemType.builtin() instanceof IntegerType i) {
             jvm.visitInsn(Opcodes.DUP);
             switch (i.bits) {

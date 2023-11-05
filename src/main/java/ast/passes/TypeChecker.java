@@ -1,6 +1,7 @@
 package ast.passes;
 
 import ast.type_resolved.ResolvedType;
+import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
@@ -58,6 +59,10 @@ public class TypeChecker {
     private final Map<Integer, Map<List<TypeDef>, TypeDef>> cache = new HashMap<>();
     //The set of all TypeDefs created here
     private final List<TypeDef> allTypeDefs = new ArrayList<>();
+
+    public Collection<TypeDef> getAllInstantiated(ResolvedType.Basic basic) {
+        return cache.get(basic.index()).values();
+    }
 
     //Converts from ResolvedType to TypeDef.
     public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics) {

@@ -7,6 +7,7 @@ import ast.passes.Parser;
 import ast.passes.TypeChecker;
 import ast.passes.TypeResolver;
 import ast.type_resolved.prog.TypeResolvedAST;
+import ast.typed.def.type.TypeDef;
 import ast.typed.prog.TypedAST;
 import builtin_types.BuiltinTypes;
 import exceptions.compile_time.CompilationException;
@@ -34,15 +35,16 @@ public class CompileAll {
             lexers.put(file.getKey(), new Lexer(file.getKey(), file.getValue()));
         //2. Parse to ParsedAST
         ParsedAST parsedAST = Parser.parse(lexers);
-//        System.out.println(parsedAST);
+        System.out.println(parsedAST);
         //3. Resolve types to TypeResolvedAST
         TypeResolvedAST typeResolvedAST = TypeResolver.resolve(types, parsedAST);
+        System.out.println(typeResolvedAST);
         //4. Verify generics
         GenericVerifier.verifyGenerics(typeResolvedAST);
         //5. Type check to TypedAST
         TypedAST typedAST = TypeChecker.type(typeResolvedAST);
-//        for (TypeDef d : typedAST.typeDefs())
-//            System.out.println(d);
+        for (TypeDef d : typedAST.typeDefs())
+            System.out.println(d);
         //6. Compile to instance and return
         return Program.of(typedAST).compileToInstance();
     }

@@ -1,10 +1,7 @@
 package util;
 
 import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ListUtils {
 
@@ -75,12 +72,20 @@ public class ListUtils {
     }
 
     /**
-     * Join all lists into one
+     * Join all into one
      */
     public static <T> List<T> join(List<List<T>> lists) {
         ArrayList<T> res = new ArrayList<>();
         for (List<T> list : lists)
             res.addAll(list);
+        res.trimToSize();
+        return res;
+    }
+
+    public static <T> List<T> flatten(List<Collection<T>> collections) {
+        ArrayList<T> res = new ArrayList<>();
+        for (Collection<T> collection : collections)
+            res.addAll(collection);
         res.trimToSize();
         return res;
     }

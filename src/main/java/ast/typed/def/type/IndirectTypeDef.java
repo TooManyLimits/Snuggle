@@ -5,6 +5,7 @@ import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +54,10 @@ public class IndirectTypeDef implements TypeDef {
     @Override
     public boolean hasSpecialConstructor() {
         return check().hasSpecialConstructor();
+    }
+    @Override
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
+        return check().compileTimeToRuntimeConvert(thisType, loc, checker);
     }
 
     @Override
@@ -124,5 +129,10 @@ public class IndirectTypeDef implements TypeDef {
         if (obj instanceof TypeDef otherDef)
             return Objects.equals(get(), otherDef.get());
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return get().toString();
     }
 }

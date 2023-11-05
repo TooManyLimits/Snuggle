@@ -13,6 +13,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.Fraction;
 import util.ListUtils;
+import util.ThrowingConsumer;
 
 import java.util.List;
 import java.util.function.BiFunction;
@@ -100,7 +101,7 @@ public class FloatType implements BuiltinType {
     //ifOp should be the "opposite" of what you actually want:
     //for the less than operator, we want GE.
     //for the less-equal operator, we want GT. Etc
-    private Consumer<MethodVisitor> floatCompare(int ifOp) {
+    private ThrowingConsumer<MethodVisitor, CompilationException> floatCompare(int ifOp) {
         return v -> {
             Label pushFalse = new Label();
             Label end = new Label();
@@ -161,10 +162,10 @@ public class FloatType implements BuiltinType {
     @FunctionalInterface
     private interface BinHelper {
         List<MethodDef> get(String name,
-                                      BiFunction<Float, Float, Float> floatFunc,
-                                      BiFunction<Double, Double, Double> doubleFunc,
-                                      Consumer<MethodVisitor> floatConsumer,
-                                      Consumer<MethodVisitor> doubleConsumer
+                            BiFunction<Float, Float, Float> floatFunc,
+                            BiFunction<Double, Double, Double> doubleFunc,
+                            ThrowingConsumer<MethodVisitor, CompilationException> floatConsumer,
+                            ThrowingConsumer<MethodVisitor, CompilationException> doubleConsumer
         );
     }
 

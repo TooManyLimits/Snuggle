@@ -29,7 +29,7 @@ public class StringType implements BuiltinType {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 }),
                 DefineConstWithFallback.defineUnary("size", String::length, string, u32, v -> {
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
+                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
                 })
         );
     }

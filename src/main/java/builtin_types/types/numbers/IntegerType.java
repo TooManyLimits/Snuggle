@@ -8,11 +8,13 @@ import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.BoolType;
 import ast.ir.helper.BytecodeHelper;
 import builtin_types.types.StringType;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.IntLiteralData;
 import util.ListUtils;
+import util.ThrowingConsumer;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -142,11 +144,11 @@ public class IntegerType implements BuiltinType {
                 //Unary
                 signed ? DefineConstWithFallback.defineUnary("neg", BigInteger::negate, type, type, doOperationThenConvert(v -> v.visitInsn(bits <= 32 ? Opcodes.INEG : Opcodes.LNEG))) : List.of(),
                 DefineConstWithFallback.defineUnary("bnot", BigInteger::not, type, type, doOperationThenConvert(switch (bits) {
-                    case 8, 16, 32 -> (Consumer<MethodVisitor>) (v -> { //Cast is because intellij is bugged, and thinks it's an error without the cast
+                    case 8, 16, 32 -> (ThrowingConsumer<MethodVisitor, CompilationException>) (v -> { //Cast is because intellij is bugged, and thinks it's an error without the cast
                         v.visitInsn(Opcodes.ICONST_M1);
                         v.visitInsn(Opcodes.IXOR);
                     });
-                    case 64 -> (Consumer<MethodVisitor>) (v -> {
+                    case 64 -> (ThrowingConsumer<MethodVisitor, CompilationException>) (v -> {
                         v.visitLdcInsn(-1L);
                         v.visitInsn(Opcodes.LXOR);
                     });
@@ -174,7 +176,7 @@ public class IntegerType implements BuiltinType {
         ));
     }
 
-    private Consumer<MethodVisitor> doOperationThenConvert(Consumer<MethodVisitor> doOperation) {
+    private ThrowingConsumer<MethodVisitor, CompilationException> doOperationThenConvert(ThrowingConsumer<MethodVisitor, CompilationException> doOperation) {
         return v -> {
             doOperation.accept(v);
             convert(v);
@@ -202,7 +204,7 @@ public class IntegerType implements BuiltinType {
     }
 
 
-    private Consumer<MethodVisitor> intCompare(int intCompareOp) {
+    private ThrowingConsumer<MethodVisitor, CompilationException> intCompare(int intCompareOp) {
         return v -> {
             Label pushTrue = new Label();
             Label end = new Label();

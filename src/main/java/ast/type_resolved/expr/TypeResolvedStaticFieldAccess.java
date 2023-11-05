@@ -3,7 +3,10 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
+import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
+import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.field.FieldDef;
+import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedFieldAccess;
@@ -25,7 +28,15 @@ public record TypeResolvedStaticFieldAccess(Loc loc, ResolvedType type, String f
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         TypeDef typeDef = checker.getOrInstantiate(type, typeGenerics);
-        FieldDef fieldDef = ListUtils.find(typeDef.fields(), f -> f.isStatic() && f.name().equals(fieldName));
+
+        FieldDef fieldDef = ListUtils.find(typeDef.fields(), f -> {
+            if (!f.isStatic()) return false;
+            if (!f.name().equals(fieldName)) return false;
+            if (f.pub()) return true;
+            if (f instanceof SnuggleFieldDef sf)
+                return sf.loc().fileName().equals(loc.fileName());
+            throw new IllegalStateException("Non-snuggle field defs should always be pub? Bug in compiler, please report");
+        });
         if (fieldDef == null)
             throw new UndeclaredVariableException("Unable to locate static field \"" + fieldName + "\" on type " + typeDef.name(), loc);
         return new TypedFieldAccess(loc, null, fieldDef, fieldDef.type());

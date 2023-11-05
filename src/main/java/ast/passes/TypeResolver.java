@@ -8,6 +8,7 @@ import ast.parsed.prog.ParsedFile;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedImport;
+import ast.type_resolved.expr.TypeResolvedMethodCall;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.type_resolved.prog.TypeResolvedFile;
 import builtin_types.BuiltinType;
@@ -113,10 +114,9 @@ public class TypeResolver {
             //Also resolve the imports and code in the file:
             codeByFile.put(f.name(), new TypeResolvedFile(
                     f.name(),
-                    ListUtils.join(
-                            ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
-                            ListUtils.map(f.code(), e -> e.resolve(this))
-                    )
+                    ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
+                    ListUtils.map(f.typeDefs(), t -> new ResolvedType.Basic(allTypeDefsInverse.get(t), List.of())),
+                    ListUtils.map(f.code(), e -> e.resolve(this))
             ));
             //Pop scope
             pop();

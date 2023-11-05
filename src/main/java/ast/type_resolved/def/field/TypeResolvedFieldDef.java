@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface TypeResolvedFieldDef {
 
+    boolean isStatic();
     FieldDef instantiateType(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) throws CompilationException;
 
 }

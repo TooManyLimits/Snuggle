@@ -1,5 +1,6 @@
 package ast.type_resolved.expr;
 
+import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
@@ -27,7 +28,7 @@ public interface TypeResolvedExpr {
     //IMPORTANT NOTE:
     //If this check() call fails, then ensure that the checker parameter's variables and scopes are NOT MODIFIED.
     //The exception to this is for expressions which cannot exist inside of method parameters
-    //(currently only declarations)
+    //(currently only declarations modify the checker)
     TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException;
 
 }

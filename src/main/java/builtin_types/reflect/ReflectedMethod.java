@@ -15,6 +15,7 @@ import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
+import util.ThrowingConsumer;
 import util.ThrowingFunction;
 
 import java.lang.reflect.AnnotatedArrayType;
@@ -31,7 +32,7 @@ public class ReflectedMethod {
     private final boolean inlined, isStatic, isVoid;
     private final List<ThrowingFunction<TypeChecker, TypeDef, RuntimeException>> paramTypeGetters;
     private final ThrowingFunction<TypeChecker, TypeDef, RuntimeException> ownerTypeGetter, returnTypeGetter;
-    private final Consumer<MethodVisitor> bytecode;
+    private final ThrowingConsumer<MethodVisitor, CompilationException> bytecode;
 
     ReflectedMethod(Method method) {
         inlined = method.getAnnotation(Inline.class) != null;
@@ -63,7 +64,7 @@ public class ReflectedMethod {
         );
     }
 
-    private Consumer<MethodVisitor> getBytecode() {
+    private ThrowingConsumer<MethodVisitor, CompilationException> getBytecode() {
         if (inlined) {
             //special thingis
             throw new IllegalArgumentException("Inline not available");

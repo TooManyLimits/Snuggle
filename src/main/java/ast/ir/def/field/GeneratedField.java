@@ -11,18 +11,18 @@ public record GeneratedField(boolean isMemberOfPluralType, FieldDef fieldDef) {
     }
 
     //If plural, recurse and add smaller fields
-    private void compileRecursive(ClassVisitor writer, String namePrefix, FieldDef fieldDef) {
-        if (fieldDef.type().isPlural()) {
+    private void compileRecursive(ClassVisitor writer, String namePrefix, FieldDef curFieldDef) {
+        if (curFieldDef.type().isPlural()) {
             //If plural, recurse
-            for (FieldDef nestedDef : fieldDef.type().fields()) {
+            for (FieldDef nestedDef : curFieldDef.type().fields()) {
                 if (nestedDef.isStatic()) continue;
-                compileRecursive(writer, fieldDef.name() + "$", nestedDef);
+                compileRecursive(writer, namePrefix + curFieldDef.name() + "$", nestedDef);
             }
         } else {
             //If non-plural, add the field.
             int access = Opcodes.ACC_PUBLIC;
-            if (fieldDef.isStatic() || isMemberOfPluralType) access |= Opcodes.ACC_STATIC;
-            writer.visitField(access, namePrefix + fieldDef.name(), fieldDef.type().getDescriptor().get(0), null, null).visitEnd();
+            if (this.fieldDef.isStatic() || isMemberOfPluralType) access |= Opcodes.ACC_STATIC;
+            writer.visitField(access, namePrefix + curFieldDef.name(), curFieldDef.type().getDescriptor().get(0), null, null).visitEnd();
         }
     }
 

@@ -88,9 +88,91 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testWhar() throws CompilationException, SnuggleException {
+        test("""
+                class Thingi<T> {
+                    fn new(x: T) {
+                        super()
+                        System.print(x)
+                    }
+                }
+                new Thingi<i32>(5)
+                """);
+    }
+
+    @Test
+    public void testStaticInitializer() throws CompilationException, SnuggleException {
+        test("""
+                class catplant {
+                    static var e: String
+                    static {
+                        catplant.e = ":catplant:";
+                    }
+                }
+                System.print(catplant.e)
+                Test.assertEquals(":catplant:", catplant.e)
+                """);
+    }
+
+    @Test
+    public void testEnum() throws CompilationException, SnuggleException {
+        test("""
+                struct LittleScary {
+                    var x: String //non nullable struct-nested reference type!! aaa!!
+                    var y: u64
+                }
+                
+                struct Scary {
+                    var little: LittleScary
+                    var z: String //AAAA!!! ANOTHER ONE!!
+                }
+                
+                enum Day(isWeekend: bool, emotion: String, scary: Scary) {
+                    SUNDAY(true, ":)", new Scary { new LittleScary { "a", 1 }, "A" })
+                    MONDAY(false, ":((", new Scary { new LittleScary { "aa", 2 }, "AA" })
+                    TUESDAY(false, ":(", new Scary { new LittleScary { "aaa", 3 }, "AAA" })
+                    WEDNESDAY(false, ":|", new Scary { new LittleScary { "aaaa", 4 }, "AAAA" })
+                    THURSDAY(false, ":o", new Scary { new LittleScary { "aaaaa", 5 }, "AAAAA" })
+                    FRIDAY(false, "^w^", new Scary { new LittleScary { "aaaaaa", 6 }, "AAAAAA" })
+                    SATURDAY(true, ":D", new Scary { new LittleScary { "aaaaaaa", 7 }, "AAAAAAA" })
+                }
+                Test.assertTrue(Day.SUNDAY.isWeekend())
+                Test.assertFalse(Day.WEDNESDAY.isWeekend())
+                Test.assertEquals(":(", Day.TUESDAY.emotion())
+                Test.assertEquals(":D", Day.SATURDAY.emotion())
+                Test.assertEquals(1, Day.MONDAY.index())
+                Test.assertEquals("aaaaa", Day.THURSDAY.scary().little.x)
+                Test.assertEquals("AAAAAA", Day.FRIDAY.scary().z)
+                """);
+    }
+
+    @Test
+    public void testNPE() {
+        assertThrows(NullPointerException.class, () -> test("""
+                class NPE {
+                    var x: f32
+                    var y: String
+                    fn new() {
+                        super()
+                        System.print(x)
+                        System.print(#y) //NPE! y is not initialized
+                    }
+                }
+                new NPE()
+                """));
+    }
+
+    @Test
     public void testCrimes() throws CompilationException, SnuggleException {
         test("""
                 class Crime {
+                    fn new() {
+                        var x: i32 = 0
+                        super()
+                    }
+                    fn doThing() {
+                        var x: i32 = 5;
+                    }
                     static var val: i32
                     static fn get(): i32
                         Crime.val
@@ -103,7 +185,6 @@ public class SnuggleTests {
                     static fn invoke(x: i32): i32
                         x * x * x
                 }
-                
                 Test.assertEquals(200, Crime[10, 20])
                 Crime[] = 15
                 Test.assertEquals(225, Crime[])
@@ -117,13 +198,9 @@ public class SnuggleTests {
     public void testEvenShorterList() throws CompilationException, SnuggleException {
         test("""
                 class List<T> {
-                    var backing: Array<T>
-                    var size: u32
-                    fn new() {
-                        super()
-                        backing = new Array<T>(5)
-                        size = 0;
-                    }
+                    var backing: Array<T> = new Array<T>(5)
+                    var size: u32 = 0
+                    fn new() super()
                     fn addAssign(elem: T): List<T> {
                         backing[size] = elem
                         size += 1

@@ -6,6 +6,7 @@ import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -18,7 +19,7 @@ import java.util.List;
 public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<FieldDef> desiredFields) implements Instruction {
 
     @Override
-    public void accept(CodeBlock block, MethodVisitor jvm) {
+    public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
         //Call the method:
         methodToCall.compileCall(isSuperCall, block, desiredFields, jvm);
 

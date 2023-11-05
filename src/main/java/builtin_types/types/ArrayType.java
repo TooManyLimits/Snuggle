@@ -4,9 +4,12 @@ import ast.ir.helper.BytecodeHelper;
 import ast.passes.TypeChecker;
 import ast.typed.def.field.BuiltinFieldDef;
 import ast.typed.def.field.FieldDef;
+import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.BuiltinTypeDef;
+import ast.typed.def.type.IndirectTypeDef;
+import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.types.numbers.FloatType;
@@ -18,10 +21,13 @@ import util.ListUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ArrayType implements BuiltinType {
 
     public static final ArrayType INSTANCE = new ArrayType();
+    private static TypeDef owningType;
+
     private ArrayType() {}
 
     @Override
@@ -76,7 +82,7 @@ public class ArrayType implements BuiltinType {
             if (elementType.isOptionalReferenceType() || !opcodes.isReference)
                 methods.add(new BytecodeMethodDef("new", false, type, List.of(u32), unit, true, v -> {
                     if (opcodes.isReference)
-                        v.visitTypeInsn(Opcodes.ANEWARRAY, elementType.name());
+                        v.visitTypeInsn(Opcodes.ANEWARRAY, elementType.runtimeName());
                     else
                         v.visitIntInsn(Opcodes.NEWARRAY, opcodes.newOpcodeArg());
                 }));
@@ -110,14 +116,13 @@ public class ArrayType implements BuiltinType {
         TypeDef elementType = generics.get(0);
         if (elementType.isPlural()) {
             return ListUtils.map(ListUtils.filter(elementType.fields(),
-                            f -> !f.isStatic()),
+                    f -> !f.isStatic()),
                     f -> new BuiltinFieldDef(
                             "#array_" + f.name(),
                             thisType,
                             checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(f.type())),
                             false
-                    )
-            );
+                    ));
         } else {
             return List.of();
         }
@@ -129,6 +134,8 @@ public class ArrayType implements BuiltinType {
     //curLocal should start at block.maxIndex(), it increments
     //curElem should start at flattenedElemTypes.size() - 1, it decrements.
     private static void getArray(int curLocal, int curElem, MethodVisitor jvm, List<TypeDef> flattenedElemTypes, int[] desiredFieldRange) {
+        if (curElem < 0)
+            return;
         if (curElem == desiredFieldRange[0] - 1) {
             jvm.visitInsn(Opcodes.POP2);
             getArray(curLocal, curElem - 1, jvm, flattenedElemTypes, desiredFieldRange);
@@ -354,7 +361,7 @@ public class ArrayType implements BuiltinType {
                 f -> flattenedElems(f.type())));
     }
 
-    private boolean containsNonOptionalReferenceType(TypeDef def) {
+    public static boolean containsNonOptionalReferenceType(TypeDef def) {
         if (def.isPlural()) {
             boolean res = false;
             for (FieldDef fieldDef : def.fields()) {
@@ -364,6 +371,40 @@ public class ArrayType implements BuiltinType {
             return res;
         } else {
             return def.isReferenceType();
+        }
+    }
+
+    //accursed monstrosity. do not try to understand it. run for your life
+    private static final AtomicInteger dedup = new AtomicInteger();
+    public static TypeDef valuetypeify(TypeChecker checker, TypeDef def) {
+        if (!containsNonOptionalReferenceType(def))
+            return def;
+        if (def.get() instanceof StructDef sd) {
+            IndirectTypeDef owningType = new IndirectTypeDef();
+            StructDef d = new StructDef(
+                    sd.loc,
+                    sd.name() + "$value_typeified" + dedup.getAndIncrement(),
+                    ListUtils.map(ListUtils.filter(sd.fields(), f -> !f.isStatic()), f -> {
+                        SnuggleFieldDef sf = ((SnuggleFieldDef) f);
+                        return new SnuggleFieldDef(
+                                sf.loc(),
+                                sf.pub(),
+                                sf.name(),
+                                owningType,
+                                valuetypeify(checker, sf.type()),
+                                false,
+                                null
+                        );
+                    }),
+                    List.of()
+            );
+            owningType.fill(d);
+            return owningType;
+        } else {
+            if (def.isReferenceType())
+                return checker.getGenericBuiltin(OptionType.INSTANCE, List.of(def));
+            else
+                return def;
         }
     }
 

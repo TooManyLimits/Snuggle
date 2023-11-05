@@ -5,26 +5,26 @@ import ast.ir.def.GeneratedMethod;
 import ast.ir.def.Program;
 import ast.ir.helper.NameHelper;
 import ast.typed.def.type.StructDef;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Type;
 import util.ListUtils;
 
 import java.util.List;
 import java.util.Objects;
 
-public record GeneratedStruct(String name, List<GeneratedField> fields, List<GeneratedMethod> methods) implements GeneratedType {
+public record GeneratedValueType(String name, List<GeneratedField> fields, List<GeneratedMethod> methods) implements GeneratedType {
 
-    public static GeneratedStruct of(StructDef s) throws CompilationException {
-        return new GeneratedStruct(
-                s.name(),
+    public static GeneratedValueType of(TypeDef typeDef) throws CompilationException {
+        return new GeneratedValueType(
+                typeDef.name(),
                 ListUtils.map(
-                        s.fields(),
-                        f -> new GeneratedField(true, f)
+                        typeDef.fields(),
+                        f -> new GeneratedField(typeDef.isPlural(), f)
                 ),
                 ListUtils.filter(ListUtils.map(
-                        s.methods(),
+                        typeDef.methods(),
                         GeneratedMethod::of
                 ),      Objects::nonNull)
         );
