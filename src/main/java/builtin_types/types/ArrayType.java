@@ -73,21 +73,6 @@ public class ArrayType implements BuiltinType {
                 setArray(b.env.maxIndex(), v, flattenedElems);
             }, stackSlotsCost)); //Again decided that cost is equal to # of stack slots
 
-            //For arrays of MaybeUninit, we add extra set method to deal with the unwrapped type directly
-            if (elementType.builtin() == MaybeUninit.INSTANCE) {
-                if (elementType.get() instanceof BuiltinTypeDef shouldAlwaysBe) {
-                    TypeDef unwrappedMaybeUninit = shouldAlwaysBe.generics.get(0);
-                    //Method is implemented the exact same underneath
-                    methods.add(new BytecodeMethodDef("set", false, type, List.of(u32, unwrappedMaybeUninit), unwrappedMaybeUninit, true, (b, $, v) -> {
-                        //Stack is [arr1, arr2, ..., arrN, index, e1, e2, ... eN]
-                        //Want [e1, e2, ... eN], and arr1[index] = e1, arr2[index] = e2, ... arrN[index] = eN
-                        setArray(b.env.maxIndex(), v, flattenedElems);
-                    }, stackSlotsCost)); //Again decided that cost is equal to # of stack slots
-                } else {
-                    throw new IllegalStateException("Element type is maybeuninit but isn't builtin?? bug in compiler , please report");
-                }
-            }
-            return methods;
         } else {
             //Element type is non-plural, just a regular array
             ArrayOpcodes opcodes = getOpcodes(elementType);
@@ -122,6 +107,7 @@ public class ArrayType implements BuiltinType {
 
         }
 
+        methods.trimToSize();
         return methods;
     }
 

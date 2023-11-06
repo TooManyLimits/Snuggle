@@ -49,7 +49,7 @@ public class ListType extends SnuggleDefinedType {
                             var x = 0i32
                             1i32 / x;
                         } else {
-                            backing[i] = elem;
+                            backing[i] = new(elem);
                         }
                         elem
                     }
@@ -63,12 +63,12 @@ public class ListType extends SnuggleDefinedType {
                             var newBacking = new Array<MaybeUninit<T>>(size * 2)
                             var i: u32 = 0
                             while i < #backing {
-                                newBacking[i] = backing[i].get()
+                                newBacking[i] = new(backing[i].get())
                                 i += 1
                             }
                             backing = newBacking
                         }
-                        backing[size] = elem
+                        backing[size] = new(elem)
                         size += 1
                         this
                     }
@@ -80,7 +80,7 @@ public class ListType extends SnuggleDefinedType {
                     pub fn pop(): T {
                         size -= 1
                         var elem = backing[size].get()
-                        backing[size] = new MaybeUninit<T>() //can't infer
+                        backing[size] = new()
                         elem
                     }
                     
