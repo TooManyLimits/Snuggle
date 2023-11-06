@@ -11,8 +11,10 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
+import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.LateInit;
 import util.ListUtils;
 
 import java.util.ArrayList;
@@ -41,6 +43,8 @@ public class ArrayType implements BuiltinType {
             int stackSlots = flattenedElems.size();
             boolean containsNonOptionalReferenceType = containsNonOptionalReferenceType(elementType);
 
+            LateInit<Long, CompilationException> stackSlotsCost = new LateInit<>(() -> (long) stackSlots);
+
             //Methods
             if (!containsNonOptionalReferenceType) {
                 //If there's no non-optional reference type, then we can add a "new" method...
@@ -48,7 +52,7 @@ public class ArrayType implements BuiltinType {
                     //Stack is [size]
                     BytecodeHelper.newArray(v, elementType); //[arrays, size]
                     v.visitInsn(Opcodes.POP); //[arrays]
-                }));
+                }, stackSlotsCost)); //cost equal to stack slots used
             }
             methods.add(new BytecodeMethodDef("size", false, type, List.of(), u32, true, v -> {
                 //Stack is [arrays]
@@ -56,19 +60,33 @@ public class ArrayType implements BuiltinType {
                 for (int i = 0; i < stackSlots - 1; i++)
                     v.visitInsn(Opcodes.POP);
                 v.visitInsn(Opcodes.ARRAYLENGTH);
-            }));
+            })); //cost 1, we assume that those arbitrary pops are optimized out to a single pop by jvm
             methods.add(new BytecodeMethodDef("get", false, type, List.of(u32), elementType, true, (b, d, v) -> {
                 //Stack is [arr1, arr2, ..., index]
                 //Want [arr1[index], arr2[index], ...]
                 //If we have desiredFields, then only a certain sublist of this stack should be there in the end
                 getArray(b.env.maxIndex(), flattenedElems.size() - 1, v, flattenedElems, getDesiredFieldRange(elementType, d)); //This will do that!
-            }));
+            }, stackSlotsCost)); //Cost is again the number of stack slots used
             methods.add(new BytecodeMethodDef("set", false, type, List.of(u32, elementType), elementType, true, (b, $, v) -> {
                 //Stack is [arr1, arr2, ..., arrN, index, e1, e2, ... eN]
                 //Want [e1, e2, ... eN], and arr1[index] = e1, arr2[index] = e2, ... arrN[index] = eN
                 setArray(b.env.maxIndex(), v, flattenedElems);
-            }));
+            }, stackSlotsCost)); //Again decided that cost is equal to # of stack slots
 
+            //For arrays of MaybeUninit, we add extra set method to deal with the unwrapped type directly
+            if (elementType.builtin() == MaybeUninit.INSTANCE) {
+                if (elementType.get() instanceof BuiltinTypeDef shouldAlwaysBe) {
+                    TypeDef unwrappedMaybeUninit = shouldAlwaysBe.generics.get(0);
+                    //Method is implemented the exact same underneath
+                    methods.add(new BytecodeMethodDef("set", false, type, List.of(u32, unwrappedMaybeUninit), unwrappedMaybeUninit, true, (b, $, v) -> {
+                        //Stack is [arr1, arr2, ..., arrN, index, e1, e2, ... eN]
+                        //Want [e1, e2, ... eN], and arr1[index] = e1, arr2[index] = e2, ... arrN[index] = eN
+                        setArray(b.env.maxIndex(), v, flattenedElems);
+                    }, stackSlotsCost)); //Again decided that cost is equal to # of stack slots
+                } else {
+                    throw new IllegalStateException("Element type is maybeuninit but isn't builtin?? bug in compiler , please report");
+                }
+            }
             return methods;
         } else {
             //Element type is non-plural, just a regular array
@@ -92,7 +110,8 @@ public class ArrayType implements BuiltinType {
                 v.visitInsn(opcodes.dupOpcode);
                 v.visitInsn(opcodes.storeOpcode);
             }));
-            //If this is Option<ReferenceType>, then also allow "set" with non-optional param
+            //If element type is Option<ReferenceType>, then also allow "set" with non-optional param
+            //e.g. you can do "var x = new Array<String?>(10); x[0] = "hi";" despite "hi" being of type String, while the array is of type String?
             if (elementType.isOptionalReferenceType()) {
                 TypeDef innerType = ((BuiltinTypeDef) elementType.get()).generics.get(0);
                 methods.add(new BytecodeMethodDef("set", false, type, List.of(u32, innerType), innerType, true, v -> {

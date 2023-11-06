@@ -11,6 +11,6 @@ public interface Instruction {
     void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException;
 
     //Get the cost for this operation (not counting inner code blocks)
-    long cost();
+    long cost() throws CompilationException;
 
 }

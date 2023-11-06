@@ -23,6 +23,7 @@ import builtin_types.types.UnitType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import runtime.Unit;
 import util.LateInit;
@@ -84,8 +85,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumPro
         else
             elementType = checker.getBasicBuiltin(IntegerType.U8);
 
-
-        LateInit<CodeBlock, CompilationException> lateInit = new LateInit<>(() -> {
+        LateInit<CodeBlock, CompilationException> staticInitBlockLazy = new LateInit<>(() -> {
             //Create the static init method
             CodeBlock staticInitBlock = new CodeBlock((MethodDef) null);
 
@@ -162,8 +162,9 @@ public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumPro
                 //The actual methods which are defined in the enum body
                 ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics)),
                 //Methods generated from the properties
-                ListUtils.mapIndexed(properties, (property, index) ->
-                    new BytecodeMethodDef(property.name, false, currentType, List.of(), checker.getOrInstantiate(property.type(), generics), true, (b, d, v) -> {
+                ListUtils.mapIndexed(properties, (property, index) -> {
+                    MethodDef getter = ListUtils.find(fieldDefs.get(index).type().methods(), m -> m.name().equals("get"));
+                    return new BytecodeMethodDef(property.name, false, currentType, List.of(), checker.getOrInstantiate(property.type(), generics), true, (b, d, v) -> {
                         //Store index as local
                         int localIndex = b.env.maxIndex();
                         v.visitVarInsn(Opcodes.ISTORE, localIndex);
@@ -172,16 +173,16 @@ public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumPro
                         //Load the index
                         v.visitVarInsn(Opcodes.ILOAD, localIndex);
                         //Call the array's "get" method
-                        ListUtils.find(fieldDefs.get(index).type().methods(), m -> m.name().equals("get")).compileCall(false, b, d, v);
-                    })
-                ),
+                        getter.compileCall(false, b, d, v);
+                    });
+                }),
                 //Static initializer, which fills all the fields
-                List.of(new BytecodeMethodDef("#init", true, currentType, List.of(), checker.getBasicBuiltin(UnitType.INSTANCE), true, v -> {
-                    CodeBlock b = lateInit.get();
-                    b.writeJvmBytecode(v);
-                })),
+                List.of(new BytecodeMethodDef("#init", true, currentType, List.of(), checker.getBasicBuiltin(UnitType.INSTANCE), true,
+                        v -> staticInitBlockLazy.get().writeJvmBytecode(v),
+                        new LateInit<>(() -> staticInitBlockLazy.get().cost()) //Custom cost
+                )),
                 //.index(), which does literally nothing at runtime lol, just converts between types
-                List.of(new BytecodeMethodDef("index", false, currentType, List.of(), elementType, true, v -> {}))
+                List.of(new BytecodeMethodDef("index", false, currentType, List.of(), elementType, true, v -> {}, BytecodeMethodDef.ZERO)) //zero cost
         );
     }
 

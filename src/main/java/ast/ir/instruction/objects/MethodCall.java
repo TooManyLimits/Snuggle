@@ -63,10 +63,11 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<Field
 
 
     @Override
-    public long cost() {
-        //If special case, more instructions
+    public long cost() throws CompilationException {
+        long base = methodToCall instanceof BytecodeMethodDef bytecode ? bytecode.cost().get() : 1;
+        //If plural return, then add more instructions
         if (methodToCall.returnType().isPlural())
-            return 2 + methodToCall.returnType().stackSlots() / 2;
-        return 1; //Say it costs 1 to call by default
+            return base + (methodToCall.returnType().stackSlots() - 1) / 2;
+        return base;
     }
 }

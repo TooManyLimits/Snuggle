@@ -6,6 +6,7 @@ import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
+import util.LateInit;
 import util.ThrowingConsumer;
 
 import java.util.List;
@@ -16,10 +17,21 @@ import java.util.function.Consumer;
 //If this method returns a plural type, then this is true if the plural type
 //is left on the stack, and false otherwise.
 //If the method does not return a plural type, this boolean does not matter.
-public record BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, boolean leavesReturnOnStack, BytecodeCall bytecode, RunBytecode... argTransformers) implements MethodDef {
+public record BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, boolean leavesReturnOnStack, BytecodeCall bytecode, LateInit<Long, CompilationException> cost, RunBytecode... argTransformers) implements MethodDef {
+
+    public static final LateInit<Long, CompilationException> ONE = new LateInit<>(() -> 1L);
+    public static final LateInit<Long, CompilationException> ZERO = new LateInit<>(() -> 0L);
+
+    public BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, boolean leavesReturnOnStack, ThrowingConsumer<MethodVisitor, CompilationException> bytecode, LateInit<Long, CompilationException> cost, RunBytecode... argTransformers) {
+        this(name, isStatic, owningType, paramTypes, returnType, leavesReturnOnStack, (b, d, v) -> bytecode.accept(v), cost);
+    }
 
     public BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, boolean leavesReturnOnStack, ThrowingConsumer<MethodVisitor, CompilationException> bytecode, RunBytecode... argTransformers) {
-        this(name, isStatic, owningType, paramTypes, returnType, leavesReturnOnStack, (b, d, v) -> bytecode.accept(v));
+        this(name, isStatic, owningType, paramTypes, returnType, leavesReturnOnStack, (b, d, v) -> bytecode.accept(v), ONE);
+    }
+
+    public BytecodeMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, boolean leavesReturnOnStack, BytecodeCall bytecode, RunBytecode... argTransformers) {
+        this(name, isStatic, owningType, paramTypes, returnType, leavesReturnOnStack, bytecode, ONE);
     }
 
     @Override

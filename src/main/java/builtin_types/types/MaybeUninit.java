@@ -1,5 +1,6 @@
 package builtin_types.types;
 
+import ast.ir.helper.BytecodeHelper;
 import ast.passes.TypeChecker;
 import ast.typed.def.field.BuiltinFieldDef;
 import ast.typed.def.field.FieldDef;
@@ -51,13 +52,19 @@ public class MaybeUninit implements BuiltinType {
         TypeDef innerType = generics.get(0);
         TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(
+                //new with no args -> empty
+                new BytecodeMethodDef("new", false, thisType, List.of(), unitType, true, v -> {
+                    //Push default, inner value
+                    BytecodeHelper.pushDefaultValue(v, innerType);
+                }),
+                //new with arg -> wrap
                 new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, true, v -> {
                     //Wraps the argument into one of these
                     //No-op! This stuff is unsafe, it literally just changes the type
-                }),
+                }, BytecodeMethodDef.ZERO), //Cost is 0, as a no-op
                 new BytecodeMethodDef("get", false, thisType, List.of(), innerType, true, v -> {
-                    //No-op! This is unsafe, it literally just changes the type. Worst that can happen is
-                })
+                    //No-op! This is unsafe, it literally just changes the type. Worst that can happen though is an NPE from using the output of this
+                }, BytecodeMethodDef.ZERO) //Cost is 0, as a no-op
         );
     }
 

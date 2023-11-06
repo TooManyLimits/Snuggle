@@ -37,7 +37,7 @@ public class CodeBlock {
         cost = 0; //Cost is tracked independently
     }
 
-    public CodeBlock emit(Instruction instruction) {
+    public CodeBlock emit(Instruction instruction) throws CompilationException {
         //TODO: Peephole-optimize while we add instructions, so we don't have to copy lots of things backwards in memory
         instructions.add(instruction);
         cost += instruction.cost();

@@ -95,7 +95,7 @@ public class OptionType implements BuiltinType {
                     }),
                     new BytecodeMethodDef("new", false, thisType, List.of(innerType), unitType, true, v -> {
                         //Literally just do nothing lmao
-                    }),
+                    }, BytecodeMethodDef.ZERO), //No-op, 0 cost
                     new BytecodeMethodDef("bool", false, thisType, List.of(), boolType, true, v -> {
                         Label ifPresent = new Label();
                         Label done = new Label();
