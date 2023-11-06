@@ -25,7 +25,8 @@ public record TypeResolvedStructConstructor(Loc loc, ResolvedType type, List<Str
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
-        verifier.verifyType(type, loc);
+        if (type != null)
+            verifier.verifyType(type, loc);
         for (TypeResolvedExpr e : argValues)
             e.verifyGenericArgCounts(verifier);
     }

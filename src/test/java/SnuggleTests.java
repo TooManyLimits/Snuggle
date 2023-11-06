@@ -88,6 +88,32 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testStructNewInference() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec3<T> {
+                    var x: T
+                    var y: T
+                    var z: T
+                    pub fn add(o: Vec3<T>): Vec3<T>
+                        new {x + o.x, y + o.y, z + o.z}
+                    pub fn sub(o: Vec3<T>): Vec3<T>
+                        new {x - o.x, y - o.y, z - o.z}
+                    pub fn neg(): Vec3<T>
+                        new {-x, -y, -z}
+                    pub fn mul(s: T): Vec3<T>
+                        new {x * s, y * s, z * s}
+                    pub fn dot(o: Vec3<T>): T
+                        x * o.x + y * o.y + z * o.z
+                }
+                
+                var a: Vec3<i64> = new {1, 2, 3}
+                var b: Vec3<i64> = new {5, 6, 7}
+                Test.assertEquals(480, -{a + b}.dot({a - b}) * 5)
+                
+                """);
+    }
+
+    @Test
     public void testConstructorInfer() throws CompilationException, SnuggleException {
         test("""
                 var x: String? = new()
