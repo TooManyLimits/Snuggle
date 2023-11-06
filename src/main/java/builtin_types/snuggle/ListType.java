@@ -16,7 +16,7 @@ public class ListType extends SnuggleDefinedType {
                     //Create a new List<T> with backing size 5
                     pub fn new() {
                         super()
-                        backing = new Array<MaybeUninit<T>>(backingSize = 5);
+                        backing = new(backingSize = 5);
                     }
                     
                     //Create a new List<T> with the passed backing size
@@ -27,7 +27,7 @@ public class ListType extends SnuggleDefinedType {
                             1i32 / x;
                         }
                         super()
-                        backing = new Array<MaybeUninit<T>>(backingSize = startingBackingSize);
+                        backing = new(backingSize = startingBackingSize);
                     }
                     
                     //Get from index
@@ -80,7 +80,7 @@ public class ListType extends SnuggleDefinedType {
                     pub fn pop(): T {
                         size -= 1
                         var elem = backing[size].get()
-                        backing[size] = new MaybeUninit<T>()
+                        backing[size] = new MaybeUninit<T>() //can't infer
                         elem
                     }
                     

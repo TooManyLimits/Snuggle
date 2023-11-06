@@ -14,6 +14,10 @@ public record ParsedConstructor(Loc loc, ParsedType parsedType, List<ParsedExpr>
 
     @Override
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {
-        return new TypeResolvedConstructor(loc, parsedType.resolve(loc, resolver), ListUtils.map(args, a -> a.resolve(resolver)));
+        return new TypeResolvedConstructor(
+                loc,
+                parsedType == null ? null : parsedType.resolve(loc, resolver),
+                ListUtils.map(args, a -> a.resolve(resolver))
+        );
     }
 }

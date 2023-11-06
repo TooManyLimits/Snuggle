@@ -664,27 +664,42 @@ public class Parser {
     //Token "new" was just parsed
     private ParsedExpr parseConstructor(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc newLoc = lexer.last().loc();
+
+        //First check for "new()" or "new {}", where we will later try to infer the type from context
+        if (lexer.consume(LEFT_PAREN)) {
+            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+            return new ParsedConstructor(newLoc, null, args);
+        } else if (lexer.consume(LEFT_CURLY)) {
+            return parseStructConstructor(newLoc, null, classGenerics, methodGenerics);
+        }
+
+        //Wasn't those, so it must be explicitly typed
         ParsedType constructedType = parseType("new", lexer.last().loc(), classGenerics, methodGenerics);
 
         //Branch here - either a calling constructor new Type(), or a struct constructor new Type { }
         if (lexer.consume(LEFT_CURLY)) {
-            List<ParsedExpr> args = parseArguments(RIGHT_CURLY, classGenerics, methodGenerics);
-            if (args.stream().allMatch(a -> a instanceof ParsedAssignment parsedAssignment && parsedAssignment.lhs() instanceof ParsedVariable)) {
-                //Using the named format
-                List<String> argNames = new ArrayList<>(args.size());
-                for (int i = 0; i < args.size(); i++) {
-                    argNames.add(((ParsedVariable) ((ParsedAssignment) args.get(i)).lhs()).name());
-                    args.set(i, ((ParsedAssignment) args.get(i)).rhs());
-                }
-                return new ParsedStructConstructor(newLoc, constructedType, argNames, args);
-            } else {
-                //Unnamed format
-                return new ParsedStructConstructor(newLoc, constructedType, null, args);
-            }
+            return parseStructConstructor(newLoc, constructedType, classGenerics, methodGenerics);
         } else {
             lexer.expect(LEFT_PAREN, "Expected ( or { to start constructor of annotatedType " + constructedType, newLoc);
             List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
             return new ParsedConstructor(newLoc, constructedType, args);
+        }
+    }
+
+    //Left curly { was already parsed
+    private ParsedStructConstructor parseStructConstructor(Loc newLoc, ParsedType constructedType, List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        List<ParsedExpr> args = parseArguments(RIGHT_CURLY, classGenerics, methodGenerics);
+        if (args.stream().allMatch(a -> a instanceof ParsedAssignment parsedAssignment && parsedAssignment.lhs() instanceof ParsedVariable)) {
+            //Using the named format
+            List<String> argNames = new ArrayList<>(args.size());
+            for (int i = 0; i < args.size(); i++) {
+                argNames.add(((ParsedVariable) ((ParsedAssignment) args.get(i)).lhs()).name());
+                args.set(i, ((ParsedAssignment) args.get(i)).rhs());
+            }
+            return new ParsedStructConstructor(newLoc, constructedType, argNames, args);
+        } else {
+            //Unnamed format
+            return new ParsedStructConstructor(newLoc, constructedType, null, args);
         }
     }
 

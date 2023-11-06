@@ -12,6 +12,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import util.ListUtils;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +29,7 @@ public class StringType implements BuiltinType {
                 DefineConstWithFallback.defineBinary("add", String::concat, string, string, string, v -> {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 }),
-                DefineConstWithFallback.defineUnary("size", String::length, string, u32, v -> {
+                DefineConstWithFallback.defineUnary("size", (String x) -> BigInteger.valueOf(x.length()), string, u32, v -> {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
                 })
         );

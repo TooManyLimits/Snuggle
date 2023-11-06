@@ -17,7 +17,7 @@ public record ParsedStructConstructor(Loc loc, ParsedType parsedType, List<Strin
     public TypeResolvedExpr resolve(TypeResolver resolver) throws CompilationException {
         return new TypeResolvedStructConstructor(
                 loc,
-                parsedType.resolve(loc, resolver),
+                parsedType == null ? null : parsedType.resolve(loc, resolver),
                 argKeys,
                 ListUtils.map(argValues, v -> v.resolve(resolver))
         );

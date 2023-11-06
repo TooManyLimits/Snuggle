@@ -1,6 +1,5 @@
 package ast.type_resolved.expr;
 
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.UnitType;
@@ -19,29 +18,39 @@ public record TypeResolvedConstructor(Loc loc, ResolvedType type, List<TypeResol
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
-        verifier.verifyType(type, loc);
+        if (type != null)
+            verifier.verifyType(type, loc);
         for (TypeResolvedExpr arg : args)
             arg.verifyGenericArgCounts(verifier);
     }
 
+    private TypedExpr typeWithKnownType(TypeDef typeToConstruct, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+        //Get the expected return type of the new() method
+        TypeDef expectedConstructorOutput = typeToConstruct.get() instanceof StructDef sd ? sd : checker.getBasicBuiltin(UnitType.INSTANCE);
+        //Lookup the best method
+        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, typeToConstruct, "new", args, List.of(), typeGenerics, false, false, expectedConstructorOutput);
+        return new TypedConstructor(loc, typeToConstruct, best.methodDef(), best.typedArgs());
+    }
+
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
-        //Lookup the best method
+        //If null, can't infer.
+        if (type == null)
+            throw new TypeCheckingException("Unable to infer type of constructor: consider making it explicit or add annotations.", loc);
         TypeDef t = checker.getOrInstantiate(type, typeGenerics);
-        TypeDef expectedResult;
-        if (t.get() instanceof StructDef)
-            expectedResult = t; //Expected type for struct constructors is the struct itself
-        else
-            expectedResult = checker.getBasicBuiltin(UnitType.INSTANCE);
-        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, t, "new", args, List.of(), typeGenerics, false, false, expectedResult);
-        return new TypedConstructor(loc, t, best.methodDef(), best.typedArgs());
+        return typeWithKnownType(t, currentType, checker, typeGenerics);
     }
 
     @Override
     public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedExpr inferred = infer(currentType, checker, typeGenerics);
-        if (!inferred.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected type " + expected.name() + ", got " + inferred.type().name(), loc);
-        return inferred;
+        //If type is explicit, use it
+        //If not explicit, use expected type
+        TypedExpr typed = typeWithKnownType(
+                type == null ? expected : checker.getOrInstantiate(type, typeGenerics),
+                currentType, checker, typeGenerics
+        );
+        if (!typed.type().isSubtype(expected))
+            throw new TypeCheckingException("Expected type " + expected.name() + ", got " + typed.type().name(), loc);
+        return typed;
     }
 }

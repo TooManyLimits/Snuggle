@@ -88,6 +88,17 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testConstructorInfer() throws CompilationException, SnuggleException {
+        test("""
+                var x: String? = new()
+                x = new("helo cutie :D")
+                System.print(x[])
+                Test.assertEquals(#"helo cutie :D", #x[])
+                Test.assertEquals("helo cutie :D", x.get())
+                """);
+    }
+
+    @Test
     public void testShortestList() throws CompilationException, SnuggleException {
         test("""
                 //It's so short, it's only 1 line of code (in this file, anyway)
