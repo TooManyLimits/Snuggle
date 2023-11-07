@@ -4,6 +4,8 @@ import ast.ir.def.CodeBlock;
 import ast.ir.instruction.objects.GetField;
 import ast.ir.instruction.objects.SetField;
 import ast.ir.instruction.stack.Dup;
+import ast.ir.instruction.stack.Pop;
+import ast.ir.instruction.stack.StoreInTopLocal;
 import ast.ir.instruction.vars.LoadLocal;
 import ast.ir.instruction.vars.StoreLocal;
 import ast.typed.def.field.FieldDef;
@@ -68,9 +70,13 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
         } else if (fieldsToFollow.size() > 0 && lhs != null && lhs.type().isReferenceType()) {
             //Setting field of a reference type
             lhs.compile(code, null); //Compile lhs
-            code.emit(new Dup(lhs.type())); //Dup it
+            code.emit(new Dup(lhs.type())); //Dup lhs
+            if (rhs.type().isPlural())
+                code.emit(new StoreInTopLocal(lhs.type()));
             rhs.compile(code, null); //Compile rhs
-            code.emit(new SetField(fieldsToFollow)); //Set field
+            code.emit(new SetField(fieldsToFollow)); //Set the field
+            if (rhs.type().isPlural())
+                code.emit(new Pop(lhs.type()));
             code.emit(new GetField(ListUtils.join(fieldsToFollow, DesiredFieldNode.toList(desiredFields)))); //Fetch the desired value back
         } else if (lhs == null) {
             //Setting static field

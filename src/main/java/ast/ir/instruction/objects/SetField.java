@@ -1,6 +1,7 @@
 package ast.ir.instruction.objects;
 
 import ast.ir.def.CodeBlock;
+import ast.ir.helper.BytecodeHelper;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
@@ -37,19 +38,24 @@ public record SetField(List<FieldDef> fieldsToFollow) implements Instruction {
             fieldName = nameBuilder.toString();
         }
 
-        set(opcode, owner, jvm, fieldName, lastField.type());
+        set(opcode, firstField.owningType(), owner, jvm, fieldName, lastField.type(), lastField.type().isPlural(), block.env.maxIndex());
     }
 
-    private void set(int opcode, String owner, MethodVisitor jvm, String fieldName, TypeDef type) {
+    //if isPlural, then before every set() we need to get the top local variable, then swap it accordingly.
+    private void set(int opcode, TypeDef ownerType, String owner, MethodVisitor jvm, String fieldName, TypeDef type, boolean isPlural, int maxIndex) {
         if (type.isPlural()) {
             List<FieldDef> innerFields = type.fields();
             ListUtils.iterBackwards(innerFields, innerField -> {
                 if (innerField.isStatic()) return;
                 String builtName = fieldName + "$" + innerField.name();
-                set(opcode, owner, jvm, builtName, innerField.type());
+                set(opcode, ownerType, owner, jvm, builtName, innerField.type(), isPlural, maxIndex);
             });
         } else {
-            jvm.visitFieldInsn(opcode, owner, fieldName, type.getDescriptor().get(0));
+            if (isPlural && opcode != Opcodes.PUTSTATIC) {
+                BytecodeHelper.visitVariable(maxIndex, ownerType, false, jvm); //load variable
+                BytecodeHelper.swap(jvm, type, ownerType); //swap
+            }
+            jvm.visitFieldInsn(opcode, owner, fieldName, type.getDescriptor().get(0)); //store field
         }
     }
 

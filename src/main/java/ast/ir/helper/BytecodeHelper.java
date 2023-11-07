@@ -168,6 +168,25 @@ public class BytecodeHelper {
         visitor.visitInsn(Opcodes.POP2);
     }
 
+    //[first, second] -> [second, first]
+    public static void swap(MethodVisitor visitor, TypeDef first, TypeDef second) {
+        int firstSlots = first.stackSlots();
+        int secondSlots = second.stackSlots();
+        if (firstSlots == 0 || secondSlots == 0) return;
+        if (firstSlots > 2 || secondSlots > 2) throw new IllegalArgumentException("BytecodeHelper.swap() only expects elements with 1 or 2 slots, got " + Math.max(firstSlots, secondSlots));
+        if (firstSlots == 1)
+            if (secondSlots == 1)
+                visitor.visitInsn(Opcodes.SWAP);
+            else
+                swapSmallBig(visitor);
+        else
+            if (secondSlots == 1)
+                swapBigSmall(visitor);
+            else
+                swapBigBig(visitor);
+    }
+
+
     //Push unit on the stack
     private static final String unitName = Type.getInternalName(Unit.class);
     private static final String unitDescriptor = "L" + unitName + ";";

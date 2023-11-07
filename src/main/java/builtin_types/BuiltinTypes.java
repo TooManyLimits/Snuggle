@@ -2,6 +2,7 @@ package builtin_types;
 
 import ast.parsed.prog.ParsedFile;
 import builtin_types.reflect.ReflectedBuiltin;
+import builtin_types.snuggle.BoxType;
 import builtin_types.snuggle.ListType;
 import builtin_types.snuggle.SnuggleDefinedType;
 import builtin_types.types.*;
@@ -56,6 +57,7 @@ public class BuiltinTypes {
     public BuiltinTypes addStandardTypes() {
         //Add snuggle-defined types:
         addType(ListType.INSTANCE);
+        addType(BoxType.INSTANCE);
 
         //Add builtin java-defined types:
         addType(SystemType.INSTANCE);

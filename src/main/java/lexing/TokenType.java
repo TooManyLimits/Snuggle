@@ -24,9 +24,9 @@ public enum TokenType {
     POWER("**"),
 
     //Bitwise operators
-    BITWISE_AND("&"),
-    BITWISE_OR("|"),
-    BITWISE_XOR("^"),
+    AMPERSAND("&"),
+    PIPE("|"),
+    CARAT("^"),
 
     //Boolean operators
     AND("&&"),

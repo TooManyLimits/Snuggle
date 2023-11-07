@@ -62,12 +62,26 @@ public class TypeResolver {
     private TypeResolver(BuiltinTypes builtinTypes, ParsedAST parsedAST) throws CompilationException {
 
         Set<String> fileNames = new HashSet<>(ListUtils.map(parsedAST.files(), ParsedFile::name));
+        Map<ParsedTypeDef, Integer> builtinSnuggleTypes = new IdentityHashMap<>();
 
         //Insert the snuggle-defined builtins into the ParsedAST
-        for (SnuggleDefinedType snuggleDefined : builtinTypes.getSnuggleDefined())
-            //Only add the file if there's not already a file with that name
-            if (!fileNames.contains(snuggleDefined.parsedFile.name()))
-                parsedAST.files().add(snuggleDefined.parsedFile);
+        for (SnuggleDefinedType snuggleDefined : builtinTypes.getSnuggleDefined()) {
+            if (snuggleDefined.needsImport) {
+                //Add it to the AST, if there isn't already a file with that name
+                if (!fileNames.contains(snuggleDefined.parsedFile.name()))
+                    parsedAST.files().add(snuggleDefined.parsedFile);
+            } else {
+                //Register the type(s) directly in the current mappings
+                for (ParsedTypeDef t : snuggleDefined.parsedFile.typeDefs()) {
+                    if (!t.pub())
+                        throw new IllegalStateException("Bug in environment: snuggle-defined builtin \"" + t.name() + "\" is not pub, but it was expected to be!");
+                    int mapping = register(t);
+                    builtinSnuggleTypes.put(t, mapping);
+                    if (currentMappings.putIfAbsent(t.name(), mapping) != null)
+                        throw new IllegalStateException("Bug by environment implementor: multiple builtin types named \"" + t.name() + "\"?");
+                }
+            }
+        }
 
         //Globally defined builtin types
         builtins = new IdentityHashMap<>();
@@ -104,6 +118,11 @@ public class TypeResolver {
             ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
             result[allTypeDefsInverse.get(typeDef)] = typeDef.resolve(this);
         }
+        for (Integer builtinIndex : builtinSnuggleTypes.values()) {
+            ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
+            result[allTypeDefsInverse.get(typeDef)] = typeDef.resolve(this);
+        }
+
 
         //Also resolve the file code
         Map<String, TypeResolvedFile> codeByFile = new HashMap<>();

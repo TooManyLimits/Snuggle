@@ -88,6 +88,61 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testBox() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec2 {
+                    var x: f32
+                    var y: f32
+                }
+                
+                class ModifyStruct {
+                    static fn dontModifyIt(a: Vec2) {
+                        a.y += 1; //doesn't do anything, since structs are value types
+                    }
+                    static fn modifyIt(a: Box<Vec2>) {
+                        a[] = new {a[].x, a[].y + 1};
+                    }
+                }
+                
+                var x: Vec2 = new {1, 2}
+                var y: Box<Vec2> = new(x)
+                
+                ModifyStruct.dontModifyIt(x)
+                ModifyStruct.modifyIt(y)
+
+                Test.assertEquals(2, x.y)
+                Test.assertEquals(3, y[].y)
+                """);
+    }
+
+    @Test
+    public void testValueTypes() throws CompilationException, SnuggleException {
+        test("""
+                struct Vec3<T> {
+                    var x: T
+                    var y: T
+                    var z: T
+                    pub fn add(o: Vec3<T>): Vec3<T>
+                        new {x + o.x, y + o.y, z + o.z}
+                    pub fn sub(o: Vec3<T>): Vec3<T>
+                        new {x - o.x, y - o.y, z - o.z}
+                    pub fn neg(): Vec3<T>
+                        new {-x, -y, -z}
+                    pub fn mul(s: T): Vec3<T>
+                        new {x * s, y * s, z * s}
+                    pub fn dot(o: Vec3<T>): T
+                        x * o.x + y * o.y + z * o.z
+                }
+                
+                var a: Vec3<f32> = new {4, 5, 6}
+                var b = a
+                a.x = 7
+                Test.assertEquals(7, a.x)
+                Test.assertEquals(4, b.x)
+                """);
+    }
+
+    @Test
     public void testStructNewInference() throws CompilationException, SnuggleException {
         test("""
                 struct Vec3<T> {
@@ -109,7 +164,6 @@ public class SnuggleTests {
                 var a: Vec3<i64> = new {1, 2, 3}
                 var b: Vec3<i64> = new {5, 6, 7}
                 Test.assertEquals(480, -{a + b}.dot({a - b}) * 5)
-                
                 """);
     }
 
@@ -121,22 +175,6 @@ public class SnuggleTests {
                 System.print(x[])
                 Test.assertEquals(#"helo cutie :D", #x[])
                 Test.assertEquals("helo cutie :D", x.get())
-                """);
-    }
-
-    @Test
-    public void testShortestList() throws CompilationException, SnuggleException {
-        test("""
-                //It's so short, it's only 1 line of code (in this file, anyway)
-                import "List"
-                
-                var x = new List<String>()
-                x.push("hello").push("cutie").push("applejuice").push(":D")
-                
-                Test.assertEquals(4, #x)
-                Test.assertEquals("cutie", x[1])
-                x[2] = "juic"
-                Test.assertEquals("juic", x[2])
                 """);
     }
 
@@ -241,55 +279,6 @@ public class SnuggleTests {
                 Crime -= 10
                 Test.assertEquals(215, Crime[])
                 Test.assertEquals(64, Crime(4))
-                """);
-    }
-
-    @Test
-    public void testEvenShorterList() throws CompilationException, SnuggleException {
-        test("""
-                class List<T> {
-                    var backing: Array<T> = new Array<T>(5)
-                    var size: u32 = 0
-                    fn new() super()
-                    fn addAssign(elem: T): List<T> {
-                        backing[size] = elem
-                        size += 1
-                        if size == #backing {
-                            var newBacking = new Array<T>(size * 2)
-                            var i: u32 = 0
-                            while i < #backing {
-                                newBacking[i] = backing[i]
-                                i += 1
-                            }
-                            backing = newBacking
-                        }
-                        this
-                    }
-                    fn get(index: u32): T backing[index]
-                    fn size(): u32 size
-                    fn backingSize(): u32 #backing
-                }
-                
-                var a = new List<u32>()
-                a += 1
-                a += 3
-                a += 5
-                a += 2
-                a += 7
-                a += 4
-                
-                var i: u32 = 0
-                while i < #a {
-                    System.print(a[i])
-                    i += 1
-                }
-                
-                Test.assertEquals(1, a[0])
-                Test.assertEquals(3, a[1])
-                Test.assertEquals(5, a[2])
-                Test.assertEquals(2, a[3])
-                Test.assertEquals(7, a[4])
-                Test.assertEquals(4, a[5])
                 """);
     }
 
@@ -460,60 +449,6 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testShorterList() throws CompilationException, SnuggleException {
-        //Test field access syntax with implicit "this."
-        test("""
-                class List<T> {
-                    var backing: Array<T>
-                    var size: u32
-                    fn new() {
-                        super()
-                        backing = new Array<T>(5)
-                        size = 0;
-                    }
-                    fn push(elem: T) {
-                        backing.set(size, elem)
-                        size = size + 1
-                        if size == #backing {
-                            var newBacking = new Array<T>(size * 2)
-                            var i: u32 = 0
-                            while i < #backing {
-                                newBacking.set(i, backing.get(i))
-                                i = i + 1
-                            }
-                            backing = newBacking
-                        };
-                    }
-                    fn get(index: u32): T backing.get(index)
-                    fn size(): u32 size
-                    fn backingSize(): u32 #backing
-                }
-                
-                var a = new List<u32>()
-                a.push(1)
-                a.push(3)
-                a.push(5)
-                a.push(2)
-                a.push(7)
-                a.push(4)
-                
-                var i: u32 = 0
-                while i < a.backingSize() {
-                    System.print(a.get(i))
-                    i = i + 1
-                }
-                
-                Test.assertEquals(1, a.get(0))
-                Test.assertEquals(3, a.get(1))
-                Test.assertEquals(5, a.get(2))
-                Test.assertEquals(2, a.get(3))
-                Test.assertEquals(7, a.get(4))
-                Test.assertEquals(4, a.get(5))
-                
-                """);
-    }
-
-    @Test
     public void testNestedStruct() throws CompilationException, SnuggleException {
         test("""
                 struct Nester {
@@ -535,55 +470,6 @@ public class SnuggleTests {
                     z = 13
                 }
                 System.print(c.y.b)
-                """);
-    }
-
-    @Test
-    public void testBox() throws CompilationException, SnuggleException {
-        test("""
-                class Box<T> {
-                    var value: T
-                    fn new(v: T) {
-                        super()
-                        this.value = v;
-                    }
-                }
-                struct Thing {
-                    var thing: u32
-                }
-                
-                class Whatnot {
-                    var elem: Box<Thing>
-                    fn new() {
-                        super()
-                        elem = new Box<Thing>(new Thing{30});
-                    }
-                    fn getThing(): Thing {
-                        elem.value
-                    }
-                    fn getBoxed(): Box<Thing> {
-                        elem
-                    }
-                }
-                
-                var x = new Thing { 10 }
-                Test.assertEquals(10, x.thing)
-                x.thing = 5
-                Test.assertEquals(5, x.thing)
-                
-                var y = new Box<Thing>(new Thing { 50 })
-                Test.assertEquals(50, y.value.thing)
-                y.value.thing = 100
-                Test.assertEquals(100, y.value.thing)
-                
-                var z = new Whatnot()
-                Test.assertEquals(30, z.getThing().thing)
-                Test.assertEquals(30, z.getBoxed().value.thing)
-                //z.getThing().thing = 50 //Error
-                //Test.assertEquals(30, z.getThing().thing)
-                z.getBoxed().value.thing = 50
-                Test.assertEquals(50, z.getThing().thing)
-                
                 """);
     }
 
@@ -644,32 +530,6 @@ public class SnuggleTests {
     @Test
     public void testFunFakeVarargs() throws CompilationException, SnuggleException, IOException {
         test("""
-                class List<T> {
-                    var backing: Array<T>
-                    var size: u32
-                    fn new() {
-                        super()
-                        this.backing = new Array<T>(5)
-                        this.size = 0;
-                    }
-                    fn push(elem: T) {
-                        this.backing.set(this.size, elem)
-                        this.size = this.size + 1;
-                        if this.size == this.backing.size() {
-                            var newBacking = new Array<T>(this.size * 2);
-                            var i: u32 = 0
-                            while i < this.backing.size() {
-                                newBacking.set(i, this.backing.get(i))
-                                i = i + 1;
-                            }
-                            this.backing = newBacking;
-                        };
-                    }
-                    fn get(index: u32): T this.backing.get(index)
-                    fn size(): u32 this.size
-                    fn backingSize(): u32 this.backing.size()
-                }
-                
                 class FakeVarargsPrinter<T> {
                     var elems: List<T>
                     fn new(firstElem: T) {
@@ -799,58 +659,6 @@ public class SnuggleTests {
                 var z = x as f64 + 0.56
                 Test.assertEquals(150u8, y) // todo: looks like masking isn't done to @Unsigned? idk
                 Test.assertEquals(150.56f64, z)
-                """);
-    }
-
-    @Test
-    public void testList() throws CompilationException, SnuggleException {
-        test("""
-                class List<T> {
-                    var backing: Array<T>
-                    var size: u32
-                    fn new() {
-                        super()
-                        this.backing = new Array<T>(5)
-                        this.size = 0;
-                    }
-                    fn push(elem: T) {
-                        this.backing.set(this.size, elem)
-                        this.size = this.size + 1;
-                        if this.size == this.backing.size() {
-                            var newBacking = new Array<T>(this.size * 2);
-                            var i: u32 = 0
-                            while i < this.backing.size() {
-                                newBacking.set(i, this.backing.get(i))
-                                i = i + 1;
-                            }
-                            this.backing = newBacking;
-                        } else {}
-                    }
-                    fn get(index: u32): T this.backing.get(index)
-                    fn size(): u32 this.size
-                    fn backingSize(): u32 this.backing.size()
-                }
-                
-                var a = new List<u32>()
-                a.push(1)
-                a.push(3)
-                a.push(5)
-                a.push(2)
-                a.push(7)
-                a.push(4)
-                
-                var i: u32 = 0
-                while i < a.backingSize() {
-                    System.print(a.get(i))
-                    i = i + 1;
-                }
-                
-                Test.assertEquals(1, a.get(0))
-                Test.assertEquals(3, a.get(1))
-                Test.assertEquals(5, a.get(2))
-                Test.assertEquals(2, a.get(3))
-                Test.assertEquals(7, a.get(4))
-                Test.assertEquals(4, a.get(5))
                 """);
     }
 

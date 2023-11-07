@@ -10,9 +10,14 @@ public class SnuggleDefinedType {
 
     public final ParsedFile parsedFile;
 
+    //If "needsImport", then the parsed file will run when imported.
+    //Otherwise, add the parsedFile's typedefs to every scope.
+    public final boolean needsImport;
+
     //Pass the source code for this type.
     //The source code should just define a single type, and nothing else.
-    protected SnuggleDefinedType(String fileName, String src) {
+    protected SnuggleDefinedType(String fileName, boolean needsImport, String src) {
+        this.needsImport = needsImport;
         try {
             parsedFile = Parser.parseFile(fileName, new Lexer(fileName, src));
         } catch (CompilationException e) {

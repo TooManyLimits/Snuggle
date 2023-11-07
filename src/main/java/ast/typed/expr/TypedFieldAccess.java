@@ -2,7 +2,7 @@ package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.objects.GetField;
-import ast.ir.instruction.stack.Dup;
+import ast.ir.instruction.stack.StoreInTopLocal;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
@@ -14,7 +14,6 @@ public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef t
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
-
         if (lhs == null) {
             //Static field
             List<FieldDef> desiredList = DesiredFieldNode.toList(new DesiredFieldNode(field, desiredFields));
@@ -23,6 +22,8 @@ public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef t
             //If LHS is a reference type, then don't push our field into the desired stack.
             //Compile the LHS without any desired fields.
             lhs.compile(block, null);
+            if (field.type().isPlural())
+                block.emit(new StoreInTopLocal(lhs.type())); //Store in the top local, if plural
             //Then, get the list of fields (now including our own)
             List<FieldDef> desiredList = DesiredFieldNode.toList(new DesiredFieldNode(field, desiredFields));
             block.emit(new GetField(desiredList));

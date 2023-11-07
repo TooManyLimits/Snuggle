@@ -5,11 +5,11 @@ public class ListType extends SnuggleDefinedType {
     public static ListType INSTANCE = new ListType();
 
     private ListType() {
-        super("List", """
+        super("List", false, """
                 
                 pub class List<T> {
                 
-                    var backing: Array<MaybeUninit<T>>
+                    var backing: MaybeUninit<T>[]
                     var backingSize: u32
                     var size: u32 = 0
                     
@@ -60,7 +60,7 @@ public class ListType extends SnuggleDefinedType {
                     //Push an element into the list, double the size if it fills up
                     pub fn push(elem: T): List<T> {
                         if size == #backing {
-                            var newBacking = new Array<MaybeUninit<T>>(size * 2)
+                            var newBacking = new MaybeUninit<T>[](size * 2)
                             var i: u32 = 0
                             while i < #backing {
                                 newBacking[i] = new(backing[i].get())

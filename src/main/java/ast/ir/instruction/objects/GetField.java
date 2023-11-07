@@ -1,6 +1,7 @@
 package ast.ir.instruction.objects;
 
 import ast.ir.def.CodeBlock;
+import ast.ir.helper.BytecodeHelper;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
@@ -35,19 +36,23 @@ public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
             fieldName = nameBuilder.toString();
         }
 
-        get(opcode, owner, jvm, fieldName, lastField.type());
+        get(opcode, firstField.owningType(), owner, jvm, fieldName, lastField.type(), lastField.type().isPlural(), block.env.maxIndex());
     }
 
-    private void get(int opcode, String owner, MethodVisitor jvm, String fieldName, TypeDef type) {
+    private void get(int opcode, TypeDef ownerType, String owner, MethodVisitor jvm, String fieldName, TypeDef type, boolean isPlural, int maxIndex) {
         if (type.isPlural()) {
             List<FieldDef> innerFields = type.fields();
             for (FieldDef innerField : innerFields) {
                 if (innerField.isStatic()) continue;
                 String builtName = fieldName + "$" + innerField.name();
-                get(opcode, owner, jvm, builtName, innerField.type());
+                get(opcode, ownerType, owner, jvm, builtName, innerField.type(), isPlural, maxIndex);
             }
         } else {
-            jvm.visitFieldInsn(opcode, owner, fieldName, type.getDescriptor().get(0));
+            if (isPlural && opcode != Opcodes.GETSTATIC) {
+                BytecodeHelper.visitVariable(maxIndex, ownerType, false, jvm); //load variable
+//                BytecodeHelper.swap(jvm, type, ownerType); //swap
+            }
+            jvm.visitFieldInsn(opcode, owner, fieldName, type.getDescriptor().get(0)); //get field
         }
     }
 
