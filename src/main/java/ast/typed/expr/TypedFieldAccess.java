@@ -22,8 +22,8 @@ public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef t
             //If LHS is a reference type, then don't push our field into the desired stack.
             //Compile the LHS without any desired fields.
             lhs.compile(block, null);
-            if (field.type().isPlural())
-                block.emit(new StoreInTopLocal(lhs.type())); //Store in the top local, if plural
+            if (desiredFields == null && field.type().isPlural())
+                block.emit(new StoreInTopLocal(lhs.type())); //Store in the top local, if plural and this is the top
             //Then, get the list of fields (now including our own)
             List<FieldDef> desiredList = DesiredFieldNode.toList(new DesiredFieldNode(field, desiredFields));
             block.emit(new GetField(desiredList));

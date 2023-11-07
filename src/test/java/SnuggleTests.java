@@ -88,6 +88,16 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testBadExtension() throws CompilationException, SnuggleException {
+        assertThrows(TypeCheckingException.class, () -> test("""
+                class A: f32 {
+                    fn new();
+                }
+                var x: f32 = new A()
+                """));
+    }
+
+    @Test
     public void testBox() throws CompilationException, SnuggleException {
         test("""
                 struct Vec2 {
@@ -100,7 +110,7 @@ public class SnuggleTests {
                         a.y += 1; //doesn't do anything, since structs are value types
                     }
                     static fn modifyIt(a: Box<Vec2>) {
-                        a[] = new {a[].x, a[].y + 1};
+                        a.v.y += 1; //modifies it, since it's boxed
                     }
                 }
                 
@@ -111,7 +121,7 @@ public class SnuggleTests {
                 ModifyStruct.modifyIt(y)
 
                 Test.assertEquals(2, x.y)
-                Test.assertEquals(3, y[].y)
+                Test.assertEquals(3, y.v.y)
                 """);
     }
 

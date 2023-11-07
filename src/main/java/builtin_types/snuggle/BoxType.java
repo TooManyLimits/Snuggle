@@ -8,13 +8,13 @@ public class BoxType extends SnuggleDefinedType {
         super("Box", false, """
                 
                 pub class Box<T> {
-                    var v: T
+                    pub var v: T
                     pub fn new(e: T) {
                         super()
                         v = e;
                     }
-                    pub fn get(): T v
-                    pub fn set(e: T): T v = e
+//                    pub fn get(): T v
+//                    pub fn set(e: T): T v = e
                 }
                 
                 """);

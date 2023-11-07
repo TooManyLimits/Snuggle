@@ -4,6 +4,7 @@ import ast.passes.TypeChecker;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
+import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 import java.util.List;
@@ -28,6 +29,8 @@ public class ClassDef implements TypeDef {
 
     @Override
     public void checkCode() throws CompilationException {
+        if (supertype != null && !supertype.extensible())
+            throw new TypeCheckingException("Cannot extend from \"" + supertype.name() + "\"", loc);
         for (FieldDef field : fields)
             field.checkCode();
         for (MethodDef method : methods)
