@@ -180,7 +180,7 @@ public class SnuggleTests {
     @Test
     public void testConstructorInfer() throws CompilationException, SnuggleException {
         test("""
-                var x: String? = new()
+                var x: str? = new()
                 x = new("helo cutie :D")
                 System.print(x[])
                 Test.assertEquals(#"helo cutie :D", #x[])
@@ -191,8 +191,8 @@ public class SnuggleTests {
     @Test
     public void testMaybeUninit() throws CompilationException, SnuggleException {
         test("""
-                var x = new Array<MaybeUninit<String>>(1)[0]
-                var y = new MaybeUninit<String>("hi")
+                var x = new Array<MaybeUninit<str>>(1)[0]
+                var y = new MaybeUninit<str>("hi")
                 System.print(y[])
                 System.print(x[])
                 """);
@@ -202,7 +202,7 @@ public class SnuggleTests {
     public void testStaticInitializer() throws CompilationException, SnuggleException {
         test("""
                 class catplant {
-                    static var e: String
+                    static var e: str
                     static {
                         catplant.e = ":catplant:";
                     }
@@ -216,16 +216,16 @@ public class SnuggleTests {
     public void testEnum() throws CompilationException, SnuggleException {
         test("""
                 struct LittleScary {
-                    var x: String //non nullable struct-nested reference type!! aaa!!
+                    var x: str //non nullable struct-nested reference type!! aaa!!
                     var y: u64
                 }
                 
                 struct Scary {
                     var little: LittleScary
-                    var z: String //AAAA!!! ANOTHER ONE!!
+                    var z: str //AAAA!!! ANOTHER ONE!!
                 }
                 
-                enum Day(isWeekend: bool, emotion: String, scary: Scary) {
+                enum Day(isWeekend: bool, emotion: str, scary: Scary) {
                     SUNDAY(true, ":)", new Scary { new LittleScary { "a", 1 }, "A" })
                     MONDAY(false, ":((", new Scary { new LittleScary { "aa", 2 }, "AA" })
                     TUESDAY(false, ":(", new Scary { new LittleScary { "aaa", 3 }, "AAA" })
@@ -249,7 +249,7 @@ public class SnuggleTests {
         assertThrows(NullPointerException.class, () -> test("""
                 class NPE {
                     var x: f32
-                    var y: String
+                    var y: str
                     fn new() {
                         super()
                         System.print(x)
@@ -338,15 +338,15 @@ public class SnuggleTests {
                         is A B && is B A
                 }
                 
-                Test.assertTrue(is String Obj)
-                Test.assertFalse(is Obj String)
+                Test.assertTrue(is str Obj)
+                Test.assertFalse(is Obj str)
                 Test.assertFalse(is i64 i32)
-                Test.assertTrue(is Array<Array<String>> Obj)
+                Test.assertTrue(is Array<Array<str>> Obj)
                 Test.assertFalse(is Array<Vec2> Obj)
                 Test.assertFalse(new IsMyGenericI32<f32>().isIt())
                 Test.assertTrue(new IsMyGenericI32<i32>().isIt())
-                Test.assertFalse(new IsSameGeneric<Obj, String>().isSame())
-                Test.assertFalse(new IsSameGeneric<String, Obj>().isSame())
+                Test.assertFalse(new IsSameGeneric<Obj, str>().isSame())
+                Test.assertFalse(new IsSameGeneric<str, Obj>().isSame())
                 Test.assertTrue(new IsSameGeneric<Vec2, Vec2>().isSame())
                 """);
     }
@@ -372,7 +372,7 @@ public class SnuggleTests {
                         x == o.x && y == o.y && z == o.z
                     fn add(o: Vec3): Vec3
                         new Vec3 { x + o.x, y + o.y, z + o.z }
-                    fn str(): String
+                    fn str(): str
                         x.str() + ", " + y.str() + ", " + z.str()
                 }
                 
@@ -420,19 +420,19 @@ public class SnuggleTests {
     public void testReferenceTypeOption() throws CompilationException, SnuggleException {
         test("""
                 class A {
-                    var x: String?
+                    var x: str?
                     var y: B?
                     fn new() {
                         super()
-                        x = new String?("i am an A")
+                        x = new str?("i am an A")
                         y = new B?(new B());
                     }
                 }
                 class B {
-                    var y: String?
+                    var y: str?
                     fn new() {
                         super()
-                        y = new String?("i am a B");
+                        y = new str?("i am a B");
                     }
                 }
                 
@@ -492,7 +492,7 @@ public class SnuggleTests {
                     var z: f32
                     fn new(x: f32, y: f32, z: f32)
                         new Vec3 { x, y, z }
-                    fn str(): String
+                    fn str(): str
                         "{" + x.str() + ", " + y.str() + ", " + z.str() + "}"
                     fn add(o: Vec3): Vec3
                         new Vec3 {x + o.x, y + o.y, z + o.z}
@@ -588,8 +588,8 @@ public class SnuggleTests {
     @Test
     public void testOption() {
         assertThrows(SnuggleException.class, () -> test("""
-                var x = new String?()
-                var y = new String?("hi")
+                var x = new str?()
+                var y = new str?("hi")
                 
                 //x.get() //error, x is empty
                 x.get("Silly custom error message") //error, x is empty
@@ -797,7 +797,7 @@ public class SnuggleTests {
                 """));
     }
 
-//    public void test(@Language("TEXT") String main) throws CompilationException, SnuggleException {
+//    public void test(@Language("TEXT") str main) throws CompilationException, SnuggleException {
     public void test(String main) throws CompilationException, SnuggleException {
         test(new BuiltinTypes(), Map.of("main", main), null);
     }
@@ -806,7 +806,7 @@ public class SnuggleTests {
         test(new BuiltinTypes(), Map.of("main", main), file);
     }
 
-//    public void test(BuiltinTypes types, @Language("TEXT") String main) throws CompilationException, SnuggleException {
+//    public void test(BuiltinTypes types, @Language("TEXT") str main) throws CompilationException, SnuggleException {
     public void test(BuiltinTypes types, String main) throws CompilationException, SnuggleException {
         test(types, Map.of("main", main), null);
     }

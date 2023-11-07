@@ -37,7 +37,7 @@ public class StringType implements BuiltinType {
 
     @Override
     public String name() {
-        return "String";
+        return "str";
     }
 
     @Override
