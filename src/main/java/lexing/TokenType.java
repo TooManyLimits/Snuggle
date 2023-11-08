@@ -79,6 +79,7 @@ public enum TokenType {
     //Punctuation
     DOT("."),
     COLON(":"),
+    DOUBLE_COLON("::"),
     SEMICOLON(";"),
     COMMA(","),
 

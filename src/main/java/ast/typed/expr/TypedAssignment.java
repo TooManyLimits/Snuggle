@@ -41,7 +41,7 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
                 lhs = null;
                 break;
             }
-            for (FieldDef field : fieldAccess.lhs().type().fields()) {
+            for (FieldDef field : fieldAccess.lhs().type().nonStaticFields()) {
                 if (field == fieldAccess.field())
                     break;
                 indexOffset += fieldAccess.field().type().stackSlots();
@@ -91,13 +91,12 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
     public static DefIndexPair getDesiredIndexOffset(TypeDef curDef, int curIndex, DesiredFieldNode desiredFields) {
         if (desiredFields == null)
             return new DefIndexPair(curDef, curIndex);
-        List<FieldDef> fieldDefs = curDef.fields();
+        List<FieldDef> fieldDefs = curDef.nonStaticFields();
         for (FieldDef fieldDef : fieldDefs) {
             if (fieldDef == desiredFields.field()) {
                 return getDesiredIndexOffset(fieldDef.type(), curIndex, desiredFields.next());
             } else {
-                if (!fieldDef.isStatic())
-                    curIndex += fieldDef.type().stackSlots();
+                curIndex += fieldDef.type().stackSlots();
             }
         }
         throw new IllegalStateException("Should have found field by now - bug in compiler, please report!");

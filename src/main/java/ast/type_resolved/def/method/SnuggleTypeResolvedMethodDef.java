@@ -39,9 +39,6 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
                     checker.declare(loc, "this", currentType);
             }
 
-            //If this is a constructor, the current type has an inheritance supertype, the supertype has a default constructor, and the first
-
-
             for (int i = 0; i < newParamTypes.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(i));
             TypedExpr res = body.check(currentType, checker, generics, newReturnType);

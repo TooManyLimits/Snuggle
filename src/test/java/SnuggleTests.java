@@ -88,6 +88,24 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testCursedStaticsOnGenerics() throws CompilationException, SnuggleException {
+        test("""
+                class Silly<T> {
+                    fn new() super()
+                    fn callStaticOnGeneric()
+                        T::<>.hello()
+                    static fn callStaticOnGenericFromStatic()
+                        T::<>.hello()
+                }
+                class Hello {
+                    static fn hello() System.print("hello")
+                }
+                new Silly<Hello>().callStaticOnGeneric()
+                Silly::<Hello>.callStaticOnGenericFromStatic()
+                """);
+    }
+
+    @Test
     public void testComplex() throws CompilationException, SnuggleException {
         test("""
                 import "complex"
@@ -97,6 +115,8 @@ public class SnuggleTests {
                 Test.assertEquals(-5, {a * b}.real)
                 Test.assertEquals(10, {a * b}.imag)
                 Test.assertTrue(a * b == new { -5, 10 })
+                Test.assertTrue(a * b == Complex::<f32>.ONE * -5 + Complex::<f32>.I * 10)
+                Test.assertEquals(5, Complex::<f32>.sumComponents(a * b))
                 """);
     }
 

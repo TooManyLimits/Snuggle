@@ -21,6 +21,8 @@ public interface TypeDef {
     Set<TypeDef> typeCheckingSupertypes(); //The supertypes of this type, when used for the purpose of type-checking.
     TypeDef inheritanceSupertype(); //The supertype from which this can inherit methods. Null for types that don't inherit.
     List<FieldDef> fields(); //The fields of this type. In the case of plural types, describes the sub-types inside this.
+    default List<FieldDef> nonStaticFields() {return ListUtils.filter(fields(), f -> !f.isStatic());}
+
     List<MethodDef> methods(); //The methods of this type.
     List<String> getDescriptor(); //The descriptor(s) of this type when not a return type. Multiple descriptors when isPlural().
     String getReturnTypeDescriptor(); //The descriptor of this type when it is a return type.

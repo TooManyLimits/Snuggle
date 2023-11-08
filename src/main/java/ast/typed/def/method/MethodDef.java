@@ -51,7 +51,7 @@ public interface MethodDef {
         String returnTypeDescriptor = isConstructor() ? "V" : returnType().getReturnTypeDescriptor();
 
         StringBuilder b = new StringBuilder("(");
-        if (owningType().get() instanceof StructDef structDef && !isConstructor())
+        if (owningType().get() instanceof StructDef structDef && !isConstructor() && !isStatic()) //Add "this" if necessary
             for (String s : structDef.getDescriptor())
                 b.append(s);
         for (TypeDef p : paramTypes())

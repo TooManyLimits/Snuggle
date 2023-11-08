@@ -44,9 +44,8 @@ public record SetField(List<FieldDef> fieldsToFollow) implements Instruction {
     //if isPlural, then before every set() we need to get the top local variable, then swap it accordingly.
     private void set(int opcode, TypeDef ownerType, String owner, MethodVisitor jvm, String fieldName, TypeDef type, boolean isPlural, int maxIndex) {
         if (type.isPlural()) {
-            List<FieldDef> innerFields = type.fields();
+            List<FieldDef> innerFields = type.nonStaticFields();
             ListUtils.iterBackwards(innerFields, innerField -> {
-                if (innerField.isStatic()) return;
                 String builtName = fieldName + "$" + innerField.name();
                 set(opcode, ownerType, owner, jvm, builtName, innerField.type(), isPlural, maxIndex);
             });

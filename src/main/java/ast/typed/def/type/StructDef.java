@@ -24,7 +24,7 @@ public class StructDef implements TypeDef {
         this.fields = fields;
         this.methods = methods;
         this.stackSlots = fields.stream().filter(f -> !f.isStatic()).map(f -> f.type().stackSlots()).reduce(Integer::sum).get();
-        this.descriptor = ListUtils.join(ListUtils.map(fields, f -> f.type().getDescriptor()));
+        this.descriptor = ListUtils.join(ListUtils.map(ListUtils.filter(fields, f -> !f.isStatic()), f -> f.type().getDescriptor()));
         this.returnTypeDescriptor = "V";
     }
 

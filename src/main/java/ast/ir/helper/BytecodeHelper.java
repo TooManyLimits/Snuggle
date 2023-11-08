@@ -42,14 +42,12 @@ public class BytecodeHelper {
         if (def.isPlural()) {
             if (store) {
                 AtomicInteger mutableIndex = new AtomicInteger(index + def.stackSlots()); //cursed
-                ListUtils.iterBackwards(def.fields(), field -> {
-                    if (field.isStatic()) return;
+                ListUtils.iterBackwards(def.nonStaticFields(), field -> {
                     mutableIndex.addAndGet(-field.type().stackSlots());
                     visitVariable(mutableIndex.get(), field.type(), store, visitor);
                 });
             } else {
-                for (FieldDef field : def.fields()) {
-                    if (field.isStatic()) continue;
+                for (FieldDef field : def.nonStaticFields()) {
                     visitVariable(index, field.type(), store, visitor);
                     index += field.type().stackSlots();
                 }
@@ -78,7 +76,7 @@ public class BytecodeHelper {
 
     public static void pushDefaultValue(MethodVisitor jvm, TypeDef def) {
         if (def.isPlural()) {
-            for (FieldDef field : def.fields())
+            for (FieldDef field : def.nonStaticFields())
                 pushDefaultValue(jvm, field.type());
         } else if (def.isReferenceType()) {
             jvm.visitInsn(Opcodes.ACONST_NULL);
@@ -104,7 +102,7 @@ public class BytecodeHelper {
     //Size starts on the stack. At the end, the array(s) then the size are on the stack.
     public static void newArray(MethodVisitor jvm, TypeDef elemType) {
         if (elemType.isPlural()) {
-            for (FieldDef field : elemType.fields()) {
+            for (FieldDef field : elemType.nonStaticFields()) {
                 newArray(jvm, field.type()); //[some arrays, size]
             }
         } else if (elemType.isReferenceType() || elemType.isOptionalReferenceType()) {

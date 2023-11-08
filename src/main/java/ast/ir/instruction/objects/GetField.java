@@ -41,9 +41,8 @@ public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
 
     private void get(int opcode, TypeDef ownerType, String owner, MethodVisitor jvm, String fieldName, TypeDef type, boolean isPlural, int maxIndex) {
         if (type.isPlural()) {
-            List<FieldDef> innerFields = type.fields();
+            List<FieldDef> innerFields = type.nonStaticFields();
             for (FieldDef innerField : innerFields) {
-                if (innerField.isStatic()) continue;
                 String builtName = fieldName + "$" + innerField.name();
                 get(opcode, ownerType, owner, jvm, builtName, innerField.type(), isPlural, maxIndex);
             }

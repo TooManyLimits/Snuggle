@@ -42,8 +42,7 @@ public record TypeResolvedStructConstructor(Loc loc, ResolvedType type, List<Str
         List<TypedExpr> checkedValues = new ArrayList<>(argValues.size());
         if (named()) {
             int numFields = 0; //error tracker
-            for (FieldDef f : typeToConstruct.fields()) {
-                if (f.isStatic()) continue;
+            for (FieldDef f : typeToConstruct.nonStaticFields()) {
                 numFields++;
 
                 int index = argKeys.indexOf(f.name());
@@ -54,15 +53,14 @@ public record TypeResolvedStructConstructor(Loc loc, ResolvedType type, List<Str
                 checkedValues.add(checked);
             }
             if (numFields != argValues.size()) {
-                Set<String> actualFieldNames = typeToConstruct.fields().stream().map(FieldDef::name).collect(Collectors.toSet());
+                Set<String> actualFieldNames = typeToConstruct.nonStaticFields().stream().map(FieldDef::name).collect(Collectors.toSet());
                 Set<String> providedFieldNames = new HashSet<>(argKeys);
                 providedFieldNames.removeAll(actualFieldNames);
                 throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " has too many values - expected only " + numFields + ", got " + argValues.size() + ". Fields " + providedFieldNames + " are not defined on this type.", loc);
             }
         } else {
             int i = 0;
-            for (FieldDef f : typeToConstruct.fields()) {
-                if (f.isStatic()) continue;
+            for (FieldDef f : typeToConstruct.nonStaticFields()) {
                 if (i >= argValues.size())
                     throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " does not have enough values", loc);
                 TypedExpr checked = argValues.get(i).check(currentType, checker, typeGenerics, f.type());

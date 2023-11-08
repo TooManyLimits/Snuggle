@@ -121,11 +121,11 @@ public class Parser {
             //"static fn" or "static var"
             if (lexer.consume(STATIC)) {
                 if (lexer.consume(FN))
-                    methods.add(parseMethod(isClass ? TypeType.CLASS : TypeType.STRUCT, true, typeName.string(), pubMember, List.of()));
+                    methods.add(parseMethod(isClass ? TypeType.CLASS : TypeType.STRUCT, true, typeName.string(), pubMember, typeGenerics));
                 else if (lexer.consume(VAR))
-                    fields.add(parseField(isClass, pubMember, true, List.of()));
+                    fields.add(parseField(isClass, pubMember, true, typeGenerics));
                 else if (lexer.consume(LEFT_CURLY))
-                    methods.add(new SnuggleParsedMethodDef(lexer.last().loc(), false, true, "#init", 0, List.of(), List.of(), new ParsedType.Basic("unit", List.of()), parseBlock(List.of(), List.of())));
+                    methods.add(new SnuggleParsedMethodDef(lexer.last().loc(), false, true, "#init", 0, List.of(), List.of(), new ParsedType.Basic("unit", List.of()), parseBlock(typeGenerics, List.of())));
                 else
                     throw new ParsingException("Expected \"fn\", \"var\", or initializer block after \"static\"", lexer.last().loc());
             }
@@ -543,16 +543,19 @@ public class Parser {
     }
 
 
-    //If there's a <, then parses annotatedType arguments list
+    //If there's a ::, then parses annotatedType arguments list
     //If there isn't, returns an empty list
     private List<ParsedType> parseTypeArguments(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
-        if (lexer.consume(LESS)) {
+        if (lexer.consume(DOUBLE_COLON)) {
+            lexer.expect(LESS, "Expected < after :: to begin generic type arguments list", lexer.last().loc());
+            if (lexer.consume(GREATER))
+                return List.of(); //If it's immediately a >, then just return empty list. ::<>
             Token less = lexer.last();
             ArrayList<ParsedType> result = new ArrayList<>();
             result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
             while (lexer.consume(COMMA))
                 result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
-            lexer.expect(GREATER, "Expected > to end generic annotatedType arguments list that began at " + less.loc());
+            lexer.expect(GREATER, "Expected > to end generic type arguments list that began at " + less.loc());
             result.trimToSize();
             return result;
         } else {
@@ -596,7 +599,28 @@ public class Parser {
             }
 
             //Identifiers
-            case IDENTIFIER -> new ParsedVariable(lexer.last().loc(), lexer.last().string());
+            case IDENTIFIER -> {
+                ParsedVariable v = new ParsedVariable(lexer.last().loc(), lexer.last().string());
+                //Double colon means it's a type reference
+                if (lexer.check(DOUBLE_COLON)) {
+                    List<ParsedType> typeArguments = parseTypeArguments(classGenerics, methodGenerics);
+                    Loc fullLoc = v.loc().merge(lexer.last().loc());
+                    int index = genericIndexOf(methodGenerics, v.name());
+                    if (index != -1)
+                        if (typeArguments.size() == 0)
+                            yield new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, true));
+                        else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
+                    index = genericIndexOf(classGenerics, v.name());
+                    if (index != -1)
+                        if (typeArguments.size() == 0)
+                            yield new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, false));
+                        else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
+                    yield new ParsedTypeExpr(fullLoc, new ParsedType.Basic(v.name(), typeArguments));
+                } else {
+                    //Otherwise just yield the variable
+                    yield v;
+                }
+            }
             case THIS -> new ParsedVariable(lexer.last().loc(), "this");
             case SUPER -> new ParsedSuper(lexer.last().loc());
 

@@ -116,8 +116,7 @@ public class ArrayType implements BuiltinType {
         TypeDef thisType = checker.getGenericBuiltin(this, generics);
         TypeDef elementType = generics.get(0);
         if (elementType.isPlural()) {
-            return ListUtils.map(ListUtils.filter(elementType.fields(),
-                    f -> !f.isStatic()),
+            return ListUtils.map(elementType.nonStaticFields(),
                     f -> new BuiltinFieldDef(
                             "#array_" + f.name(),
                             thisType,
@@ -186,8 +185,7 @@ public class ArrayType implements BuiltinType {
             return new int[] { 0, flattenedElems(type).size() };
         //Otherwise, do some calculating
         int curIndex = 0;
-        for (FieldDef def : type.fields()) {
-            if (def.isStatic()) continue;
+        for (FieldDef def : type.nonStaticFields()) {
             if (def == desiredFields.get(0)) {
                 int[] inner = getDesiredFieldRange(def.type(), desiredFields.subList(1, desiredFields.size()));
                 return new int[] {inner[0] + curIndex, inner[1] + curIndex};
@@ -356,17 +354,15 @@ public class ArrayType implements BuiltinType {
     private List<TypeDef> flattenedElems(TypeDef typeDef) {
         if (!typeDef.isPlural())
             return List.of(typeDef);
-        return ListUtils.join(ListUtils.map(ListUtils.filter(
-                typeDef.fields(),
-                f -> !f.isStatic()),
+        return ListUtils.join(ListUtils.map(
+                typeDef.nonStaticFields(),
                 f -> flattenedElems(f.type())));
     }
 
     public static boolean containsNonOptionalReferenceType(TypeDef def) {
         if (def.isPlural()) {
             boolean res = false;
-            for (FieldDef fieldDef : def.fields()) {
-                if (fieldDef.isStatic()) continue;
+            for (FieldDef fieldDef : def.nonStaticFields()) {
                 res |= containsNonOptionalReferenceType(fieldDef.type());
             }
             return res;

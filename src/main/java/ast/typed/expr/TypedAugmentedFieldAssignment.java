@@ -41,7 +41,7 @@ public record TypedAugmentedFieldAssignment(Loc loc, MethodDef method, TypedExpr
                 lhs = null;
                 break;
             }
-            for (FieldDef field : fieldAccess.lhs().type().fields()) {
+            for (FieldDef field : fieldAccess.lhs().type().nonStaticFields()) {
                 if (field == fieldAccess.field())
                     break;
                 indexOffset += fieldAccess.field().type().stackSlots();

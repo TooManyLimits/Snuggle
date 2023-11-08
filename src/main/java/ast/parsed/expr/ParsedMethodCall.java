@@ -37,7 +37,16 @@ public record ParsedMethodCall(Loc loc, ParsedExpr receiver, String methodName, 
                         ListUtils.map(args, a -> a.resolve(resolver))
                 );
             }
-        } else if (receiver instanceof ParsedSuper parsedSuper) {
+        } else if (receiver instanceof ParsedTypeExpr typeExpr) {
+            //It's static
+            return new TypeResolvedStaticMethodCall(
+                    loc,
+                    typeExpr.type().resolve(typeExpr.loc(), resolver),
+                    methodName,
+                    ListUtils.map(genericArgs, g -> g.resolve(loc, resolver)),
+                    ListUtils.map(args, a -> a.resolve(resolver))
+            );
+        } else if (receiver instanceof ParsedSuper) {
             //If we're calling a super method, then create a SuperMethodCall.
             return new TypeResolvedSuperMethodCall(
                     loc,

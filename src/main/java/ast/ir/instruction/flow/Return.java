@@ -49,8 +49,7 @@ public record Return(MethodDef methodDef, TypeDef returnType) implements Instruc
     private void storePluralFieldsRecurse(MethodVisitor jvm, TypeDef pluralType, String namePrefix, TypeDef curType) {
         String runtimeName = pluralType.runtimeName();
         if (curType.isPlural()) {
-            ListUtils.iterBackwards(curType.fields(), field -> {
-                if (field.isStatic()) return;
+            ListUtils.iterBackwards(curType.nonStaticFields(), field -> {
                 if (namePrefix.length() == 0)
                     storePluralFieldsRecurse(jvm, pluralType, namePrefix + field.name(), field.type());
                 else

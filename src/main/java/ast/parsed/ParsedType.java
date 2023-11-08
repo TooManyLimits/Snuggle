@@ -21,7 +21,7 @@ public sealed interface ParsedType {
     record Basic(String name, List<ParsedType> generics) implements ParsedType {
         @Override
         public ResolvedType resolve(Loc loc, TypeResolver resolver) throws CompilationException {
-            //Basic types; lookup their methodName
+            //Basic types; lookup their name
             Integer resolvedName = resolver.lookup(name);
             if (resolvedName == null)
                 throw new UnknownTypeException("Type \"" + name + "\" could not be found in the current scope.", loc);

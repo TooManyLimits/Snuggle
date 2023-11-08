@@ -28,9 +28,8 @@ public class MaybeUninit implements BuiltinType {
         TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
         TypeDef innerType = generics.get(0);
         if (innerType.get().isPlural()) {
-            return ListUtils.map(ListUtils.filter(
-                    innerType.fields(),
-                    f -> !f.isStatic()),
+            return ListUtils.map(
+                    innerType.nonStaticFields(),
                     f -> new BuiltinFieldDef(
                             f.name(),
                             thisType,

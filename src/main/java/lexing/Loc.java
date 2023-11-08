@@ -5,7 +5,7 @@ import java.util.Objects;
 public record Loc(String fileName, int startLine, int startColumn, int endLine, int endColumn) {
 
     public String toString() {
-        return startLine + ":" + startColumn + " in " + fileName;
+        return startLine + ":" + startColumn + " in file \"" + fileName + "\"";
     }
 
     //-1 if a is first, 0 if tie, 1 if b is first

@@ -1,14 +1,12 @@
 package ast.parsed.expr;
 
+import ast.passes.TypeResolver;
 import ast.type_resolved.ResolvedType;
+import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.type_resolved.expr.TypeResolvedFieldAccess;
 import ast.type_resolved.expr.TypeResolvedStaticFieldAccess;
-import ast.type_resolved.expr.TypeResolvedStaticMethodCall;
 import exceptions.compile_time.CompilationException;
-import ast.passes.TypeResolver;
-import ast.type_resolved.expr.TypeResolvedExpr;
 import lexing.Loc;
-import util.ListUtils;
 
 public record ParsedFieldAccess(Loc loc, ParsedExpr lhs, String name) implements ParsedExpr {
     @Override
@@ -19,6 +17,10 @@ public record ParsedFieldAccess(Loc loc, ParsedExpr lhs, String name) implements
                 //Static field!
                 return new TypeResolvedStaticFieldAccess(loc, maybeStaticReceiver, name);
             }
+        } else if (lhs instanceof ParsedTypeExpr typeExpr) {
+            //It's static
+            ResolvedType staticReceiver = typeExpr.type().resolve(typeExpr.loc(), resolver);
+            return new TypeResolvedStaticFieldAccess(loc, staticReceiver, name);
         }
         //Otherwise, regular field
         return new TypeResolvedFieldAccess(loc, lhs.resolve(resolver), name, false);

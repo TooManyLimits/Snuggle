@@ -14,8 +14,7 @@ public record GeneratedField(boolean isMemberOfPluralType, FieldDef fieldDef) {
     private void compileRecursive(ClassVisitor writer, String namePrefix, FieldDef curFieldDef) {
         if (curFieldDef.type().isPlural()) {
             //If plural, recurse
-            for (FieldDef nestedDef : curFieldDef.type().fields()) {
-                if (nestedDef.isStatic()) continue;
+            for (FieldDef nestedDef : curFieldDef.type().nonStaticFields()) {
                 compileRecursive(writer, namePrefix + curFieldDef.name() + "$", nestedDef);
             }
         } else {

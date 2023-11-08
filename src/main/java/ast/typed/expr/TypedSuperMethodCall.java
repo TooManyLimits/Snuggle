@@ -28,9 +28,7 @@ public record TypedSuperMethodCall(Loc loc, TypeDef currentType, TypeDef receive
 
         if (method.isConstructor() && !method.owningType().isPlural()) {
             //If this is a constructor call, super() AKA super.new(), then do all the field initializers
-            for (FieldDef f : currentType.fields()) {
-                //Skip static
-                if (f.isStatic()) continue;
+            for (FieldDef f : currentType.nonStaticFields()) {
                 //For each field that has an initializer:
                 if (f instanceof SnuggleFieldDef sf && sf.initializer() != null) {
                     //compile something like "this.f = f.initializer()"

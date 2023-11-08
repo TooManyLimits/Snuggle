@@ -15,7 +15,7 @@ public record Pop(TypeDef type) implements Instruction {
     @Override
     public void accept(CodeBlock block, MethodVisitor jvm) {
         if (type.isPlural()) {
-            ListUtils.iterBackwards(type.fields(),
+            ListUtils.iterBackwards(type.nonStaticFields(),
                     f -> new Pop(f.type()).accept(block, jvm)
             );
         } else {

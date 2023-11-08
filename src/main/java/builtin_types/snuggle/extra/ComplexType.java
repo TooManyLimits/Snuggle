@@ -13,6 +13,17 @@ public class ComplexType extends SnuggleDefinedType {
                     pub var real: T
                     pub var imag: T
                     
+                    pub static var ONE: Complex<T>
+                    pub static var I: Complex<T>
+                    
+                    static {
+                        Complex::<T>.ONE = new {1, 0}
+                        Complex::<T>.I = new {0, 1};
+                    }
+                    
+                    pub static fn sumComponents(e: Complex<T>): T
+                        e.real + e.imag
+                    
                     pub fn eq(o: Complex<T>): bool
                         real == o.real && imag == o.imag
                     

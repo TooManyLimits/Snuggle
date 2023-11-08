@@ -49,8 +49,7 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<Field
     private void fetchPluralFieldsRecurse(MethodVisitor jvm, TypeDef pluralType, String namePrefix, TypeDef curType) {
         String runtimeName = pluralType.runtimeName();
         if (curType.isPlural()) {
-            for (FieldDef field : curType.fields()) {
-                if (field.isStatic()) continue;
+            for (FieldDef field : curType.nonStaticFields()) {
                 if (namePrefix.length() == 0)
                     fetchPluralFieldsRecurse(jvm, pluralType, namePrefix + field.name(), field.type());
                 else

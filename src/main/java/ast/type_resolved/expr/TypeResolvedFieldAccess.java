@@ -27,8 +27,7 @@ public record TypeResolvedFieldAccess(Loc loc, TypeResolvedExpr lhs, String name
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
         TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
-        FieldDef field = ListUtils.find(typedLhs.type().fields(), f -> {
-            if (f.isStatic()) return false;
+        FieldDef field = ListUtils.find(typedLhs.type().nonStaticFields(), f -> {
             if (!f.name().equals(name)) return false;
             if (f.pub()) return true;
             if (f instanceof SnuggleFieldDef sf)

@@ -15,8 +15,7 @@ public record TypedStructConstructor(Loc loc, TypeDef type, List<TypedExpr> valu
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
 
         int i = 0;
-        for (FieldDef field : type.fields()) {
-            if (field.isStatic()) continue;
+        for (FieldDef field : type.nonStaticFields()) {
 
             if (desiredFields != null && desiredFields.field() == field) {
                 //If we desire this field specifically, then push it
