@@ -94,9 +94,9 @@ public class SnuggleTests {
                 var a: Complex<f32> = new {1, 2}
                 var b: Complex<f32> = new {3, 4}
 
-                Test.assertEquals(-5f32, {a * b}.real)
-                Test.assertEquals(10f32, {a * b}.imag)
-                Test.assertTrue(a * b == new { -5f32, 10 })
+                Test.assertEquals(-5, {a * b}.real)
+                Test.assertEquals(10, {a * b}.imag)
+                Test.assertTrue(a * b == new { -5, 10 })
                 """);
     }
 
