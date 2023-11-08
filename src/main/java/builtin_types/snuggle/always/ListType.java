@@ -1,4 +1,6 @@
-package builtin_types.snuggle;
+package builtin_types.snuggle.always;
+
+import builtin_types.snuggle.SnuggleDefinedType;
 
 public class ListType extends SnuggleDefinedType {
 

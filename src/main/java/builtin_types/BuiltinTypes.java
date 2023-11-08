@@ -1,10 +1,10 @@
 package builtin_types;
 
-import ast.parsed.prog.ParsedFile;
 import builtin_types.reflect.ReflectedBuiltin;
-import builtin_types.snuggle.BoxType;
-import builtin_types.snuggle.ListType;
+import builtin_types.snuggle.always.BoxType;
+import builtin_types.snuggle.always.ListType;
 import builtin_types.snuggle.SnuggleDefinedType;
+import builtin_types.snuggle.extra.ComplexType;
 import builtin_types.types.*;
 import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
@@ -56,8 +56,12 @@ public class BuiltinTypes {
 
     public BuiltinTypes addStandardTypes() {
         //Add snuggle-defined types:
+        //Always in:
         addType(ListType.INSTANCE);
         addType(BoxType.INSTANCE);
+
+        //Extra:
+        addType(ComplexType.INSTANCE);
 
         //Add builtin java-defined types:
         addType(SystemType.INSTANCE);
