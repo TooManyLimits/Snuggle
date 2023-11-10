@@ -6,6 +6,7 @@ import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.LateInit;
 
 import java.util.List;
 import java.util.Objects;
@@ -15,11 +16,11 @@ public class ClassDef implements TypeDef {
 
     public final Loc loc;
     private final String name;
-    private final TypeDef supertype;
+    private final LateInit<TypeDef, CompilationException> supertype;
     private final List<FieldDef> fields;
     private final List<MethodDef> methods;
 
-    public ClassDef(Loc loc, String name, TypeDef supertype, List<FieldDef> fields, List<MethodDef> methods) {
+    public ClassDef(Loc loc, String name, LateInit<TypeDef, CompilationException> supertype, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
         this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.supertype = supertype;
@@ -29,8 +30,7 @@ public class ClassDef implements TypeDef {
 
     @Override
     public void checkCode() throws CompilationException {
-        if (supertype != null && !supertype.extensible())
-            throw new TypeCheckingException("Cannot extend from \"" + supertype.name() + "\"", loc);
+        supertype.get();
         for (FieldDef field : fields)
             field.checkCode();
         for (MethodDef method : methods)
@@ -78,13 +78,13 @@ public class ClassDef implements TypeDef {
     }
 
     @Override
-    public Set<TypeDef> typeCheckingSupertypes() {
-        return Set.of(supertype);
+    public Set<TypeDef> typeCheckingSupertypes() throws CompilationException {
+        return Set.of(supertype.get());
     }
 
     @Override
-    public TypeDef inheritanceSupertype() {
-        return supertype;
+    public TypeDef inheritanceSupertype() throws CompilationException {
+        return supertype.get();
     }
 
     @Override

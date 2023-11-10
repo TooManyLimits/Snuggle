@@ -24,29 +24,29 @@ public record TypeResolvedDeclaration(Loc loc, String name, ResolvedType annotat
     }
 
     @Override
-    public TypedDeclaration infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedDeclaration infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         if (annotatedType == null) {
             //Infer rhs
-            TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics);
+            TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics, cause);
             //Ensure rhs isn't an un-storable value (e.g. a literal).
             //This following method errors if a storable type can't be found.
-            TypeDef rhsType = typedRhs.type().compileTimeToRuntimeConvert(typedRhs.type(), typedRhs.loc(), checker);
+            TypeDef rhsType = typedRhs.type().compileTimeToRuntimeConvert(typedRhs.type(), typedRhs.loc(), cause, checker);
             //If it's a literal, can pull the type upwards on the spot
             if (typedRhs instanceof TypedLiteral literal)
                 typedRhs = literal.pullTypeUpwards(rhsType);
             checker.declare(loc, name, rhsType);
             return new TypedDeclaration(loc, name, rhsType, typedRhs);
         } else {
-            TypeDef instantiatedAnnotatedType = checker.getOrInstantiate(annotatedType, typeGenerics);
+            TypeDef instantiatedAnnotatedType = checker.getOrInstantiate(annotatedType, typeGenerics, loc, cause);
             //Check rhs
-            TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, instantiatedAnnotatedType);
+            TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, instantiatedAnnotatedType, cause);
             checker.declare(loc, name, instantiatedAnnotatedType);
             return new TypedDeclaration(loc, name, instantiatedAnnotatedType, typedRhs);
         }
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //If we ever need to check() a declaration, it's in an invalid place, hence why we throw a parsing exception.
         throw new ParsingException("Invalid declaration location for variable \"" + name + "\"", loc);
 //        throw new IllegalStateException("Error: Attempt to check() a declaration. This should be impossible - Bug in compiler, please report!");

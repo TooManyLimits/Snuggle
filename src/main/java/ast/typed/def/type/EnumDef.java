@@ -98,4 +98,11 @@ public class EnumDef implements TypeDef {
         return fields;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof TypeDef typeDef)
+            return this == typeDef.get();
+        return false;
+    }
+
 }

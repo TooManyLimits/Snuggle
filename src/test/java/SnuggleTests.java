@@ -102,6 +102,9 @@ public class SnuggleTests {
                 }
                 new Silly<Hello>().callStaticOnGeneric()
                 Silly::<Hello>.callStaticOnGenericFromStatic()
+                
+//                //Error :( str doesn't have a static .hello()
+//                new Silly<str>().callStaticOnGeneric()
                 """);
     }
 

@@ -12,6 +12,7 @@ import builtin_types.BuiltinType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.LateInit;
@@ -29,8 +30,8 @@ public class ArrayType implements BuiltinType {
     private ArrayType() {}
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
-        TypeDef type = checker.getGenericBuiltin(this, generics);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+        TypeDef type = checker.getGenericBuiltin(this, generics, instantiationLoc, cause);
         TypeDef elementType = generics.get(0);
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
         TypeDef unit = checker.getBasicBuiltin(UnitType.INSTANCE);
@@ -112,15 +113,15 @@ public class ArrayType implements BuiltinType {
     }
 
     @Override
-    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics) {
-        TypeDef thisType = checker.getGenericBuiltin(this, generics);
+    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+        TypeDef thisType = checker.getGenericBuiltin(this, generics, instantiationLoc, cause);
         TypeDef elementType = generics.get(0);
         if (elementType.isPlural()) {
             return ListUtils.map(elementType.nonStaticFields(),
                     f -> new BuiltinFieldDef(
                             "#array_" + f.name(),
                             thisType,
-                            checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(f.type())),
+                            checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(f.type()), instantiationLoc, cause),
                             false
                     ));
         } else {

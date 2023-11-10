@@ -13,6 +13,7 @@ import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
 import ast.ir.helper.BytecodeHelper;
 import exceptions.runtime.SnuggleException;
+import lexing.Loc;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
@@ -25,9 +26,9 @@ public class OptionType implements BuiltinType {
     private OptionType() {}
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         //Get some types
-        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
+        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
         TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
@@ -214,13 +215,13 @@ public class OptionType implements BuiltinType {
     }
 
     @Override
-    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics) {
+    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         if (!isPlural(checker, generics))
             return List.of(); //Non-plural form: no fields
         //Plural form needs fields. An Option is a struct composed of:
         // - the inner, wrapped type
         // - a boolean
-        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
+        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
         return List.of(

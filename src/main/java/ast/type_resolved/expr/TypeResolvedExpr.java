@@ -21,7 +21,7 @@ public interface TypeResolvedExpr {
     //which is what the passed typeGenerics are for.
 
     //Attempt to infer the annotatedType of this expr.
-    TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException;
+    TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException;
 
     //Check that the annotatedType of this expr matches the expected annotatedType. If it doesn't, error.
     //
@@ -29,6 +29,6 @@ public interface TypeResolvedExpr {
     //If this check() call fails, then ensure that the checker parameter's variables and scopes are NOT MODIFIED.
     //The exception to this is for expressions which cannot exist inside of method parameters
     //(currently only declarations modify the checker)
-    TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException;
+    TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException;
 
 }

@@ -56,8 +56,8 @@ public class IndirectTypeDef implements TypeDef {
         return check().hasSpecialConstructor();
     }
     @Override
-    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
-        return check().compileTimeToRuntimeConvert(thisType, loc, checker);
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException {
+        return check().compileTimeToRuntimeConvert(thisType, loc, cause, checker);
     }
 
     @Override
@@ -100,12 +100,12 @@ public class IndirectTypeDef implements TypeDef {
     }
 
     @Override
-    public Set<TypeDef> typeCheckingSupertypes() {
+    public Set<TypeDef> typeCheckingSupertypes() throws CompilationException {
         return check().typeCheckingSupertypes();
     }
 
     @Override
-    public TypeDef inheritanceSupertype() {
+    public TypeDef inheritanceSupertype() throws CompilationException {
         return check().inheritanceSupertype();
     }
 

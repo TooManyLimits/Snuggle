@@ -19,6 +19,6 @@ public interface TypeResolvedMethodDef {
      * Note that this only instantiates *TYPE* generics,
      * NOT *METHOD* generics!
      */
-    MethodDef instantiateType(List<? extends TypeResolvedMethodDef> methodDefs, TypeDef currentType, TypeChecker checker, List<TypeDef> generics) throws CompilationException;
+    MethodDef instantiateType(List<? extends TypeResolvedMethodDef> methodDefs, TypeDef currentType, TypeChecker checker, List<TypeDef> generics, TypeDef.InstantiationStackFrame cause) throws CompilationException;
 
 }

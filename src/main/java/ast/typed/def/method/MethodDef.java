@@ -71,7 +71,7 @@ public interface MethodDef {
     //If neither is more specific, return 0.
     //If the other one is more specific, return a positive value.
     //The result is that sort()-ing this list will put the most specific method(s) at the front.
-    default int compareSpecificity(MethodDef other) {
+    default int compareSpecificity(MethodDef other) throws CompilationException {
         int currentState = 0;
         List<TypeDef> myParams = paramTypes();
         List<TypeDef> otherParams = other.paramTypes();

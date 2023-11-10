@@ -25,10 +25,10 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, List<St
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, null);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, null, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create the call
@@ -38,10 +38,10 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, List<St
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, expected);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.tryMultipleMethodsForBest(loc, currentType, typedReceiver.type(), methodNames, args, genericArgs, typeGenerics, false, false, expected, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Get the typed method call

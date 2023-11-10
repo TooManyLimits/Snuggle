@@ -25,8 +25,8 @@ public record TypeResolvedFieldAccess(Loc loc, TypeResolvedExpr lhs, String name
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
-        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics, cause);
         FieldDef field = ListUtils.find(typedLhs.type().nonStaticFields(), f -> {
             if (!f.name().equals(name)) return false;
             if (f.pub()) return true;
@@ -44,10 +44,10 @@ public record TypeResolvedFieldAccess(Loc loc, TypeResolvedExpr lhs, String name
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedExpr e = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr e = infer(currentType, checker, typeGenerics, cause);
         if (!e.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected type " + expected.name() + ", but field \"" + name + "\" has type " + e.type().name(), loc);
+            throw new TypeCheckingException(expected, "field '" + name + "'", e.type(), loc, cause);
         return e;
     }
 }

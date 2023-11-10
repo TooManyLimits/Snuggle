@@ -25,21 +25,21 @@ public record TypeResolvedAugmentedFieldAssignment(Loc loc, String methodName, S
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Infer type of "a.x"
-        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
+        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics, cause);
         //Check that "a.x" has a method of name methodName or fallback
         //That accepts rhs as a parameter, and returns the type of a.x
-        TypeChecker.BestMethodInfo best = checker.tryMultipleMethodsForBest(loc, currentType, typedLhs.type(), List.of(methodName, fallback), List.of(rhs), List.of(), typeGenerics, false, false, typedLhs.type());
+        TypeChecker.BestMethodInfo best = checker.tryMultipleMethodsForBest(loc, currentType, typedLhs.type(), List.of(methodName, fallback), List.of(rhs), List.of(), typeGenerics, false, false, typedLhs.type(), cause);
         //Return it
-        return new TypedAugmentedFieldAssignment(loc, best.methodDef().delegate(), typedLhs, best.typedArgs().get(0), typedLhs.type());
+        return new TypedAugmentedFieldAssignment(cause, loc, best.methodDef().delegate(), typedLhs, best.typedArgs().get(0), typedLhs.type());
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedExpr inferred = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr inferred = infer(currentType, checker, typeGenerics, cause);
         if (!inferred.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected " + expected.name() + ", got " + inferred.type().name(), loc);
+            throw new TypeCheckingException(expected, "augmented field assignment", inferred.type(), loc, cause);
         return inferred;
     }
 }

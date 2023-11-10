@@ -6,6 +6,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 
@@ -17,7 +18,7 @@ public class BoolType implements BuiltinType {
     private BoolType() {}
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef boolType = checker.getBasicBuiltin(INSTANCE);
 
         return ListUtils.join(List.of(

@@ -31,14 +31,14 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
     }
 
     @Override
-    public TypedLiteral infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedLiteral infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         Object newValue = (value instanceof IntLiteralData data) ? data.value() : value;
-        return new TypedLiteral(loc, newValue, checker.getOrInstantiate(resolved, List.of()));
+        return new TypedLiteral(cause, loc, newValue, checker.getOrInstantiate(resolved, List.of(), loc, cause));
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedLiteral e = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedLiteral e = infer(currentType, checker, typeGenerics, cause);
         TypeDef intLiteralType = checker.getBasicBuiltin(IntLiteralType.INSTANCE);
         TypeDef floatLiteralType = checker.getBasicBuiltin(FloatLiteralType.INSTANCE);
         if (e.type().equals(intLiteralType)) {
@@ -52,26 +52,26 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
             //Expected other int type?
             for (IntegerType t : IntegerType.ALL_INT_TYPES)
                 if (checker.getBasicBuiltin(t).equals(expected))
-                    return new TypedLiteral(e.loc(), value, expected);
+                    return new TypedLiteral(cause, e.loc(), value, expected);
 
             //Expected float type?
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
                 if (checker.getBasicBuiltin(t).equals(expected))
-                    return new TypedLiteral(e.loc(), new Fraction(value, BigInteger.ONE), expected);
+                    return new TypedLiteral(cause, e.loc(), new Fraction(value, BigInteger.ONE), expected);
 
             //Didn't expect any of those numeric types? Error
-            throw new TypeCheckingException("Expected " + expected.name() + ", got int literal", loc);
+            throw new TypeCheckingException("Expected " + expected.name() + ", got int literal", loc, cause);
         } else if (e.type().equals(floatLiteralType)) {
             //Practically same structure as above IntLiteral version ^
             if (expected.equals(floatLiteralType))
                 return e;
             for (FloatType t : FloatType.ALL_FLOAT_TYPES)
                 if (checker.getBasicBuiltin(t).equals(expected))
-                    return new TypedLiteral(e.loc(), value, expected);
-            throw new TypeCheckingException("Expected " + expected.name() + ", got float literal", loc);
+                    return new TypedLiteral(cause, e.loc(), value, expected);
+            throw new TypeCheckingException("Expected " + expected.name() + ", got float literal", loc, cause);
         }
         if (!e.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected " + expected.name() + ", got " + e.type().name(), loc);
+            throw new TypeCheckingException("Expected " + expected.name() + ", got " + e.type().name() + " literal", loc, cause);
         return e;
     }
 

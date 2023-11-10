@@ -26,8 +26,8 @@ public record TypeResolvedStaticFieldAccess(Loc loc, ResolvedType type, String f
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
-        TypeDef typeDef = checker.getOrInstantiate(type, typeGenerics);
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypeDef typeDef = checker.getOrInstantiate(type, typeGenerics, loc, cause);
 
         FieldDef fieldDef = ListUtils.find(typeDef.fields(), f -> {
             if (!f.isStatic()) return false;
@@ -43,10 +43,10 @@ public record TypeResolvedStaticFieldAccess(Loc loc, ResolvedType type, String f
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedExpr e = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr e = infer(currentType, checker, typeGenerics, cause);
         if (!e.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected type " + expected.name() + ", but static field \"" + fieldName + "\" has type " + e.type().name(), loc);
+            throw new TypeCheckingException(expected, "static field '" + fieldName + "'", e.type(), loc, cause);
         return e;
     }
 }

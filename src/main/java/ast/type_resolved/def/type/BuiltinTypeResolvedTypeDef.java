@@ -6,6 +6,7 @@ import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
+import lexing.Loc;
 import util.LateInit;
 
 import java.util.List;
@@ -26,8 +27,8 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {}
 
     @Override
-    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
-        return new BuiltinTypeDef(builtin, generics, checker);
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame instantiationStackFrame) {
+        return new BuiltinTypeDef(builtin, generics, checker, instantiationLoc, instantiationStackFrame);
     }
 
 }

@@ -21,7 +21,7 @@ import java.util.List;
 //a.x += b
 //a.x is lhs, b is rhs
 //a.x = a.x.method(b)
-public record TypedAugmentedFieldAssignment(Loc loc, MethodDef method, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+public record TypedAugmentedFieldAssignment(TypeDef.InstantiationStackFrame cause, Loc loc, MethodDef method, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
 
     //Very similar to TypedAssignment's code, slightly different things emitted to the CodeBlock arg
     @Override
@@ -56,7 +56,7 @@ public record TypedAugmentedFieldAssignment(Loc loc, MethodDef method, TypedExpr
         // - null
         // - Outputs a reference type
         if (!(lhs instanceof TypedVariable || lhs == null || lhs.type().isReferenceType()))
-            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" on this struct; as this struct is neither a local variable nor a field of a reference type!", lhs.loc());
+            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" on this struct; as it is neither a local variable nor a field of a reference type!", lhs.loc(), cause);
 
         //If fieldsToFollow.size() > 0, then this is a field set; otherwise, it's a local variable.
         if (lhs instanceof TypedVariable typedVariable && (fieldsToFollow.size() == 0 || typedVariable.type().isPlural())) {

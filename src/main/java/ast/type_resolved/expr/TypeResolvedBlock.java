@@ -26,36 +26,36 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //empty block {} just evaluates to unit
         if (exprs.size() == 0)
-            return new TypedLiteral(loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
+            return new TypedLiteral(cause, loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
 
         //Otherwise, map all exprs to inferred exprs, in a pushed checker env
         checker.push();
-        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(currentType, checker, typeGenerics));
+        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(currentType, checker, typeGenerics, cause));
         checker.pop();
         //Result type is the type of the last expr in the block
         return new TypedBlock(loc, inferredExprs, inferredExprs.get(inferredExprs.size() - 1).type());
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Empty block case
         if (exprs.size() == 0) {
             if (!checker.getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected))
-                throw new TypeCheckingException("Expected this expression to evaluate to type \"" + expected.name() + "\", but instead got \"" + checker.getBasicBuiltin(UnitType.INSTANCE).name() + "\"", loc);
+                throw new TypeCheckingException(expected, "block expression", checker.getBasicBuiltin(UnitType.INSTANCE), loc, cause);
             else
-                return new TypedLiteral(loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
+                return new TypedLiteral(cause, loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
         }
         //Otherwise, infer all exprs except the last one, which is checked instead.
         List<TypedExpr> typedExprs = new ArrayList<>(exprs.size());
         checker.push();
         for (int i = 0; i < exprs.size(); i++) {
             if (i == exprs.size() - 1)
-                typedExprs.add(exprs.get(i).check(currentType, checker, typeGenerics, expected));
+                typedExprs.add(exprs.get(i).check(currentType, checker, typeGenerics, expected, cause));
             else
-                typedExprs.add(exprs.get(i).infer(currentType, checker, typeGenerics));
+                typedExprs.add(exprs.get(i).infer(currentType, checker, typeGenerics, cause));
         }
         checker.pop();
         return new TypedBlock(loc, typedExprs, expected);

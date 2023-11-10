@@ -12,11 +12,13 @@ import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import ast.ir.helper.BytecodeHelper;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 import util.ThrowingConsumer;
 import util.ThrowingFunction;
+import util.ThrowingTriFunction;
 
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;
@@ -30,8 +32,8 @@ public class ReflectedMethod {
 
     private final String origName, name, owner, descriptor;
     private final boolean inlined, isStatic, isVoid;
-    private final List<ThrowingFunction<TypeChecker, TypeDef, RuntimeException>> paramTypeGetters;
-    private final ThrowingFunction<TypeChecker, TypeDef, RuntimeException> ownerTypeGetter, returnTypeGetter;
+    private final List<ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException>> paramTypeGetters;
+    private final ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> ownerTypeGetter, returnTypeGetter;
     private final ThrowingConsumer<MethodVisitor, CompilationException> bytecode;
 
     ReflectedMethod(Method method) {
@@ -46,19 +48,19 @@ public class ReflectedMethod {
         descriptor = org.objectweb.asm.Type.getMethodDescriptor(method);
 
         paramTypeGetters = ListUtils.map(List.of(method.getAnnotatedParameterTypes()), ReflectedMethod::getTypeGetter);
-        ownerTypeGetter = pool -> pool.getReflectedBuiltin(method.getDeclaringClass());
+        ownerTypeGetter = (pool, loc, cause) -> pool.getReflectedBuiltin(method.getDeclaringClass());
         returnTypeGetter = getTypeGetter(method.getAnnotatedReturnType());
 
         bytecode = getBytecode();
     }
 
-    public MethodDef get(TypeChecker pool) {
+    public MethodDef get(TypeChecker pool, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         return new BytecodeMethodDef(
                 name,
                 isStatic,
-                ownerTypeGetter.apply(pool),
-                ListUtils.map(paramTypeGetters, g -> g.apply(pool)),
-                returnTypeGetter.apply(pool),
+                ownerTypeGetter.apply(pool, instantiationLoc, cause),
+                ListUtils.map(paramTypeGetters, g -> g.apply(pool, instantiationLoc, cause)),
+                returnTypeGetter.apply(pool, instantiationLoc, cause),
                 false,
                 bytecode
         );
@@ -84,14 +86,14 @@ public class ReflectedMethod {
         }
     }
 
-    private static ThrowingFunction<TypeChecker, TypeDef, RuntimeException> getTypeGetter(AnnotatedType type) {
+    private static ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> getTypeGetter(AnnotatedType type) {
         Class<?> c = (Class<?>) type.getType();
         String className = c.getName().replace('.', '/');
 
         //Array types
         if (type instanceof AnnotatedArrayType arrayType) {
-            ThrowingFunction<TypeChecker, TypeDef, RuntimeException> inner = getTypeGetter(arrayType.getAnnotatedGenericComponentType());
-            return pool -> pool.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(pool)));
+            ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> inner = getTypeGetter(arrayType.getAnnotatedGenericComponentType());
+            return (pool, loc, cause) -> pool.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(pool, loc, cause)), loc, cause);
         }
 
         return switch (className) {
@@ -135,12 +137,12 @@ public class ReflectedMethod {
             case "java/lang/String" -> basicBuiltin(StringType.INSTANCE);
             case "java/lang/Object" -> basicBuiltin(ObjType.INSTANCE);
             //Default
-            default -> pool -> pool.getReflectedBuiltin(c);
+            default -> (pool, loc, cause) -> pool.getReflectedBuiltin(c);
         };
     }
 
-    private static ThrowingFunction<TypeChecker, TypeDef, RuntimeException> basicBuiltin(BuiltinType b) {
-        return pool -> pool.getBasicBuiltin(b);
+    private static ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> basicBuiltin(BuiltinType b) {
+        return (pool, loc, cause) -> pool.getBasicBuiltin(b);
     }
 
 }

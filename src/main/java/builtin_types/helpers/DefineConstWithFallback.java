@@ -34,7 +34,7 @@ public class DefineConstWithFallback {
                     call.args().get(0) instanceof TypedLiteral literalArg
             ) {
                 //Constant-fold into a literal if possible
-                return new TypedLiteral(call.loc(), func.apply(receiverConverter.apply(literalReceiver.obj()), argConverter.apply(literalArg.obj())), returnType);
+                return new TypedLiteral(literalReceiver.cause(), call.loc(), func.apply(receiverConverter.apply(literalReceiver.obj()), argConverter.apply(literalArg.obj())), returnType);
             } else {
                 //Otherwise, delegate to the fallback implementation
                 return new TypedMethodCall(call.loc(), call.receiver(), fallback, call.args(), returnType);
@@ -64,7 +64,7 @@ public class DefineConstWithFallback {
         return new ConstMethodDef(name, 0, false, List.of(), returnType, call -> {
             if (call.receiver() instanceof TypedLiteral literalReceiver) {
                 //Constant-fold into a literal if possible
-                return new TypedLiteral(call.loc(), func.apply(converter.apply(literalReceiver.obj())), returnType);
+                return new TypedLiteral(literalReceiver.cause(), call.loc(), func.apply(converter.apply(literalReceiver.obj())), returnType);
             } else {
                 //Otherwise, delegate to the fallback implementation
                 return new TypedMethodCall(call.loc(), call.receiver(), fallback, call.args(), returnType);

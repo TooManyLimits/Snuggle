@@ -17,16 +17,16 @@ public class TypeCheckingHelper {
     /**
      * Wrap the given TypedExpr into an Option of its type.
      */
-    public static TypedConstructor wrapInOption(Loc loc, TypedExpr toBeWrapped, TypeChecker checker) throws CompilationException {
-        TypeDef optionWrapped = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(toBeWrapped.type()));
+    public static TypedConstructor wrapInOption(Loc loc, TypedExpr toBeWrapped, TypeChecker checker, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypeDef optionWrapped = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(toBeWrapped.type()), loc, cause);
         //And return an Option constructor around this.
         MethodDef constructor = ListUtils.find(optionWrapped.methods(), method ->
                 method.name().equals("new") && method.paramTypes().size() == 1); //Get the constructor
         return new TypedConstructor(loc, optionWrapped, constructor, List.of(toBeWrapped));
     }
 
-    public static TypedConstructor getEmptyOption(Loc loc, TypeDef optionGeneric, TypeChecker checker) throws CompilationException {
-        TypeDef optionWrapped = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(optionGeneric));
+    public static TypedConstructor getEmptyOption(Loc loc, TypeDef optionGeneric, TypeChecker checker, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypeDef optionWrapped = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(optionGeneric), loc, cause);
         //And return an Option constructor around this.
         MethodDef constructor = ListUtils.find(optionWrapped.methods(), method ->
                 method.name().equals("new") && method.paramTypes().size() == 0); //Get the constructor

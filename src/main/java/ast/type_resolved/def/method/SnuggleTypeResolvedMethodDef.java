@@ -28,9 +28,9 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
     }
 
     //allMethods are passed in for disambiguating between method names.
-    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> generics) {
-        List<TypeDef> newParamTypes = ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, generics));
-        TypeDef newReturnType = checker.getOrInstantiate(returnType, generics);
+    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> generics, TypeDef.InstantiationStackFrame cause) {
+        List<TypeDef> newParamTypes = ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, generics, loc, cause));
+        TypeDef newReturnType = checker.getOrInstantiate(returnType, generics, loc, cause);
         //TypedBody must be computed *after* we know all the method signatures and such
         LateInit<TypedExpr, CompilationException> typedBody = new LateInit<>(() -> {
             checker.push();
@@ -41,7 +41,7 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
 
             for (int i = 0; i < newParamTypes.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(i));
-            TypedExpr res = body.check(currentType, checker, generics, newReturnType);
+            TypedExpr res = body.check(currentType, checker, generics, newReturnType, cause);
             checker.pop();
             return res;
         });

@@ -56,7 +56,7 @@ public interface BuiltinType {
      */
     default TypeDef getInheritanceSupertype(TypeChecker checker, List<TypeDef> generics) { return null; }
 
-    default TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
+    default TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException {
         return thisType;
     }
 
@@ -70,9 +70,9 @@ public interface BuiltinType {
      * - We need this map between the two in order for the GLOBAL concept to generate methods
      *   which operate on LOCAL types.
      */
-    default List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) { return List.of(); }
+    default List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) { return List.of(); }
 
-    default List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics) { return List.of(); }
+    default List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) { return List.of(); }
 
 //    /**
 //     * Return the java descriptor for this type.

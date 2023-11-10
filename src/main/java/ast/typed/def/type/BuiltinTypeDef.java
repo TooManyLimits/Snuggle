@@ -28,7 +28,7 @@ public class BuiltinTypeDef implements TypeDef {
     private final List<FieldDef> fields;
     private final List<MethodDef> methods;
 
-    public BuiltinTypeDef(BuiltinType builtinType, List<TypeDef> generics, TypeChecker checker) {
+    public BuiltinTypeDef(BuiltinType builtinType, List<TypeDef> generics, TypeChecker checker, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         this.builtin = builtinType;
         this.generics = List.copyOf(generics);
         this.name = builtinType.genericName(checker, generics);
@@ -43,8 +43,8 @@ public class BuiltinTypeDef implements TypeDef {
         this.stackSlots = builtinType.stackSlots(checker, generics);
         this.typeCheckingSupertypes = builtinType.getTypeCheckingSupertypes(checker, generics);
         this.inheritanceSupertype = builtinType.getInheritanceSupertype(checker, generics);
-        this.fields = builtinType.getFields(checker, generics);
-        this.methods = builtinType.getMethods(checker, generics);
+        this.fields = builtinType.getFields(checker, generics, instantiationLoc, cause);
+        this.methods = builtinType.getMethods(checker, generics, instantiationLoc, cause);
     }
 
     //Whether this should generate a struct class at runtime.
@@ -138,8 +138,8 @@ public class BuiltinTypeDef implements TypeDef {
     }
 
     @Override
-    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
-        return builtin.compileTimeToRuntimeConvert(thisType, loc, checker);
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException {
+        return builtin.compileTimeToRuntimeConvert(thisType, loc, cause, checker);
     }
 
     @Override

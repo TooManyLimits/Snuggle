@@ -21,18 +21,18 @@ public record TypeResolvedAssignment(Loc loc, TypeResolvedExpr lhs, TypeResolved
     }
 
     @Override
-    public TypedAssignment infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
-        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics);
+    public TypedAssignment infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics, cause);
         TypeDef type = typedLhs.type();
-        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, type);
-        return new TypedAssignment(loc, typedLhs, typedRhs, type);
+        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, type, cause);
+        return new TypedAssignment(cause, loc, typedLhs, typedRhs, type);
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedAssignment inferred = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedAssignment inferred = infer(currentType, checker, typeGenerics, cause);
         if (!inferred.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected " + expected.name() + ", got " + inferred.type().name(), loc);
+            throw new TypeCheckingException(expected, "assignment", inferred.type(), loc, cause);
         return inferred;
     }
 }

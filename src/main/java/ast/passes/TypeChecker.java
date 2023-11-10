@@ -66,11 +66,11 @@ public class TypeChecker {
     }
 
     //Converts from ResolvedType to TypeDef.
-    public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics) {
+    public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         if (resolvedType instanceof ResolvedType.Basic basic) {
             //Convert the generics and check if we've cached this already.
             //If we have, return that value.
-            List<TypeDef> convertedGenerics = ListUtils.map(basic.generics(), g -> getOrInstantiate(g, typeGenerics));
+            List<TypeDef> convertedGenerics = ListUtils.map(basic.generics(), g -> getOrInstantiate(g, typeGenerics, instantiationLoc, cause));
             Map<List<TypeDef>, TypeDef> tMap = cache.get(basic.index());
             if (tMap != null) {
                 TypeDef t = tMap.get(convertedGenerics);
@@ -83,7 +83,7 @@ public class TypeChecker {
             IndirectTypeDef resultType = new IndirectTypeDef();
             allTypeDefs.add(resultType);
             cache.computeIfAbsent(basic.index(), x -> new HashMap<>()).put(convertedGenerics, resultType);
-            TypeDef instantiated = ast.typeDefs().get(basic.index()).instantiate(resultType, this, convertedGenerics);
+            TypeDef instantiated = ast.typeDefs().get(basic.index()).instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
             resultType.fill(instantiated);
             //And return
             return resultType;
@@ -98,14 +98,14 @@ public class TypeChecker {
     }
 
     public TypeDef getBasicBuiltin(BuiltinType type) {
-        return getOrInstantiate(new ResolvedType.Basic(ast.builtinIds().get(type), List.of()), List.of());
+        return getOrInstantiate(new ResolvedType.Basic(ast.builtinIds().get(type), List.of()), List.of(), null, null);
     }
 
     public TypeDef getReflectedBuiltin(Class<?> clazz) {
         return getBasicBuiltin(ast.reflectedBuiltins().get(clazz));
     }
 
-    public TypeDef getGenericBuiltin(BuiltinType type, List<TypeDef> convertedGenerics) {
+    public TypeDef getGenericBuiltin(BuiltinType type, List<TypeDef> convertedGenerics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         //Similarly structured to above method getOrInstantiate()
         int index = ast.builtinIds().get(type);
         //Convert the generics and check if we've cached this already.
@@ -122,7 +122,7 @@ public class TypeChecker {
         IndirectTypeDef resultType = new IndirectTypeDef();
         allTypeDefs.add(resultType);
         cache.computeIfAbsent(index, x -> new HashMap<>()).put(convertedGenerics, resultType);
-        TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, convertedGenerics);
+        TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
         resultType.fill(instantiated);
         //And return
         return resultType;
@@ -153,23 +153,23 @@ public class TypeChecker {
     //Helper to check multiple method names, given as a list, in order.
     //If all of them fail, then error.
     //Throw a new error message, with the first error as the cause.
-    public BestMethodInfo tryMultipleMethodsForBest(Loc loc, TypeDef currentType, TypeDef receiverType, List<String> methodNames, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType) throws CompilationException {
+    public BestMethodInfo tryMultipleMethodsForBest(Loc loc, TypeDef currentType, TypeDef receiverType, List<String> methodNames, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Regular case, size = 1, just call the method normally and don't wrap in our weird error message
         if (methodNames.size() == 1)
-            return getBestMethod(loc, currentType, receiverType, methodNames.get(0), args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType);
+            return getBestMethod(loc, currentType, receiverType, methodNames.get(0), args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
 
         //Otherwise, do something else
         List<CompilationException> es = new ArrayList<>();
         for (String methodName : methodNames) {
             try {
                 //If any succeeds, it gets returned
-                return getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType);
+                return getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
             } catch (CompilationException e) {
                 es.add(e);
             }
         }
         //If we finish the loop and none of them succeeded, then give our own error
-        throw new TypeCheckingException("Unable to choose best method for any of: " + methodNames + ". Causes: " + ListUtils.map(es, Throwable::getMessage), loc);
+        throw new TypeCheckingException("Unable to choose best method for any of: " + methodNames + ". Causes: " + ListUtils.map(es, Throwable::getMessage), loc, cause);
     }
 
     /**
@@ -187,9 +187,10 @@ public class TypeChecker {
      * @param isSuperCall        Whether this call to a method was made using the super keyword. If it was, then there's a
      *                           special process for selecting eligible methods.
      * @param expectedReturnType The type which the best method must return. If null, there's no restriction on the return type.
+     * @param cause              The stack frame for the cause of the instantiation of new types while checking a method.
      */
 
-    public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType) throws CompilationException {
+    public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //First step: find a list of potentially matching methods we can call.
 
         List<MethodDef> matchingMethods = new ArrayList<>();
@@ -264,7 +265,7 @@ public class TypeChecker {
                             continue outer;
                         }
                         //We haven't checked this arg with this type yet, so do it now:
-                        typedArg = args.get(i).check(currentType, this, typeGenerics, expectedParamType);
+                        typedArg = args.get(i).check(currentType, this, typeGenerics, expectedParamType, cause);
                         //If that didn't throw an exception, then add it to the cache
                         checkCache.get(i).put(expectedParamType, typedArg);
                     }
@@ -295,7 +296,7 @@ public class TypeChecker {
         if (matchingMethods.size() > 1) {
             //If there are multiple matching methods, try choosing the most specific one.
             //If there is no most specific one, the following errors.
-            int bestIndex = tryChoosingMostSpecific(loc, methodName, matchingMethods);
+            int bestIndex = tryChoosingMostSpecific(loc, methodName, matchingMethods, cause);
             return new BestMethodInfo(receiverType, matchingMethods.get(bestIndex), matchingMethodsTypedArgs.get(bestIndex));
         }
 
@@ -314,7 +315,7 @@ public class TypeChecker {
                         //Iterate over the expected params and check() them all
                         for (int i = 0; i < thrownOut.paramTypes().size(); i++) {
                             TypeDef expectedParamType = thrownOut.paramTypes().get(i);
-                            args.get(i).check(currentType, this, typeGenerics, expectedParamType);
+                            args.get(i).check(currentType, this, typeGenerics, expectedParamType, cause);
                         }
                     } catch (TypeCheckingException e) {
                         continue;
@@ -326,10 +327,10 @@ public class TypeChecker {
                 if (previouslyMatchingReturnTypes.length() > 0) {
                     String expectedTypeName = expectedReturnType.name();
                     previouslyMatchingReturnTypes.delete(previouslyMatchingReturnTypes.length() - 2, previouslyMatchingReturnTypes.length());
-                    throw new TypeCheckingException("Expected method \"" + methodName + "\" to return " + expectedTypeName + ", but only found options " + previouslyMatchingReturnTypes, loc);
+                    throw new TypeCheckingException("Expected method \"" + methodName + "\" to return " + expectedTypeName + ", but only found options " + previouslyMatchingReturnTypes, loc, cause);
                 }
             }
-            throw new NoSuitableMethodException(methodName, isSuperCall, receiverType, loc);
+            throw new NoSuitableMethodException(methodName, isCallStatic, isSuperCall, receiverType, loc, cause);
         }
 
         //Exactly one method must have matched:
@@ -346,17 +347,30 @@ public class TypeChecker {
      * If there is no most specific, throws a TooManyMethodsException.
      * The return value is the index of the most specific method.
      */
-    private static int tryChoosingMostSpecific(Loc loc, String methodName, List<MethodDef> matchingMethods) throws CompilationException {
+    private static int tryChoosingMostSpecific(Loc loc, String methodName, List<MethodDef> matchingMethods, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Create the indices array
         Integer[] arr = new Integer[matchingMethods.size()];
         for (int i = 0; i < arr.length; i++)
             arr[i] = i;
 
         //Sort, so the most specific wind up at the front
-        Arrays.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)));
+        try {
+            Arrays.sort(arr, (a, b) -> {
+                try {
+                    return matchingMethods.get(a).compareSpecificity(matchingMethods.get(b));
+                } catch (CompilationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof CompilationException compilationException)
+                throw compilationException;
+            throw e;
+        }
+
         //If the first 2 are equally specific, error
         if (matchingMethods.get(arr[0]).compareSpecificity(matchingMethods.get(arr[1])) == 0)
-            throw new TooManyMethodsException(methodName, loc);
+            throw new TooManyMethodsException(methodName, loc, cause);
         return arr[0];
     }
 

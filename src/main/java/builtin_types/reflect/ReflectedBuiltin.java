@@ -9,6 +9,7 @@ import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import util.ListUtils;
 import util.ThrowingFunction;
 
@@ -62,8 +63,8 @@ public class ReflectedBuiltin implements BuiltinType {
     }
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
-        return ListUtils.map(reflectedMethods, m -> m.get(checker));
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+        return ListUtils.map(reflectedMethods, m -> m.get(checker, instantiationLoc, cause));
     }
 
     @Override

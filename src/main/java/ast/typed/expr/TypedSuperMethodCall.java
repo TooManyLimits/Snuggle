@@ -16,7 +16,7 @@ import runtime.Unit;
 
 import java.util.List;
 
-public record TypedSuperMethodCall(Loc loc, TypeDef currentType, TypeDef receiverType, MethodDef method, List<TypedExpr> args, TypeDef type) implements TypedExpr {
+public record TypedSuperMethodCall(TypeDef.InstantiationStackFrame cause, Loc loc, TypeDef currentType, TypeDef receiverType, MethodDef method, List<TypedExpr> args, TypeDef type) implements TypedExpr {
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
@@ -32,7 +32,7 @@ public record TypedSuperMethodCall(Loc loc, TypeDef currentType, TypeDef receive
                 //For each field that has an initializer:
                 if (f instanceof SnuggleFieldDef sf && sf.initializer() != null) {
                     //compile something like "this.f = f.initializer()"
-                    new TypedAssignment(loc,
+                    new TypedAssignment(cause, loc,
                         new TypedFieldAccess(loc, new TypedVariable(loc, "this", currentType), f, f.type()),
                         sf.initializer().getAlreadyFilled(),
                         sf.initializer().getAlreadyFilled().type()
@@ -40,7 +40,7 @@ public record TypedSuperMethodCall(Loc loc, TypeDef currentType, TypeDef receive
                 }
             }
 
-            code.emit(new Push(loc, Unit.INSTANCE, type));
+            code.emit(new Push(cause, loc, Unit.INSTANCE, type));
         }
 
     }

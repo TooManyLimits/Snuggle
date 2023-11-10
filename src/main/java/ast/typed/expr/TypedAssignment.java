@@ -22,7 +22,7 @@ import java.util.List;
 //- TypedFieldAccess
 //- TypedVariable
 //- TypedStaticFieldAccess
-public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+public record TypedAssignment(TypeDef.InstantiationStackFrame cause, Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
@@ -56,7 +56,7 @@ public record TypedAssignment(Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef typ
         // - null
         // - Outputs a reference type
         if (!(lhs instanceof TypedVariable || lhs == null || lhs.type().isReferenceType()))
-            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" here; as this is not a local variable, a field of a reference type, or a static field!", lhs.loc());
+            throw new TypeCheckingException("Cannot set field \"" + fieldsToFollow.get(0).name() + "\" on this struct; as it is not a local variable, a field of a reference type, or a static field!", lhs.loc(), cause);
 
         if (lhs instanceof TypedVariable typedVariable && (fieldsToFollow.size() == 0 || typedVariable.type().isPlural())) {
             //Local variable. Get the mapped index and compile the rhs.

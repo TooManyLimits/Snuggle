@@ -11,6 +11,7 @@ import ast.typed.def.type.IndirectTypeDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
+import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 
@@ -24,8 +25,8 @@ public class MaybeUninit implements BuiltinType {
     private MaybeUninit() {}
 
     @Override
-    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics) {
-        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
+    public List<FieldDef> getFields(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
         if (innerType.get().isPlural()) {
             return ListUtils.map(
@@ -33,21 +34,21 @@ public class MaybeUninit implements BuiltinType {
                     f -> new BuiltinFieldDef(
                             f.name(),
                             thisType,
-                            checker.getGenericBuiltin(INSTANCE, List.of(f.type())),
+                            checker.getGenericBuiltin(INSTANCE, List.of(f.type()), instantiationLoc, cause),
                             false
                     )
             );
         } else {
             if (innerType.isReferenceType())
-                return List.of(new BuiltinFieldDef(innerType.name(), thisType, checker.getGenericBuiltin(OptionType.INSTANCE, List.of(innerType)), false));
+                return List.of(new BuiltinFieldDef(innerType.name(), thisType, checker.getGenericBuiltin(OptionType.INSTANCE, List.of(innerType), instantiationLoc, cause), false));
             else
                 return List.of(new BuiltinFieldDef(innerType.name(), thisType, innerType, false));
         }
     }
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
-        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics);
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+        TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
         TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(

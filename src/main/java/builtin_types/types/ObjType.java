@@ -6,6 +6,7 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
@@ -17,7 +18,7 @@ public class ObjType implements BuiltinType {
     private ObjType() {}
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef thisType = checker.getBasicBuiltin(INSTANCE);
         TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return List.of(

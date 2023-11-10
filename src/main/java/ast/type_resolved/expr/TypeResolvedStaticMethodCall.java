@@ -25,10 +25,10 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Lookup best method
-        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, null);
+        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, loc, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, null, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -38,10 +38,10 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Lookup best method
-        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, expected);
+        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, loc, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, expected, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

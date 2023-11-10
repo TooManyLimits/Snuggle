@@ -9,6 +9,7 @@ import builtin_types.types.BoolType;
 import ast.ir.helper.BytecodeHelper;
 import builtin_types.types.StringType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -94,7 +95,7 @@ public class IntegerType implements BuiltinType {
      */
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef type = checker.getBasicBuiltin(this);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
         TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);

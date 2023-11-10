@@ -1,13 +1,12 @@
 package ast.type_resolved.expr;
 
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
-import ast.typed.def.type.TypeDef;
-import builtin_types.types.BoolType;
-import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
+import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedImport;
+import builtin_types.types.BoolType;
+import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
@@ -21,16 +20,16 @@ public record TypeResolvedImport(Loc loc, String fileName) implements TypeResolv
     }
 
     @Override
-    public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         return new TypedImport(loc, fileName, bool);
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         if (!bool.isSubtype(expected))
-            throw new TypeCheckingException("Expected " + expected.name() + ", got bool", loc);
+            throw new TypeCheckingException(expected, "import expression", checker.getBasicBuiltin(BoolType.INSTANCE), loc, cause);
         return new TypedImport(loc, fileName, bool);
     }
 }

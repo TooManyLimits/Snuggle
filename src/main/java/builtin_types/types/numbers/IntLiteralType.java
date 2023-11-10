@@ -47,13 +47,13 @@ public class IntLiteralType implements BuiltinType {
                 if (call.args().get(0) instanceof TypedLiteral literalArg) {
                     //If the arg is also an literal, we can merge these. Example: 1 + 3
                     if (literalArg.obj() instanceof BigInteger argValue)
-                        return new TypedLiteral(call.loc(), intFunc.apply(receiverValue, argValue), returnType);
+                        return new TypedLiteral(typedReceiver.cause(), call.loc(), intFunc.apply(receiverValue, argValue), returnType);
                     if (literalArg.obj() instanceof Fraction argValue)
-                        return new TypedLiteral(call.loc(), fractionFunc.apply(receiverValue, argValue), returnType);
+                        return new TypedLiteral(typedReceiver.cause(), call.loc(), fractionFunc.apply(receiverValue, argValue), returnType);
                     if (literalArg.obj() instanceof Float argValue)
-                        return new TypedLiteral(call.loc(), floatFunc.apply(receiverValue, argValue), returnType);
+                        return new TypedLiteral(typedReceiver.cause(), call.loc(), floatFunc.apply(receiverValue, argValue), returnType);
                     if (literalArg.obj() instanceof Double argValue)
-                        return new TypedLiteral(call.loc(), doubleFunc.apply(receiverValue, argValue), returnType);
+                        return new TypedLiteral(typedReceiver.cause(), call.loc(), doubleFunc.apply(receiverValue, argValue), returnType);
                     throw new IllegalStateException("Unexpected arg type to int literal function - " + literalArg.obj());
                 } else if (mappedArgType == intLiteralType) {
                     throw new IllegalStateException("Calling int literal method expecting literal arg, on non-literal arg? Bug in compiler, please report!");
@@ -181,13 +181,13 @@ public class IntLiteralType implements BuiltinType {
 
                 //"Switch" on return type
                 if (call.type().builtin() == IntLiteralType.INSTANCE || call.type().builtin() instanceof IntegerType)
-                    return new TypedLiteral(call.loc(), intFunc.apply(receiverValue), call.type());
+                    return new TypedLiteral(typedReceiver.cause(), call.loc(), intFunc.apply(receiverValue), call.type());
                 if (call.type().builtin() == FloatLiteralType.INSTANCE)
-                    return new TypedLiteral(call.loc(), fractionFunc.apply(receiverValue), call.type());
+                    return new TypedLiteral(typedReceiver.cause(), call.loc(), fractionFunc.apply(receiverValue), call.type());
                 if (call.type().builtin() == FloatType.F32)
-                    return new TypedLiteral(call.loc(), floatFunc.apply(receiverValue), call.type());
+                    return new TypedLiteral(typedReceiver.cause(), call.loc(), floatFunc.apply(receiverValue), call.type());
                 if (call.type().builtin() == FloatType.F64)
-                    return new TypedLiteral(call.loc(), doubleFunc.apply(receiverValue), call.type());
+                    return new TypedLiteral(typedReceiver.cause(), call.loc(), doubleFunc.apply(receiverValue), call.type());
                 throw new IllegalStateException("Unexpected return type for int literal function - " + call.type());
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
@@ -231,7 +231,7 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef mappedIntLiteralType = checker.getBasicBuiltin(INSTANCE);
         TypeDef mappedFloatLiteralType = checker.getBasicBuiltin(FloatLiteralType.INSTANCE);
         TypeDef mappedBoolType = checker.getBasicBuiltin(BoolType.INSTANCE);
@@ -367,7 +367,7 @@ public class IntLiteralType implements BuiltinType {
     }
 
     @Override
-    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
-        throw new TypeCheckingException("Unable to determine type of int literal. Try adding annotations!", loc);
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException {
+        throw new TypeCheckingException("Unable to determine type of int literal. Try adding annotations!", loc, cause);
     }
 }

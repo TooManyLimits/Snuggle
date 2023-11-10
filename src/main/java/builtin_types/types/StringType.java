@@ -8,6 +8,7 @@ import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
+import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import util.ListUtils;
@@ -22,7 +23,7 @@ public class StringType implements BuiltinType {
     private StringType() {}
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef string = checker.getBasicBuiltin(INSTANCE);
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
         return ListUtils.join(

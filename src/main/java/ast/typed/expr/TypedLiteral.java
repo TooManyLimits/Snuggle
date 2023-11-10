@@ -11,7 +11,7 @@ import lexing.Loc;
 
 import java.math.BigInteger;
 
-public record TypedLiteral(Loc loc, Object obj, TypeDef type) implements TypedExpr {
+public record TypedLiteral(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, TypeDef type) implements TypedExpr {
 
     /**
      * Used in the circumstance of type() being a non-storable type (like a literal),
@@ -23,11 +23,11 @@ public record TypedLiteral(Loc loc, Object obj, TypeDef type) implements TypedEx
      * Assume that this.type() is a subtype of expected; checks have already been made.
      */
     public TypedLiteral pullTypeUpwards(TypeDef expected) {
-        return new TypedLiteral(loc, obj, expected);
+        return new TypedLiteral(cause, loc, obj, expected);
     }
 
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {
-        code.emit(new Push(loc, obj, type));
+        code.emit(new Push(cause, loc, obj, type));
     }
 
 }

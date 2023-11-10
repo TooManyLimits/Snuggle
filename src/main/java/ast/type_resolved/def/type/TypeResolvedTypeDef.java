@@ -4,6 +4,7 @@ import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;
+import lexing.Loc;
 
 import java.util.List;
 
@@ -19,7 +20,7 @@ public interface TypeResolvedTypeDef {
     /**
      * Instantiate this annotatedType with the given list of generics.
      */
-    TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics);
+    TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause);
 
     static String instantiateName(String name, List<TypeDef> generics) {
         StringBuilder newName = new StringBuilder(name);

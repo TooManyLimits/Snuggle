@@ -20,7 +20,7 @@ import util.Fraction;
 import java.math.BigInteger;
 
 //Push the given Object onto the stack
-public record Push(Loc loc, Object obj, TypeDef type) implements Instruction {
+public record Push(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, TypeDef type) implements Instruction {
 
     @Override
     public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
@@ -42,7 +42,7 @@ public record Push(Loc loc, Object obj, TypeDef type) implements Instruction {
         if (obj instanceof BigInteger v) {
             if (type.builtin() instanceof IntegerType i) {
                 if (!i.fits(v))
-                    throw new TypeCheckingException("Expected " + i.name() + ", but integer literal " + v + " is out of range. (" + i.min + " to " + i.max + ")", loc);
+                    throw new TypeCheckingException("Expected " + i.name() + ", but integer literal " + v + " is out of range. (" + i.min + " to " + i.max + ")", loc, cause);
                 if (i.bits <= 32) {
                     if (!IntegerType.I16.fits(v))
                         jvm.visitLdcInsn(v.intValue());

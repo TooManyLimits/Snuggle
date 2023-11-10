@@ -24,25 +24,25 @@ public record TypeResolvedLogicalBinOp(Loc loc, boolean and, TypeResolvedExpr lh
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         //check both sides are bool
-        TypedExpr typedLhs = lhs.check(currentType, checker, typeGenerics, bool);
-        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, bool);
+        TypedExpr typedLhs = lhs.check(currentType, checker, typeGenerics, bool, cause);
+        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, bool, cause);
         //Const fold as much as we can
         if (typedLhs instanceof TypedLiteral lhsLiteral) {
             boolean lhs = ((Boolean) lhsLiteral.obj());
             if (typedRhs instanceof TypedLiteral rhsLiteral) {
                 //Both are literals, condense into 1 literal
                 boolean rhs = ((Boolean) rhsLiteral.obj());
-                return new TypedLiteral(loc, and ? lhs && rhs : lhs || rhs, bool);
+                return new TypedLiteral(cause, loc, and ? lhs && rhs : lhs || rhs, bool);
             } else {
                 //Lhs is a literal
                 if (and != lhs) {
                     //true || __
                     //false && __
                     //If we can short circuit right away, then return the bool literal
-                    return new TypedLiteral(loc, lhs, bool);
+                    return new TypedLiteral(cause, loc, lhs, bool);
                 } else {
                     //false || __
                     //true && __
@@ -63,7 +63,7 @@ public record TypeResolvedLogicalBinOp(Loc loc, boolean and, TypeResolvedExpr lh
                     //__ || true
                     //__ && false
                     //Eval the left side, then emit true or false
-                    return new TypedBlock(loc, List.of(typedLhs, new TypedLiteral(loc, rhs, bool)), bool);
+                    return new TypedBlock(loc, List.of(typedLhs, new TypedLiteral(cause, loc, rhs, bool)), bool);
                 }
             } else {
                 //Neither are literals, can't optimize more
@@ -73,10 +73,10 @@ public record TypeResolvedLogicalBinOp(Loc loc, boolean and, TypeResolvedExpr lh
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
-        TypedExpr result = infer(currentType, checker, typeGenerics);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr result = infer(currentType, checker, typeGenerics, cause);
         if (!result.type().isSubtype(expected))
-            throw new TypeCheckingException("Expected type \"" + expected.name() + "\", but " + (and ? "and" : "or") + "-expression returns \"bool\"", loc);
+            throw new TypeCheckingException(expected, (and ? "and" : "or") + "-expression", checker.getBasicBuiltin(BoolType.INSTANCE), loc, cause);
         return result;
     }
 }

@@ -27,31 +27,31 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         if (currentType.inheritanceSupertype() == null)
             throw new ParsingException("Attempt to use super, but type \"" + currentType.name() + "\" has no supertype", loc);
         //Lookup best method
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, null);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, null, cause);
         TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
-        return new TypedSuperMethodCall(loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
+        return new TypedSuperMethodCall(cause, loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Almost identical, but passes an expected return type.
         if (currentType == null)
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, expected);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, genericArgs, typeGenerics, false, true, expected, cause);
         TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
-        return new TypedSuperMethodCall(loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
+        return new TypedSuperMethodCall(cause, loc, currentType, actualReceiverType, matchingMethod, typedArgs, matchingMethod.returnType());
     }
 }

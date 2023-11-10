@@ -18,10 +18,10 @@ public interface TypeDef {
     boolean isPlural(); //If this TypeDef is plural. Mutually exclusive with isReferenceType.
     boolean extensible(); //If this TypeDef is extensible. Mutually exclusive with isPlural.
     int stackSlots(); //The number of stack slots this takes up on the jvm. Usually 1, except in doubles, longs, or plural types.
-    Set<TypeDef> typeCheckingSupertypes(); //The supertypes of this type, when used for the purpose of type-checking.
-    TypeDef inheritanceSupertype(); //The supertype from which this can inherit methods. Null for types that don't inherit.
+    Set<TypeDef> typeCheckingSupertypes() throws CompilationException; //The supertypes of this type, when used for the purpose of type-checking.
+    TypeDef inheritanceSupertype() throws CompilationException; //The supertype from which this can inherit methods. Null for types that don't inherit.
     List<FieldDef> fields(); //The fields of this type. In the case of plural types, describes the sub-types inside this.
-    default List<FieldDef> nonStaticFields() {return ListUtils.filter(fields(), f -> !f.isStatic());}
+    default List<FieldDef> nonStaticFields() {return ListUtils.filter(fields(), f -> !f.isStatic());} //The non-static fields of this type
 
     List<MethodDef> methods(); //The methods of this type.
     List<String> getDescriptor(); //The descriptor(s) of this type when not a return type. Multiple descriptors when isPlural().
@@ -45,16 +45,34 @@ public interface TypeDef {
 
     default boolean hasSpecialConstructor() { return false; }
 
+//    /**
+//     * The location at which this type was instantiated.
+//     * For example, if this is List<u64>, then return the
+//     * Loc where List<u64> was created, as well as the TypeDef
+//     * that it was created inside. (For example, if List<u64> was
+//     * originally created by another generic instantiation).
+//     */
+//    default InstantiationStackFrame whereInstantiated() { return null; }
+
+    record InstantiationStackFrame(Loc location, TypeDef typeDef, InstantiationStackFrame cause) {
+        public String stackTrace() {
+            String s = "Was compiling type \"" + typeDef.name() + "\", used at " + location + ".";
+            if (cause != null)
+                return s + "\n" + cause.stackTrace();
+            return s;
+        }
+    }
+
     /**
      * Attempt to convert this type into a runtime type.
      * If this type is already a runtime type, just return thisType.
      * Examples of compile-time types are literals, like StringLiteral, IntLiteral, etc.
      * Default is to return thisType, since the type is usually already a runtime type.
      */
-    default TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException { return thisType; }
+    default TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException { return thisType; }
 
     //Default helpful methods
-    default boolean isSubtype(TypeDef other) {
+    default boolean isSubtype(TypeDef other) throws CompilationException {
         if (this.get() == other.get()) return true;
         for (TypeDef supertype : typeCheckingSupertypes())
             if (supertype.isSubtype(other))
@@ -63,7 +81,7 @@ public interface TypeDef {
     }
 
     //Gets all methods, including the inherited ones.
-    default List<MethodDef> getAllMethods() {
+    default List<MethodDef> getAllMethods() throws CompilationException {
         TypeDef trueSupertype = inheritanceSupertype();
         //If there's no supertype, just return this object's methods
         if (trueSupertype == null)

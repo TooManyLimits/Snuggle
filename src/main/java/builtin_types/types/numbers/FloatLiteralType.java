@@ -49,7 +49,7 @@ public class FloatLiteralType implements BuiltinType {
                 if (call.args().get(0) instanceof TypedLiteral literalArg) {
                     Object literalValue = literalArg.obj();
                     T2 resultValue = func.apply(receiverValue, (T1) literalValue);
-                    return new TypedLiteral(call.loc(), resultValue, returnType);
+                    return new TypedLiteral(typedReceiver.cause(), call.loc(), resultValue, returnType);
                 } else if (argType == floatLiteralType) {
                     throw new IllegalStateException("Calling float literal method expecting literal arg, on non-literal arg? Bug in compiler, please report!");
                 } else {
@@ -111,7 +111,7 @@ public class FloatLiteralType implements BuiltinType {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(floatLiteralType)) {
                 //Get the receiver value and apply the function
                 Fraction receiverValue = (Fraction) typedReceiver.obj();
-                return new TypedLiteral(call.loc(), func.apply(receiverValue), returnType);
+                return new TypedLiteral(typedReceiver.cause(), call.loc(), func.apply(receiverValue), returnType);
             } else {
                 throw new IllegalStateException("Calling int literal method on non-int-literal? Bug in compiler, please report");
             }
@@ -138,7 +138,7 @@ public class FloatLiteralType implements BuiltinType {
 
 
     @Override
-    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics) {
+    public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef mappedFloatLiteralType = checker.getBasicBuiltin(INSTANCE);
         TypeDef mappedF32Type = checker.getBasicBuiltin(FloatType.F32);
         TypeDef mappedF64Type = checker.getBasicBuiltin(FloatType.F64);
@@ -211,8 +211,8 @@ public class FloatLiteralType implements BuiltinType {
     }
 
     @Override
-    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeChecker checker) throws CompilationException {
-        throw new TypeCheckingException("Unable to determine type of float literal. Try adding annotations!", loc);
+    public TypeDef compileTimeToRuntimeConvert(TypeDef thisType, Loc loc, TypeDef.InstantiationStackFrame cause, TypeChecker checker) throws CompilationException {
+        throw new TypeCheckingException("Unable to determine type of float literal. Try adding annotations!", loc, cause);
     }
 
     //Helpers for cleaner syntax in getMethods()
