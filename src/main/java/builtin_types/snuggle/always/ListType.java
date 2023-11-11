@@ -75,7 +75,7 @@ public class ListType extends SnuggleDefinedType {
                         this
                     }
                     //Operator overload for push, +=
-                    pub fn plusAssign(elem: T): List<T>
+                    pub fn addAssign(elem: T): List<T>
                         this.push(elem)
                     
                     //Remove the last element of the list

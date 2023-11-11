@@ -88,6 +88,51 @@ public class SnuggleTests {
     }
 
     @Test
+    public void weirdSubtyping() throws CompilationException, SnuggleException {
+        test("""
+                class Mapper<T, R> {
+                    var default: R //used because we have no abstract/interface
+                    fn new(e: R) {
+                        super()
+                        default = e;
+                    }
+                    fn invoke(e: T): R default //need abstract/interface stuff eventually, currently default impl
+                }
+                
+                class FunnyList<T> : List<T> {
+                    fn new() super()
+                    fn mapstr(func: Mapper<T, str>): List<str> {
+                        var res = new List<str>()
+                        var i = 0u32
+                        while i < #this {
+                            res += func(this[i])
+                            i += 1;
+                        }
+                        res
+                    }
+                    fn addAssign(e: T): FunnyList<T> {
+                        super += e
+                        this
+                    }
+                }
+                
+                class ToStringMapper<T> : Mapper<T, str> {
+                    fn new() super("")
+                    fn invoke(e: T): str
+                        e.str()
+                }
+                
+                var l = new FunnyList<i32>()
+                l += 1
+                l += 2
+                l += 3
+                
+                var c = l.mapstr(new ToStringMapper<i32>())
+                Test.assertEquals("1", c[0])
+                """);
+    }
+
+    @Test
     public void testNestedTypes() throws CompilationException, SnuggleException {
         test("""
                 class Outer<X> {

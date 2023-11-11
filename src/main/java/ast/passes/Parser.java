@@ -483,7 +483,7 @@ public class Parser {
             //Parse the rhs:
             ParsedExpr rhs = parseCallOrFieldOrAssignment(classGenerics, methodGenerics, canBeDeclaration, isNested);
             //Assert and return
-            if (lhs instanceof ParsedVariable || lhs instanceof ParsedFieldAccess || lhs instanceof ParsedMethodCall parsedCall && parsedCall.methodName().equals("get")) {
+            if (lhs instanceof ParsedVariable || lhs instanceof ParsedSuper || lhs instanceof ParsedFieldAccess || lhs instanceof ParsedMethodCall parsedCall && parsedCall.methodName().equals("get")) {
                 return new ParsedAugmentedAssignment(opLoc, methodName, fallback, lhs, rhs);
             }
             //If it wasn't any case, error

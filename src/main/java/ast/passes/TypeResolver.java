@@ -201,6 +201,8 @@ public class TypeResolver {
     //and return the mapping of the type
     //Should only be run for nested types!
     public int addType(Loc loc, ParsedTypeDef typeDef) throws CompilationException {
+        if (!typeDef.nested())
+            throw new IllegalStateException("Attempt to call addType() with a non-nested type? Bug in compiler, please report!");
         int mapping = register(typeDef);
         ListUtils.setExpand(finalTypeDefList, mapping, typeDef.resolve(this));
         if (currentMappings.get(typeDef.name()) != null)

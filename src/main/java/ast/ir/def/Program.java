@@ -35,6 +35,13 @@ public record Program(List<GeneratedType> generatedClasses, Map<String, CodeBloc
 
     public static Program of(TypedAST typedAST) throws CompilationException {
         //Create the generatedClasses:
+        ListUtils.sort(typedAST.typeDefs(), (a, b) -> {
+            if (a.isSubtype(b))
+                return 1;
+            if (b.isSubtype(a))
+                return -1;
+            return 0;
+        }, CompilationException.class);
         List<GeneratedType> classes = ListUtils.filter(ListUtils.map(
                 typedAST.typeDefs(),
                 GeneratedType::of

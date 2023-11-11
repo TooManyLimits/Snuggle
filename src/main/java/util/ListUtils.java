@@ -60,6 +60,23 @@ public class ListUtils {
         list.set(index, element);
     }
 
+    public static <T, E extends Throwable> void sort(List<T> list, ThrowingBiFunction<T, T, Integer, E> comparator, Class<E> eClass) throws E {
+        try {
+            list.sort((a, b) -> {
+                try {
+                    return comparator.apply(a, b);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (RuntimeException ex) {
+            if (eClass.isInstance(ex.getCause()))
+                throw (E) ex.getCause();
+            throw ex;
+        }
+    }
+
+
     /**
      * Generate a map from a given list, where the keys are chosen by the given function.
      * If two elements of the list share the same key, no error will occur, and the one

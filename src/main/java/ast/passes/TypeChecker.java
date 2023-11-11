@@ -358,30 +358,18 @@ public class TypeChecker {
      * The return value is the index of the most specific method.
      */
     private static int tryChoosingMostSpecific(Loc loc, String methodName, List<MethodDef> matchingMethods, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        //Create the indices array
-        Integer[] arr = new Integer[matchingMethods.size()];
-        for (int i = 0; i < arr.length; i++)
-            arr[i] = i;
+        //Create the indices list
+        List<Integer> arr = new ArrayList<>(matchingMethods.size());
+        for (int i = 0; i < matchingMethods.size(); i++)
+            arr.add(i);
 
         //Sort, so the most specific wind up at the front
-        try {
-            Arrays.sort(arr, (a, b) -> {
-                try {
-                    return matchingMethods.get(a).compareSpecificity(matchingMethods.get(b));
-                } catch (CompilationException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof CompilationException compilationException)
-                throw compilationException;
-            throw e;
-        }
+        ListUtils.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)), CompilationException.class);
 
         //If the first 2 are equally specific, error
-        if (matchingMethods.get(arr[0]).compareSpecificity(matchingMethods.get(arr[1])) == 0)
+        if (matchingMethods.get(arr.get(0)).compareSpecificity(matchingMethods.get(arr.get(1))) == 0)
             throw new TooManyMethodsException(methodName, loc, cause);
-        return arr[0];
+        return arr.get(0);
     }
 
 

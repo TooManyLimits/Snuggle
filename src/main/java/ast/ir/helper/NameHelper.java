@@ -24,7 +24,12 @@ public class NameHelper {
     //Helper to generate and set up a class writer with the given parameters
     //Adds a default constructor, assuming the supertype also has a default constructor
     public static ClassVisitor generateClassWriter(String name, String supertypeName, boolean defaultConstructor, Class<?>... interfaces) {
-        ClassVisitor writer = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
+        ClassVisitor writer = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES) {
+            @Override
+            protected String getCommonSuperClass(String type1, String type2) {
+                return "java/lang/Object"; //Cursed
+            }
+        };
         if (DEBUG_BYTECODE_GENERATION)
             writer = new CheckClassAdapter(writer);
         int version = Opcodes.V17; //version 61.0
