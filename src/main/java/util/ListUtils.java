@@ -1,5 +1,9 @@
 package util;
 
+import util.throwing_interfaces.ThrowingBiFunction;
+import util.throwing_interfaces.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingFunction;
+
 import java.lang.reflect.Array;
 import java.util.*;
 

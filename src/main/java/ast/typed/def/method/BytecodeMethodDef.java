@@ -7,11 +7,9 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import util.LateInit;
-import util.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingConsumer;
 
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 //leavesReturnOnStack:
 //If this method returns a plural type, then this is true if the plural type

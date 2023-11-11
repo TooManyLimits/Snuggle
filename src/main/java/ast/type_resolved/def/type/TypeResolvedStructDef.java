@@ -12,6 +12,7 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import util.GenericStringUtil;
 import util.ListUtils;
 
 import java.util.List;
@@ -32,6 +33,6 @@ public record TypeResolvedStructDef(Loc loc, String name, int numGenerics, boole
         TypeDef.InstantiationStackFrame newStackFrame = new TypeDef.InstantiationStackFrame(instantiationLoc, currentType, cause);
         List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics, newStackFrame));
         List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics, newStackFrame));
-        return new StructDef(loc, TypeResolvedTypeDef.instantiateName(name, generics), typeInstantiatedFields, typeInstantiatedMethods);
+        return new StructDef(loc, GenericStringUtil.instantiateName(name, generics), typeInstantiatedFields, typeInstantiatedMethods);
     }
 }

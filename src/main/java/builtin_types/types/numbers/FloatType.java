@@ -14,11 +14,10 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.Fraction;
 import util.ListUtils;
-import util.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingConsumer;
 
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class FloatType implements BuiltinType {

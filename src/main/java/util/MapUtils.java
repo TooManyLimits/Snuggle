@@ -1,5 +1,7 @@
 package util;
 
+import util.throwing_interfaces.ThrowingFunction;
+
 import java.util.HashMap;
 import java.util.Map;
 

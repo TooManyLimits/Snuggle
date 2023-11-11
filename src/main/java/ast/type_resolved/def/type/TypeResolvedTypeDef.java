@@ -25,18 +25,4 @@ public interface TypeResolvedTypeDef {
      */
     TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause);
 
-    static String instantiateName(String name, List<TypeDef> generics) {
-        StringBuilder newName = new StringBuilder(name);
-        if (generics.size() > 0) {
-            newName.append("(");
-            for (TypeDef t : generics) {
-                newName.append(t.name());
-                newName.append(", ");
-            }
-            newName.delete(newName.length() - 2, newName.length());
-            newName.append(")");
-        }
-        return newName.toString();
-    }
-
 }

@@ -10,7 +10,7 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
 import lexing.Loc;
-import util.ThrowingSupplier;
+import util.throwing_interfaces.ThrowingSupplier;
 
 import java.util.List;
 

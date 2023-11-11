@@ -15,13 +15,11 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.IntLiteralData;
 import util.ListUtils;
-import util.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingConsumer;
 
 import java.math.BigInteger;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class IntegerType implements BuiltinType {
 

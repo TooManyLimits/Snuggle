@@ -1,6 +1,5 @@
 package builtin_types.helpers;
 
-import ast.ir.def.CodeBlock;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.method.MethodDef;
@@ -9,12 +8,10 @@ import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedMethodCall;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
-import util.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingConsumer;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DefineConstWithFallback {

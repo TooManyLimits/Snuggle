@@ -14,6 +14,7 @@ import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.method.SnuggleTypeResolvedMethodDef;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.GenericStringUtil;
 import util.LateInit;
 import util.ListUtils;
 
@@ -46,7 +47,7 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, boolea
         });
         List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics, newStackFrame));
         List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics, newStackFrame));
-        return new ClassDef(loc, TypeResolvedTypeDef.instantiateName(name, generics), instantiatedSupertype, typeInstantiatedFields, typeInstantiatedMethods);
+        return new ClassDef(loc, GenericStringUtil.instantiateName(name, generics), instantiatedSupertype, typeInstantiatedFields, typeInstantiatedMethods);
     }
 
 }

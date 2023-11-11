@@ -1,4 +1,4 @@
-package util;
+package util.throwing_interfaces;
 
 @FunctionalInterface
 public interface ThrowingConsumer<T, E extends Throwable> {

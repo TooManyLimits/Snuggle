@@ -7,6 +7,7 @@ import ast.typed.def.type.TypeDef;
 import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import util.GenericStringUtil;
 
 import java.util.List;
 import java.util.Set;
@@ -18,7 +19,7 @@ public interface BuiltinType {
     default String genericName(TypeChecker checker, List<TypeDef> generics) {
         if (generics.size() != numGenerics())
             throw new IllegalStateException("Somehow getting generic name with wrong number of generics? Bug in compiler, please report!");
-        return TypeResolvedTypeDef.instantiateName(name(), generics);
+        return GenericStringUtil.instantiateName(name(), generics);
     }
 
     /**

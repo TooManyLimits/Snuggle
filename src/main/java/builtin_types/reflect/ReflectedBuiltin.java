@@ -8,10 +8,9 @@ import builtin_types.reflect.annotations.SnuggleBlacklist;
 import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.types.ObjType;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.ListUtils;
-import util.ThrowingFunction;
+import util.throwing_interfaces.ThrowingFunction;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;

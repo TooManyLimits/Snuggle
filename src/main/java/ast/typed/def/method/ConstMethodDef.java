@@ -8,7 +8,7 @@ import ast.typed.expr.TypedMethodCall;
 import ast.typed.expr.TypedStaticMethodCall;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
-import util.ThrowingFunction;
+import util.throwing_interfaces.ThrowingFunction;
 
 import java.util.List;
 

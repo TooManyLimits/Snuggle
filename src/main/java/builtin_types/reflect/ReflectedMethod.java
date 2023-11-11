@@ -1,6 +1,5 @@
 package builtin_types.reflect;
 
-import ast.ir.def.CodeBlock;
 import ast.passes.TypeChecker;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
@@ -16,17 +15,14 @@ import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;
-import util.ThrowingConsumer;
-import util.ThrowingFunction;
-import util.ThrowingTriFunction;
+import util.throwing_interfaces.ThrowingConsumer;
+import util.throwing_interfaces.ThrowingTriFunction;
 
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public class ReflectedMethod {
 

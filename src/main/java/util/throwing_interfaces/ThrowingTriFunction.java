@@ -1,4 +1,4 @@
-package util;
+package util.throwing_interfaces;
 
 @FunctionalInterface
 public interface ThrowingTriFunction<A, B, C, R, E extends Throwable> {

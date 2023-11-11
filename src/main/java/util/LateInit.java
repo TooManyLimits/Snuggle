@@ -1,5 +1,7 @@
 package util;
 
+import util.throwing_interfaces.ThrowingSupplier;
+
 import java.util.function.Function;
 
 //Runs the getter on first get() attempt, and caches result
