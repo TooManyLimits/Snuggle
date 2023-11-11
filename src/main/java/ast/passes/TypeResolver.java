@@ -113,16 +113,16 @@ public class TypeResolver {
         }
 
         //Resolve all the files/topLevelTypes
-        ArrayList<TypeResolvedTypeDef> result = new ArrayList<>();
+        finalTypeDefList = new ArrayList<>();
 
         //Resolve the builtin topLevelTypes
         for (Integer builtinIndex : builtins.values()) {
             ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
-            ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
+            ListUtils.setExpand(finalTypeDefList, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
         }
         for (Integer builtinIndex : builtinSnuggleTypes.values()) {
             ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
-            ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
+            ListUtils.setExpand(finalTypeDefList, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
         }
 
 
@@ -139,7 +139,7 @@ public class TypeResolver {
             //For each top level type def in the file:
             for (ParsedTypeDef typeDef : f.topLevelTypeDefs()) {
                 //Resolve the typedef and store
-                ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
+                ListUtils.setExpand(finalTypeDefList, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
             }
             //Also resolve the imports and code in the file:
             codeByFile.put(f.name(), new TypeResolvedFile(
@@ -153,11 +153,9 @@ public class TypeResolver {
         }
 
         //Save the final results
-        result.trimToSize();
-        for (var x : result)
+        for (var x : finalTypeDefList)
             if (x == null)
                 throw new IllegalStateException("Resolved type defs not fully initialized? Bug in compiler, please report");
-        finalTypeDefList = result;
         resolvedCodeByFile = codeByFile;
     }
 
@@ -201,8 +199,10 @@ public class TypeResolver {
 
     //Add a typedef to the current mappings :3
     //and return the mapping of the type
+    //Should only be run for nested types!
     public int addType(Loc loc, ParsedTypeDef typeDef) throws CompilationException {
         int mapping = register(typeDef);
+        ListUtils.setExpand(finalTypeDefList, mapping, typeDef.resolve(this));
         if (currentMappings.get(typeDef.name()) != null)
             throw new ImportException("Type \"" + typeDef.name() + "\" already exists in this scope", loc);
         currentMappings.put(typeDef.name(), mapping);

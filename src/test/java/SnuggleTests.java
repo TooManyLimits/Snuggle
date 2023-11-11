@@ -88,6 +88,31 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testNestedTypes() throws CompilationException, SnuggleException {
+        test("""
+                class Outer<X> {
+                    fn new() super()
+                    fn func() {
+                        struct Inner<Y> {
+                            var a: X
+                            var b: Y
+                        }
+                        var inner1 = new Inner<i32> {10, 30}
+                        var inner2 = new Inner<str> {15, "cutie"}
+                        Test.assertEquals(10, inner1.a)
+                        Test.assertEquals(30, inner1.b)
+                        Test.assertEquals(15, inner2.a)
+                        Test.assertEquals("cutie", inner2.b)
+                        System.print("yes, this actually happened, you did call the function to test things")
+                    }
+                }
+                new Outer<i64>().func()
+                """);
+
+
+    }
+
+    @Test
     public void testCursedStaticsOnGenerics() throws CompilationException, SnuggleException {
         test("""
                 class Silly<T> {
