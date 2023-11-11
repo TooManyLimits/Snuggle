@@ -163,24 +163,24 @@ public class TypeChecker {
     //Helper to check multiple method names, given as a list, in order.
     //If all of them fail, then error.
     //Throw a new error message, with the first error as the cause.
-    public BestMethodInfo tryMultipleMethodsForBest(Loc loc, TypeDef currentType, TypeDef receiverType, List<String> methodNames, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        //Regular case, size = 1, just call the method normally and don't wrap in our weird error message
-        if (methodNames.size() == 1)
-            return getBestMethod(loc, currentType, receiverType, methodNames.get(0), args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
-
-        //Otherwise, do something else
-        List<CompilationException> es = new ArrayList<>();
-        for (String methodName : methodNames) {
-            try {
-                //If any succeeds, it gets returned
-                return getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
-            } catch (CompilationException e) {
-                es.add(e);
-            }
-        }
-        //If we finish the loop and none of them succeeded, then give our own error
-        throw new TypeCheckingException("Unable to choose best method for any of: " + methodNames + ". Causes: " + ListUtils.map(es, Throwable::getMessage), loc, cause);
-    }
+//    public BestMethodInfo tryMultipleMethodsForBest(Loc loc, TypeDef currentType, TypeDef receiverType, List<String> methodNames, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+//        //Regular case, size = 1, just call the method normally and don't wrap in our weird error message
+//        if (methodNames.size() == 1)
+//            return getBestMethod(loc, currentType, receiverType, methodNames.get(0), args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
+//
+//        //Otherwise, do something else
+//        List<CompilationException> es = new ArrayList<>();
+//        for (String methodName : methodNames) {
+//            try {
+//                //If any succeeds, it gets returned
+//                return getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, isCallStatic, isSuperCall, expectedReturnType, cause);
+//            } catch (CompilationException e) {
+//                es.add(e);
+//            }
+//        }
+//        //If we finish the loop and none of them succeeded, then give our own error
+//        throw new TypeCheckingException("Unable to choose best method for any of: " + methodNames + ". Causes: " + ListUtils.map(es, Throwable::getMessage), loc, cause);
+//    }
 
     /**
      * Helper method to deal with method overload resolution!

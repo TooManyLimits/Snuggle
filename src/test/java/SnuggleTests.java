@@ -110,10 +110,6 @@ public class SnuggleTests {
                         }
                         res
                     }
-                    fn addAssign(e: T): FunnyList<T> {
-                        super += e
-                        this
-                    }
                 }
                 
                 class ToStringMapper<T> : Mapper<T, str> {

@@ -16,7 +16,7 @@ import java.util.List;
  * Specifically used in the case where we have a.x += b.
  * Anything else was filtered out at the previous stage and converted into method calls / blocks instead.
  */
-public record TypeResolvedAugmentedFieldAssignment(Loc loc, String methodName, String fallback, TypeResolvedExpr lhs, TypeResolvedExpr rhs) implements TypeResolvedExpr {
+public record TypeResolvedAugmentedFieldAssignment(Loc loc, String fallback, TypeResolvedExpr lhs, TypeResolvedExpr rhs) implements TypeResolvedExpr {
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
@@ -30,7 +30,7 @@ public record TypeResolvedAugmentedFieldAssignment(Loc loc, String methodName, S
         TypedExpr typedLhs = lhs.infer(currentType, checker, typeGenerics, cause);
         //Check that "a.x" has a method of name methodName or fallback
         //That accepts rhs as a parameter, and returns the type of a.x
-        TypeChecker.BestMethodInfo best = checker.tryMultipleMethodsForBest(loc, currentType, typedLhs.type(), List.of(methodName, fallback), List.of(rhs), List.of(), typeGenerics, false, false, typedLhs.type(), cause);
+        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, typedLhs.type(), fallback, List.of(rhs), List.of(), typeGenerics, false, false, typedLhs.type(), cause);
         //Return it
         return new TypedAugmentedFieldAssignment(cause, loc, best.methodDef().delegate(), typedLhs, best.typedArgs().get(0), typedLhs.type());
     }
