@@ -30,7 +30,7 @@ public class GenericVerifier {
 
     //Ensure there are no incorrect generic param counts (i.e. List<i32, i32>)
     private void verifyGenericArgCounts(TypeResolvedAST ast) throws CompilationException {
-        //Verify all the types
+        //Verify all the topLevelTypes
         for (TypeResolvedTypeDef typeDef : ast.typeDefs())
             typeDef.verifyGenericCounts(this);
         //Verify the code

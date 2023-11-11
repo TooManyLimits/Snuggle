@@ -18,7 +18,7 @@ import java.util.List;
  * After Type Resolution completes, file names are only useful for error
  * messages.
  */
-public record ParsedClassDef(Loc loc, boolean pub, String name, int numGenerics, ParsedType.Basic supertype, List<SnuggleParsedMethodDef> methods, List<SnuggleParsedFieldDef> fields) implements ParsedTypeDef {
+public record ParsedClassDef(Loc loc, boolean pub, String name, int numGenerics, boolean nested, ParsedType.Basic supertype, List<SnuggleParsedMethodDef> methods, List<SnuggleParsedFieldDef> fields) implements ParsedTypeDef {
 
     @Override
     public TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException {
@@ -26,6 +26,7 @@ public record ParsedClassDef(Loc loc, boolean pub, String name, int numGenerics,
                 loc,
                 name,
                 numGenerics,
+                nested,
                 supertype == null ? null : (ResolvedType.Basic) supertype.resolve(loc, resolver),
                 ListUtils.map(methods, m -> m.resolve(resolver)),
                 ListUtils.map(fields, f -> f.resolve(resolver))

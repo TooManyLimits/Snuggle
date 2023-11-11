@@ -23,7 +23,7 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<Field
         //Call the method:
         methodToCall.compileCall(isSuperCall, block, desiredFields, jvm);
 
-        //If the method needs special handling afterwards (for plural types) then add more bytecodes
+        //If the method needs special handling afterwards (for plural topLevelTypes) then add more bytecodes
         if (methodToCall.returnType().isPlural()) {
             //If it's a bytecode method that leaves its return on the stack, no need to fetch plural fields
             if (!(methodToCall instanceof BytecodeMethodDef b) || !b.leavesReturnOnStack())

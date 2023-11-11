@@ -1,5 +1,6 @@
 package ast.passes;
 
+import ast.parsed.ParsedType;
 import ast.parsed.def.type.BuiltinParsedTypeDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.ParsedImport;
@@ -10,6 +11,7 @@ import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedImport;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.type_resolved.prog.TypeResolvedFile;
+import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
 import builtin_types.reflect.ReflectedBuiltin;
@@ -24,13 +26,13 @@ import util.MapStack;
 import java.util.*;
 
 /**
- * Bundles together objects needed to resolve types.
+ * Bundles together objects needed to resolve topLevelTypes.
  * Holds a static method, resolve(), which is responsible for
  * passing a ParsedAST on to the next stage, the TypeResolvedAST.
  */
 public class TypeResolver {
 
-    //All types defined throughout the entire program, as a list, as well as the inverse of this mapping
+    //All topLevelTypes defined throughout the entire program, as a list, as well as the inverse of this mapping
     private final List<ParsedTypeDef> allTypeDefs = new ArrayList<>();
     private final Map<ParsedTypeDef, Integer> allTypeDefsInverse = new IdentityHashMap<>();
 
@@ -46,7 +48,7 @@ public class TypeResolver {
 
     //Types defined in the code, must be imported. Used to update currentMappings
     //when we come across an import expression.
-    private final Map<String, Map<String, Integer>> snuggleTypeDefs;
+    private final Map<String, Map<String, Integer>> snuggleTopLevelTypeDefs;
 
     /**
      * The big method that does it all - converts a ParsedAST into a TypeResolvedAST.
@@ -72,26 +74,26 @@ public class TypeResolver {
                     parsedAST.files().add(snuggleDefined.parsedFile);
             } else {
                 //Register the type(s) directly in the current mappings
-                for (ParsedTypeDef t : snuggleDefined.parsedFile.typeDefs()) {
+                for (ParsedTypeDef t : snuggleDefined.parsedFile.topLevelTypeDefs()) {
                     if (!t.pub())
                         throw new IllegalStateException("Bug in environment: snuggle-defined builtin \"" + t.name() + "\" is not pub, but it was expected to be!");
                     int mapping = register(t);
                     builtinSnuggleTypes.put(t, mapping);
                     if (currentMappings.putIfAbsent(t.name(), mapping) != null)
-                        throw new IllegalStateException("Bug by environment implementor: multiple builtin types named \"" + t.name() + "\"?");
+                        throw new IllegalStateException("Bug by environment implementor: multiple builtin topLevelTypes named \"" + t.name() + "\"?");
                 }
             }
         }
 
-        //Globally defined builtin types
+        //Globally defined builtin topLevelTypes
         builtins = new IdentityHashMap<>();
         reflectedBuiltins = new IdentityHashMap<>();
         for (BuiltinType builtin : builtinTypes.getBuiltins()) {
             int mapping = register(new BuiltinParsedTypeDef(builtin));
             if (builtin.nameable()) {
-                //Require that all nameable builtin types have distinct names
+                //Require that all nameable builtin topLevelTypes have distinct names
                 if (currentMappings.putIfAbsent(builtin.name(), mapping) != null)
-                    throw new IllegalStateException("Bug by environment implementor: multiple builtin types named \"" + builtin.name() + "\"?");
+                    throw new IllegalStateException("Bug by environment implementor: multiple builtin topLevelTypes named \"" + builtin.name() + "\"?");
             }
             builtins.put(builtin, mapping);
             //If it's a reflected builtin, add it into the reflected map
@@ -102,25 +104,25 @@ public class TypeResolver {
             }
         }
 
-        //Get the types defined by the program
-        snuggleTypeDefs = new HashMap<>();
+        //Get the topLevelTypes defined by the program
+        snuggleTopLevelTypeDefs = new HashMap<>();
         for (ParsedFile f : parsedAST.files()) {
-            if (snuggleTypeDefs.containsKey(f.name()))
+            if (snuggleTopLevelTypeDefs.containsKey(f.name()))
                 throw new DuplicateNamesException("Multiple files with same methodName \"" + f.name() + "\": error.", new Loc(f.name(), 0, 0, 0, 0));
-            snuggleTypeDefs.put(f.name(), ListUtils.indexBy(ListUtils.map(f.typeDefs(), this::register), i -> allTypeDefs.get(i).name()));
+            snuggleTopLevelTypeDefs.put(f.name(), ListUtils.indexBy(ListUtils.map(f.topLevelTypeDefs(), this::register), i -> allTypeDefs.get(i).name()));
         }
 
-        //Resolve all the files/types
-        TypeResolvedTypeDef[] result = new TypeResolvedTypeDef[allTypeDefs.size()];
+        //Resolve all the files/topLevelTypes
+        ArrayList<TypeResolvedTypeDef> result = new ArrayList<>();
 
-        //Resolve the builtin types
+        //Resolve the builtin topLevelTypes
         for (Integer builtinIndex : builtins.values()) {
             ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
-            result[allTypeDefsInverse.get(typeDef)] = typeDef.resolve(this);
+            ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
         }
         for (Integer builtinIndex : builtinSnuggleTypes.values()) {
             ParsedTypeDef typeDef = allTypeDefs.get(builtinIndex);
-            result[allTypeDefsInverse.get(typeDef)] = typeDef.resolve(this);
+            ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
         }
 
 
@@ -132,18 +134,18 @@ public class TypeResolver {
             push();
             //Import itself, including non-pub members
             doImport(new ParsedImport(new Loc(f.name(), 0,0,0,0), f.name()), true); //Import itself
-            for (ParsedImport parsedImport : f.imports()) //Import everything it imports, without non-pub members
-                doImport(parsedImport, false);
-            //For each annotatedType in the file:
-            for (ParsedTypeDef typeDef : f.typeDefs()) {
+//            for (ParsedImport parsedImport : f.imports()) //Import everything it imports, without non-pub members
+//                doImport(parsedImport, false);
+            //For each top level type def in the file:
+            for (ParsedTypeDef typeDef : f.topLevelTypeDefs()) {
                 //Resolve the typedef and store
-                result[allTypeDefsInverse.get(typeDef)] = typeDef.resolve(this);
+                ListUtils.setExpand(result, allTypeDefsInverse.get(typeDef), typeDef.resolve(this));
             }
             //Also resolve the imports and code in the file:
             codeByFile.put(f.name(), new TypeResolvedFile(
                     f.name(),
-                    ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
-                    ListUtils.map(f.typeDefs(), t -> new ResolvedType.Basic(allTypeDefsInverse.get(t), List.of())),
+//                    ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
+                    ListUtils.map(f.topLevelTypeDefs(), t -> new ResolvedType.Basic(allTypeDefsInverse.get(t), List.of())),
                     ListUtils.map(f.code(), e -> e.resolve(this))
             ));
             //Pop scope
@@ -151,7 +153,11 @@ public class TypeResolver {
         }
 
         //Save the final results
-        finalTypeDefList = List.of(result);
+        result.trimToSize();
+        for (var x : result)
+            if (x == null)
+                throw new IllegalStateException("Resolved type defs not fully initialized? Bug in compiler, please report");
+        finalTypeDefList = result;
         resolvedCodeByFile = codeByFile;
     }
 
@@ -178,7 +184,7 @@ public class TypeResolver {
      * This only happens when a file implicitly imports itself.
      */
     public void doImport(ParsedImport parsedImport, boolean getNonPub) throws CompilationException {
-        Map<String, Integer> fileMapping = snuggleTypeDefs.get(parsedImport.fileName());
+        Map<String, Integer> fileMapping = snuggleTopLevelTypeDefs.get(parsedImport.fileName());
         if (fileMapping == null)
             throw new ImportException("File \"" + parsedImport.fileName() + "\" could not be found.", parsedImport.loc());
         for (Map.Entry<String, Integer> e : fileMapping.entrySet()) {
@@ -193,8 +199,22 @@ public class TypeResolver {
         }
     }
 
+    //Add a typedef to the current mappings :3
+    //and return the mapping of the type
+    public int addType(Loc loc, ParsedTypeDef typeDef) throws CompilationException {
+        int mapping = register(typeDef);
+        if (currentMappings.get(typeDef.name()) != null)
+            throw new ImportException("Type \"" + typeDef.name() + "\" already exists in this scope", loc);
+        currentMappings.put(typeDef.name(), mapping);
+        return mapping;
+    }
+
     public Integer lookup(String name) {
         return currentMappings.get(name);
+    }
+
+    public Integer lookup(ParsedTypeDef typeDef) {
+        return allTypeDefsInverse.get(typeDef);
     }
 
     //Return a ResolvedType for the type if it exists

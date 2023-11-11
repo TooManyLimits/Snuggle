@@ -15,8 +15,8 @@ import builtin_types.types.reflected.SystemType;
 import java.util.*;
 
 /**
- * Contains a set of builtin types which will be accessible from
- * a program. Pass an instance of this, with the appropriate types,
+ * Contains a set of builtin topLevelTypes which will be accessible from
+ * a program. Pass an instance of this, with the appropriate topLevelTypes,
  * to the TypeResolver stage of compilation.
  */
 public class BuiltinTypes {
@@ -25,7 +25,7 @@ public class BuiltinTypes {
     private final Set<SnuggleDefinedType> registeredSnuggleTypes = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public BuiltinTypes() {
-        //By default, adds in all the standard types.
+        //By default, adds in all the standard topLevelTypes.
         addStandardTypes();
     }
 
@@ -55,7 +55,7 @@ public class BuiltinTypes {
     }
 
     public BuiltinTypes addStandardTypes() {
-        //Add snuggle-defined types:
+        //Add snuggle-defined topLevelTypes:
         //Always in:
         addType(ListType.INSTANCE);
         addType(BoxType.INSTANCE);
@@ -63,7 +63,7 @@ public class BuiltinTypes {
         //Extra:
         addType(ComplexType.INSTANCE);
 
-        //Add builtin java-defined types:
+        //Add builtin java-defined topLevelTypes:
         addType(SystemType.INSTANCE);
 
         addType(OptionType.INSTANCE);

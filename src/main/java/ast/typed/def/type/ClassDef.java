@@ -49,7 +49,7 @@ public class ClassDef implements TypeDef {
 
     @Override
     public boolean isReferenceType() {
-        return true; //ClassDef are reference types
+        return true; //ClassDef are reference topLevelTypes
     }
 
     @Override

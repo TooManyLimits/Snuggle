@@ -4,7 +4,7 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 
 /**
- * An implementation of FieldDef that's useful for Builtin types.
+ * An implementation of FieldDef that's useful for Builtin topLevelTypes.
  *
  * In some cases, if you don't want these fields to be accessible by
  * code, you should place some characters into the name that are not

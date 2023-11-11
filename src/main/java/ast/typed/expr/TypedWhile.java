@@ -25,7 +25,7 @@ public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, TypeDef type) 
         //Push optional "none" as the current "result" :iea:
         MethodDef constructorDef = ListUtils.find(type.methods(), method -> method.name().equals("new") && method.paramTypes().size() == 0);
         if (constructorDef == null)
-            throw new IllegalStateException("Options of non-reference types not yet implemented!");
+            throw new IllegalStateException("Options of non-reference topLevelTypes not yet implemented!");
         new TypedConstructor(loc, type, constructorDef, List.of()).compile(code, null);
 
         code.emit(new IrLabel(condLabel)); //Emit cond label

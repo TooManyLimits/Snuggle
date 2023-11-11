@@ -2,6 +2,7 @@ package ast.passes;
 
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.field.TypeResolvedFieldDef;
+import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
@@ -26,7 +27,7 @@ import java.util.*;
  * Responsible for converting a TypeResolvedAST into
  * the next stage: a TypedAST.
  *
- * Figures out the types of all expressions and such.
+ * Figures out the topLevelTypes of all expressions and such.
  * Tracks variables in scope and such things.
  */
 public class TypeChecker {
@@ -56,7 +57,7 @@ public class TypeChecker {
     }
 
     //A cache for mapping ResolvedType -> TypeDef
-    private final Map<Integer, Map<List<TypeDef>, TypeDef>> cache = new HashMap<>();
+    private final Map<Integer, LinkedHashMap<List<TypeDef>, TypeDef>> cache = new HashMap<>();
     //The set of all TypeDefs created here
     private final List<TypeDef> allTypeDefs = new ArrayList<>();
 
@@ -82,8 +83,17 @@ public class TypeChecker {
             //to avoid problems in recursion.
             IndirectTypeDef resultType = new IndirectTypeDef();
             allTypeDefs.add(resultType);
-            cache.computeIfAbsent(basic.index(), x -> new HashMap<>()).put(convertedGenerics, resultType);
-            TypeDef instantiated = ast.typeDefs().get(basic.index()).instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
+            cache.computeIfAbsent(basic.index(), x -> new LinkedHashMap<>()).put(convertedGenerics, resultType);
+            TypeResolvedTypeDef resolved = ast.typeDefs().get(basic.index());
+            TypeDef instantiated;
+            if (resolved.nested()) { //If the type we're instantiating is nested, then prepend the current TypeGenerics.
+                var prependedGenerics = new ArrayList<>(typeGenerics);
+                prependedGenerics.addAll(convertedGenerics);
+                instantiated = resolved.instantiate(resultType, this, prependedGenerics, instantiationLoc, cause);
+            } else {
+                instantiated = resolved.instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
+            }
+
             resultType.fill(instantiated);
             //And return
             return resultType;
@@ -121,7 +131,7 @@ public class TypeChecker {
         //to avoid problems in recursion.
         IndirectTypeDef resultType = new IndirectTypeDef();
         allTypeDefs.add(resultType);
-        cache.computeIfAbsent(index, x -> new HashMap<>()).put(convertedGenerics, resultType);
+        cache.computeIfAbsent(index, x -> new LinkedHashMap<>()).put(convertedGenerics, resultType);
         TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
         resultType.fill(instantiated);
         //And return
@@ -141,7 +151,7 @@ public class TypeChecker {
         //NOTE: This cannot be an enhanced for loop! Because:
         //while we check method bodies, *more checked type defs can be added to the list*.
         //If we used an enhanced loop, this would lead to concurrent modification exceptions.
-        //However, this way, since new types are always appended to the end, we continue
+        //However, this way, since new topLevelTypes are always appended to the end, we continue
         //checking method bodies until no new method bodies are added to check, and we reach
         //the end of the list.
         for (int i = 0; i < checker.allTypeDefs.size(); i++)
@@ -182,12 +192,12 @@ public class TypeChecker {
      * @param methodName         The name in the method call.
      * @param args               The TypeResolved arguments given to the method call. They will be checked here.
      * @param genericArgs        The generic arguments to the method call.
-     * @param typeGenerics       The instantiating generic types that are passed to TypedExpr's check() and infer() methods.
+     * @param typeGenerics       The instantiating generic topLevelTypes that are passed to TypedExpr's check() and infer() methods.
      * @param isCallStatic       Whether the call was made statically.
      * @param isSuperCall        Whether this call to a method was made using the super keyword. If it was, then there's a
      *                           special process for selecting eligible methods.
      * @param expectedReturnType The type which the best method must return. If null, there's no restriction on the return type.
-     * @param cause              The stack frame for the cause of the instantiation of new types while checking a method.
+     * @param cause              The stack frame for the cause of the instantiation of new topLevelTypes while checking a method.
      */
 
     public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
@@ -237,7 +247,7 @@ public class TypeChecker {
             if (def.numGenerics() > 0 && genericArgs.size() != 0 && genericArgs.size() != def.numGenerics()) continue;
 
             //Now that we've filtered out those which obviously don't match, move on to less obvious situations.
-            //First, invalid return types we can filter out:
+            //First, invalid return topLevelTypes we can filter out:
             if (expectedReturnType != null) {
                 //We have an expected type, so skip anything whose return type doesn't fit it
                 if (!def.returnType().isSubtype(expectedReturnType)) {
@@ -246,7 +256,7 @@ public class TypeChecker {
                 }
             }
 
-            //Now, let's check the arg types:
+            //Now, let's check the arg topLevelTypes:
             List<TypedExpr> typedArgs = new ArrayList<>(args.size());
             int i = 0;
             TypeDef expectedParamType = null;

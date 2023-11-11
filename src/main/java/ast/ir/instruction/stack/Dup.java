@@ -11,7 +11,7 @@ public record Dup(TypeDef typeDef) implements Instruction {
     @Override
     public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
         if (typeDef.isPlural())
-            throw new IllegalStateException("Plural types not yet implemented");
+            throw new IllegalStateException("Plural topLevelTypes not yet implemented");
         else if (typeDef.stackSlots() == 1)
             jvm.visitInsn(Opcodes.DUP);
         else if (typeDef.stackSlots() == 2)

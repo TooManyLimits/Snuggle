@@ -178,7 +178,7 @@ public class ArrayType implements BuiltinType {
         }
     }
 
-    //Get the range of the flattened types which are desired by this list
+    //Get the range of the flattened topLevelTypes which are desired by this list
     //2 element array output, first inclusive, second exclusive
     private int[] getDesiredFieldRange(TypeDef type, List<FieldDef> desiredFields) {
         //If no specifically desired fields, return the whole thing as the range
@@ -293,7 +293,7 @@ public class ArrayType implements BuiltinType {
             varStoreOpcode = Opcodes.ISTORE;
             varLoadOpcode = Opcodes.ILOAD;
         } else if (elementTypeDef.isReferenceType() || elementTypeDef.isOptionalReferenceType()) {
-            //For now, other types are reference types (or Option<ReferenceType>)
+            //For now, other topLevelTypes are reference topLevelTypes (or Option<ReferenceType>)
             isReference = true;
             storeOpcode = Opcodes.AASTORE;
             loadOpcode = Opcodes.AALOAD;

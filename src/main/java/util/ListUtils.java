@@ -54,6 +54,12 @@ public class ListUtils {
         return null;
     }
 
+    public static <T> void setExpand(List<T> list, int index, T element) {
+        while (list.size() <= index)
+            list.add(null);
+        list.set(index, element);
+    }
+
     /**
      * Generate a map from a given list, where the keys are chosen by the given function.
      * If two elements of the list share the same key, no error will occur, and the one

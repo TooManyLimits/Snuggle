@@ -9,6 +9,6 @@ import java.util.List;
 /**
  * A single file in a program.
  */
-public record ParsedFile(String name, List<ParsedImport> imports, List<ParsedTypeDef> typeDefs, List<ParsedExpr> code) {
+public record ParsedFile(String name, List<ParsedTypeDef> topLevelTypeDefs, List<ParsedExpr> code) {
 
 }

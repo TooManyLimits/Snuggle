@@ -151,7 +151,7 @@ public class Lexer {
         return x;
     }
 
-    //Consume anything between these two token types in the enum, inclusive
+    //Consume anything between these two token topLevelTypes in the enum, inclusive
     public boolean consumeBetween(TokenType first, TokenType last) throws CompilationException {
         if (first.ordinal() > last.ordinal()) throw new IllegalArgumentException("consumeBetween args must have first <= last");
         boolean x = checkBetween(first, last);

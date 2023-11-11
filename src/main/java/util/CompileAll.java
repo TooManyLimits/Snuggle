@@ -36,7 +36,7 @@ public class CompileAll {
         //2. Parse to ParsedAST
         ParsedAST parsedAST = Parser.parse(lexers);
         System.out.println(parsedAST);
-        //3. Resolve types to TypeResolvedAST
+        //3. Resolve topLevelTypes to TypeResolvedAST
         TypeResolvedAST typeResolvedAST = TypeResolver.resolve(types, parsedAST);
         System.out.println(typeResolvedAST);
         //4. Verify generics
@@ -57,13 +57,13 @@ public class CompileAll {
         //2. Parse to ParsedAST
         ParsedAST parsedAST = Parser.parse(lexers);
         System.out.println(parsedAST);
-        //3. Resolve types to TypeResolvedAST
+        //3. Resolve topLevelTypes to TypeResolvedAST
         TypeResolvedAST typeResolvedAST = TypeResolver.resolve(types, parsedAST);
         //4. Verify generics
         GenericVerifier.verifyGenerics(typeResolvedAST);
         //5. Type check to TypedAST
         TypedAST typedAST = TypeChecker.type(typeResolvedAST);
-//        for (TypeDef d : typedAST.typeDefs())
+//        for (TypeDef d : typedAST.topLevelTypeDefs())
 //            System.out.println(d);
         //6. Compile to instance and return
         Program.of(typedAST).compileToJar(targetFile);

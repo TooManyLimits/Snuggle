@@ -842,7 +842,7 @@ public class SnuggleTests {
         test(new BuiltinTypes(), Map.of("main", main), file);
     }
 
-//    public void test(BuiltinTypes types, @Language("TEXT") str main) throws CompilationException, SnuggleException {
+//    public void test(BuiltinTypes topLevelTypes, @Language("TEXT") str main) throws CompilationException, SnuggleException {
     public void test(BuiltinTypes types, String main) throws CompilationException, SnuggleException {
         test(types, Map.of("main", main), null);
     }

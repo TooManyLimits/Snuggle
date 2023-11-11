@@ -14,7 +14,7 @@ import java.util.List;
 
 //Set to a field. The receiver (a reference type), then value are on the stack.
 //The list of fields to follow happens when doing something like a.x.y.z = 5,
-//where the fields "x" and "y" have plural types.
+//where the fields "x" and "y" have plural topLevelTypes.
 //In this case, fieldsToFollow has length 3, containing fields "x" "y" "z".
 //for the regular singlet case of a.z = 5, fieldsToFollow has length 1, and it's the "z" field.
 public record SetField(List<FieldDef> fieldsToFollow) implements Instruction {

@@ -59,7 +59,7 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
                 if (checker.getBasicBuiltin(t).equals(expected))
                     return new TypedLiteral(cause, e.loc(), new Fraction(value, BigInteger.ONE), expected);
 
-            //Didn't expect any of those numeric types? Error
+            //Didn't expect any of those numeric topLevelTypes? Error
             throw new TypeCheckingException("Expected " + expected.name() + ", got int literal", loc, cause);
         } else if (e.type().equals(floatLiteralType)) {
             //Practically same structure as above IntLiteral version ^

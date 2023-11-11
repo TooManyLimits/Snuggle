@@ -75,7 +75,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     public void compileCall(boolean isSupercall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) {
         int instruction = Opcodes.INVOKEVIRTUAL; //Virtual by default
         if (isStatic() || owningType().isPlural())
-            instruction = Opcodes.INVOKESTATIC; //Static methods, or methods on plural types, are static java-side
+            instruction = Opcodes.INVOKESTATIC; //Static methods, or methods on plural topLevelTypes, are static java-side
         else if (isSupercall || isConstructor())
             instruction = Opcodes.INVOKESPECIAL; //Super calls and constructor calls use InvokeSpecial
 

@@ -16,7 +16,7 @@ import util.ListUtils;
 
 import java.util.List;
 
-public record TypeResolvedStructDef(Loc loc, String name, int numGenerics, List<SnuggleTypeResolvedMethodDef> methods, List<SnuggleTypeResolvedFieldDef> fields) implements TypeResolvedTypeDef {
+public record TypeResolvedStructDef(Loc loc, String name, int numGenerics, boolean nested, List<SnuggleTypeResolvedMethodDef> methods, List<SnuggleTypeResolvedFieldDef> fields) implements TypeResolvedTypeDef {
 
     @Override
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {

@@ -16,11 +16,11 @@ import java.util.List;
 
 public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStatic, String name, int numGenerics, List<String> paramNames, List<ResolvedType> paramTypes, ResolvedType returnType, TypeResolvedExpr body) implements TypeResolvedMethodDef {
 
-    //Same as in other types. Error if there's a violation.
+    //Same as in other topLevelTypes. Error if there's a violation.
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {
         //Verify return annotatedType
         verifier.verifyType(returnType, loc);
-        //Verify param types
+        //Verify param topLevelTypes
         for (ResolvedType t : paramTypes)
             verifier.verifyType(t, loc);
         //Verify body

@@ -33,13 +33,14 @@ if x.isWeekend System.print("yippee!!!!")
 
  */
 
-public record ParsedEnumDef(Loc loc, boolean pub, String name, List<ParsedEnumProperty> properties, List<ParsedEnumElement> elements, List<SnuggleParsedMethodDef> methods) implements ParsedTypeDef {
+public record ParsedEnumDef(Loc loc, boolean pub, String name, boolean nested, List<ParsedEnumProperty> properties, List<ParsedEnumElement> elements, List<SnuggleParsedMethodDef> methods) implements ParsedTypeDef {
 
     @Override
     public TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException {
         return new TypeResolvedEnumDef(
                 loc,
                 name,
+                nested,
                 ListUtils.map(properties, p -> new TypeResolvedEnumDef.TypeResolvedEnumProperty(p.name, p.type.resolve(loc, resolver))),
                 ListUtils.map(elements, e -> new TypeResolvedEnumDef.TypeResolvedEnumElement(e.name, ListUtils.map(e.args, arg -> arg.resolve(resolver)))),
                 ListUtils.map(methods, m -> m.resolve(resolver))

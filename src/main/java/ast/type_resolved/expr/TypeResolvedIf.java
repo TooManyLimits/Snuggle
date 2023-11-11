@@ -32,7 +32,7 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
         //If the expr doesn't have a false branch, then the output type of the expression is Option<output of ifTrue>
-        //If the expr does have a false branch, then the output types of the branches must match, and the output type
+        //If the expr does have a false branch, then the output topLevelTypes of the branches must match, and the output type
         //of the if-expression is that type.
 
         //If the condition is a constant bool, we can do special handling and choose the branch at compile time

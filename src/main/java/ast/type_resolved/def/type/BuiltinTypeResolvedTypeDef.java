@@ -24,6 +24,11 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
     }
 
     @Override
+    public boolean nested() {
+        return false;
+}
+
+    @Override
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {}
 
     @Override

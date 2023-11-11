@@ -33,7 +33,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 
-public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumProperty> properties, List<TypeResolvedEnumElement> elements, List<SnuggleTypeResolvedMethodDef> methods) implements TypeResolvedTypeDef {
+public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<TypeResolvedEnumProperty> properties, List<TypeResolvedEnumElement> elements, List<SnuggleTypeResolvedMethodDef> methods) implements TypeResolvedTypeDef {
 
     @Override
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {
@@ -182,7 +182,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, List<TypeResolvedEnumPro
                         v -> staticInitBlockLazy.get().writeJvmBytecode(v),
                         new LateInit<>(() -> staticInitBlockLazy.get().cost()) //Custom cost
                 )),
-                //.index(), which does literally nothing at runtime lol, just converts between types
+                //.index(), which does literally nothing at runtime lol, just converts between topLevelTypes
                 List.of(new BytecodeMethodDef("index", false, currentType, List.of(), elementType, true, v -> {}, BytecodeMethodDef.ZERO)) //zero cost
         );
     }

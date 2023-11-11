@@ -38,7 +38,7 @@ public class BytecodeHelper {
     }
 
     public static void visitVariable(int index, TypeDef def, boolean store, MethodVisitor visitor) {
-        //Handle plural types first
+        //Handle plural topLevelTypes first
         if (def.isPlural()) {
             if (store) {
                 AtomicInteger mutableIndex = new AtomicInteger(index + def.stackSlots()); //cursed
@@ -53,7 +53,7 @@ public class BytecodeHelper {
                 }
             }
         }
-        //Now other types
+        //Now other topLevelTypes
         else if (def.builtin() instanceof IntegerType i) {
             switch (i.bits) {
                 case 8, 16, 32 -> visitor.visitVarInsn(store ? Opcodes.ISTORE : Opcodes.ILOAD, index);
@@ -69,7 +69,7 @@ public class BytecodeHelper {
         } else if (def.builtin() == BoolType.INSTANCE) {
             visitor.visitVarInsn(store ? Opcodes.ISTORE : Opcodes.ILOAD, index);
         } else {
-            //Assumed all others are reference types
+            //Assumed all others are reference topLevelTypes
             visitor.visitVarInsn(store ? Opcodes.ASTORE :Opcodes.ALOAD, index);
         }
     }

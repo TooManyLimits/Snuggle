@@ -27,7 +27,7 @@ public class IntegerType implements BuiltinType {
 
     /**
      *
-     * Definitions of all integer types!
+     * Definitions of all integer topLevelTypes!
      *
      */
 
@@ -90,7 +90,7 @@ public class IntegerType implements BuiltinType {
 
     /**
      *
-     * Methods of integer types!
+     * Methods of integer topLevelTypes!
      *
      */
 

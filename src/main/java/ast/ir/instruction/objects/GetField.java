@@ -13,7 +13,7 @@ import java.util.List;
 
 //Get from a field. The receiver (a reference type) is on the stack.
 //The list of fields to follow happens when doing something like a.x.y.z,
-//where the fields "x" and "y" have plural types. In this case, the list has length 3, "x" "y" and "z".
+//where the fields "x" and "y" have plural topLevelTypes. In this case, the list has length 3, "x" "y" and "z".
 //In the usual case, a.z, the length is only 1. "z".
 public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
 

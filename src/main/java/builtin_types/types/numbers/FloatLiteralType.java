@@ -45,7 +45,7 @@ public class FloatLiteralType implements BuiltinType {
             if (call.receiver() instanceof TypedLiteral typedReceiver && typedReceiver.type().equals(floatLiteralType)) {
                 //Get the receiver value
                 Fraction receiverValue = (Fraction) typedReceiver.obj();
-                //Test it against the 3 possible floating point types (float, double, fraction)
+                //Test it against the 3 possible floating point topLevelTypes (float, double, fraction)
                 if (call.args().get(0) instanceof TypedLiteral literalArg) {
                     Object literalValue = literalArg.obj();
                     T2 resultValue = func.apply(receiverValue, (T1) literalValue);

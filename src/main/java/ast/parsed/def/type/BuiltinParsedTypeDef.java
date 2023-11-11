@@ -19,6 +19,11 @@ public record BuiltinParsedTypeDef(BuiltinType builtin) implements ParsedTypeDef
     }
 
     @Override
+    public boolean nested() {
+        return false;
+    }
+
+    @Override
     public TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException {
         return new BuiltinTypeResolvedTypeDef(builtin);
     }

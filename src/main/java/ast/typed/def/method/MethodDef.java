@@ -35,9 +35,9 @@ public interface MethodDef {
     void checkCode() throws CompilationException;
 
     //Compile a call to this method. The receiver (if applicable) and the arguments are on the stack.
-    //block is rarely used, except for core builtin types.
-    //desiredFields indicates, for builtin functions that return plural types, and leave their output on the stack:
-    //it indicates which fields should actually be put onto the stack. Also only used in core builtin types.
+    //block is rarely used, except for core builtin topLevelTypes.
+    //desiredFields indicates, for builtin functions that return plural topLevelTypes, and leave their output on the stack:
+    //it indicates which fields should actually be put onto the stack. Also only used in core builtin topLevelTypes.
     void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) throws CompilationException;
 
     //Constant-fold the method. By default, does nothing and just returns the input.

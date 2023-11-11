@@ -22,9 +22,9 @@ public interface BuiltinType {
     }
 
     /**
-     * Set to false for types that cannot be referred to by name.
+     * Set to false for topLevelTypes that cannot be referred to by name.
      * Example: IntLiteral
-     * For most types, those with names, this returns true, which
+     * For most topLevelTypes, those with names, this returns true, which
      * is why it's default.
      */
     default boolean nameable() { return true; }
@@ -51,7 +51,7 @@ public interface BuiltinType {
     default Set<TypeDef> getTypeCheckingSupertypes(TypeChecker checker, List<TypeDef> generics) { return Set.of(); }
 
     /**
-     * Supertype which inheritance affects. Some types have type-checking supertypes, but don't inherit from them.
+     * Supertype which inheritance affects. Some topLevelTypes have type-checking supertypes, but don't inherit from them.
      * (example: IntLiteral is a subtype of u32, i8, etc. but it does not inherit from them)
      */
     default TypeDef getInheritanceSupertype(TypeChecker checker, List<TypeDef> generics) { return null; }
@@ -68,7 +68,7 @@ public interface BuiltinType {
      * - TypeDef is a LOCAL concept, containing information that's only meaningful
      *   inside the compilation instance it's a part of.
      * - We need this map between the two in order for the GLOBAL concept to generate methods
-     *   which operate on LOCAL types.
+     *   which operate on LOCAL topLevelTypes.
      */
     default List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) { return List.of(); }
 
@@ -95,7 +95,7 @@ public interface BuiltinType {
 //    /**
 //     * Attempt to convert this type into a storable type.
 //     * If this type is already storable, just return thisType.
-//     * Examples of non-storable types are literals, like
+//     * Examples of non-storable topLevelTypes are literals, like
 //     * StringLiteral, IntLiteral, etc.
 //     */
 //    default Type toStorable(Type thisType, Loc loc, TypePool pool) throws CompilationException {

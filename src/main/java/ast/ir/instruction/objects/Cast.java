@@ -41,7 +41,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
         return 1;
     }
 
-    //from and to are both reference types. Stack goes [from] -> [to?]
+    //from and to are both reference topLevelTypes. Stack goes [from] -> [to?]
     private void performMaybeCast(MethodVisitor jvm) {
         jvm.visitInsn(Opcodes.DUP); //dup value [from, from]
         jvm.visitTypeInsn(Opcodes.INSTANCEOF, to.name()); //instanceof [from, bool]
@@ -53,7 +53,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
         jvm.visitLabel(ifTrue);
     }
 
-    //Casting between numeric types. Separated to its own method because it's big.
+    //Casting between numeric topLevelTypes. Separated to its own method because it's big.
     //[from] -> [to]
     private void castNumericNumeric(MethodVisitor visitor) {
         if (from.isNumeric()) {
@@ -123,11 +123,11 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
                         }
                     }
                 }
-                //One or two 64-bit integer types are involved
+                //One or two 64-bit integer topLevelTypes are involved
                 else if (from.bits == 64 && to.bits == 64) { //Get this case out of the way
                     if (from.signed == to.signed)
                         throw new IllegalStateException("Invalid cast - Bits are same, and signs are same? Bug in compiler, please report!");
-                    //No-op, nothing to be done converting between two 64-bit types. Just reports a compiler bug if
+                    //No-op, nothing to be done converting between two 64-bit topLevelTypes. Just reports a compiler bug if
                     //necessary.
                 } else if (to.bits == 64) {
                     //Smaller type -> 64 bits
@@ -206,7 +206,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
                                     dValue += 0x1.0p63;
                                 }
                                 // From https://stackoverflow.com/questions/24193788/convert-unsigned-64-bit-decimal-to-java-double
-                                // Modified to work for other types as well
+                                // Modified to work for other topLevelTypes as well
                              */
                             case 32 -> {
                                 //start: [long]
@@ -287,7 +287,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
                     throw new IllegalStateException("Invalid cast - Bits are same, and signs are same? Bug in compiler, please report!");
                 return;
             }
-            throw new IllegalStateException("Casting number to number, but types are not numeric? Bug in compiler, please report!");
+            throw new IllegalStateException("Casting number to number, but topLevelTypes are not numeric? Bug in compiler, please report!");
         }
         throw new IllegalStateException("TypedCast type is numeric but lhs is not numeric? Bug in compiler, please report!");
     }

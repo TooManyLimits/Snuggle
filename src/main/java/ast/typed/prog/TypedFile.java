@@ -8,6 +8,6 @@ import util.LateInit;
 
 import java.util.List;
 
-public record TypedFile(String name, List<TypedImport> imports, LateInit<List<TypeDef>, CompilationException> types, List<TypedExpr> code) {
+public record TypedFile(String name, LateInit<List<TypeDef>, CompilationException> types, List<TypedExpr> code) {
 
 }

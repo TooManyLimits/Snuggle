@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * At this stage, we have a bunch of TypeResolvedTypeDef information.
  * Additionally, we have each of the annotatedType-resolved files.
- * Finally, we also remember the ids for the builtin types.
+ * Finally, we also remember the ids for the builtin topLevelTypes.
  */
 public record TypeResolvedAST(
         List<TypeResolvedTypeDef> typeDefs,

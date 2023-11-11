@@ -12,6 +12,10 @@ public interface ParsedTypeDef {
     //Whether this annotatedType is pub
     boolean pub();
 
+    //Whether this typedef is inside another one
+    //If this is true, then pub() should never be true
+    boolean nested();
+
     TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException;
 
 }

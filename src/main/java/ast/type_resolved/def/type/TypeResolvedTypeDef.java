@@ -14,6 +14,9 @@ public interface TypeResolvedTypeDef {
     //The number of generics this must be instantiated with
     int numGenerics();
 
+    //Whether this type def is nested inside another.
+    boolean nested();
+
     //Throw an exception if anything in here violates the generic counts
     void verifyGenericCounts(GenericVerifier verifier) throws CompilationException;
 

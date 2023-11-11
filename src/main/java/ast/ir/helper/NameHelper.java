@@ -7,7 +7,7 @@ import util.ListUtils;
 import java.util.List;
 
 /**
- * Manages the various types during the compiler stage;
+ * Manages the various topLevelTypes during the compiler stage;
  * Particularly, keeps track of various generated generatedClasses and their compiled java-side names.
  */
 public class NameHelper {

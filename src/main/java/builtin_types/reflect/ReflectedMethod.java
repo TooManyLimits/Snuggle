@@ -90,7 +90,7 @@ public class ReflectedMethod {
         Class<?> c = (Class<?>) type.getType();
         String className = c.getName().replace('.', '/');
 
-        //Array types
+        //Array topLevelTypes
         if (type instanceof AnnotatedArrayType arrayType) {
             ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> inner = getTypeGetter(arrayType.getAnnotatedGenericComponentType());
             return (pool, loc, cause) -> pool.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(pool, loc, cause)), loc, cause);

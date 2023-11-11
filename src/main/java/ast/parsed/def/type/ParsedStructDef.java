@@ -12,7 +12,7 @@ import util.ListUtils;
 
 import java.util.List;
 
-public record ParsedStructDef(Loc loc, boolean pub, String name, int numGenerics, List<SnuggleParsedMethodDef> methods, List<SnuggleParsedFieldDef> fields) implements ParsedTypeDef {
+public record ParsedStructDef(Loc loc, boolean pub, String name, int numGenerics, boolean nested, List<SnuggleParsedMethodDef> methods, List<SnuggleParsedFieldDef> fields) implements ParsedTypeDef {
 
     @Override
     public TypeResolvedTypeDef resolve(TypeResolver resolver) throws CompilationException {
@@ -20,6 +20,7 @@ public record ParsedStructDef(Loc loc, boolean pub, String name, int numGenerics
                 loc,
                 name,
                 numGenerics,
+                nested,
                 ListUtils.map(methods, m -> m.resolve(resolver)),
                 ListUtils.map(fields, f -> f.resolve(resolver))
         );

@@ -19,7 +19,7 @@ import util.ListUtils;
 
 import java.util.List;
 
-public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, ResolvedType.Basic supertype, List<SnuggleTypeResolvedMethodDef> methods, List<SnuggleTypeResolvedFieldDef> fields) implements TypeResolvedTypeDef {
+public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, boolean nested, ResolvedType.Basic supertype, List<SnuggleTypeResolvedMethodDef> methods, List<SnuggleTypeResolvedFieldDef> fields) implements TypeResolvedTypeDef {
 
     @Override
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {

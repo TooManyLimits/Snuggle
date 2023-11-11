@@ -30,8 +30,8 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
     //There's going to need to be special casing for this.
     //1. Special Case: Any numeric primitive can be cast into any numeric primitive, without fail.
     //1a. For this reason, the "as?" operator does not make sense if casting into a numeric type, so this is a type check error.
-    //2. If the two types we're casting between have no supertyping relationship (ignoring the numeric case) this is a type check error.
-    //2a. In the same vein, if the two types are the same, this cast is useless and so is labeled a type check error as well (since you almost certainly didn't mean to do it)
+    //2. If the two topLevelTypes we're casting between have no supertyping relationship (ignoring the numeric case) this is a type check error.
+    //2a. In the same vein, if the two topLevelTypes are the same, this cast is useless and so is labeled a type check error as well (since you almost certainly didn't mean to do it)
     //3. Regular case: A supertype can be cast into a subtype.
     //3a. If isMaybe is true, the output of "supertype as? subtype" is Option<subtype>.
     //3b. If isMaybe is false, the output of "supertype as subtype" is subtype, but it will panic at runtime if the type doesn't match.
@@ -60,7 +60,7 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
                 return new TypedCast(loc, tokenLine, inferredLhs, false, myTypeDef);
             }
             //Lhs cannot be numeric, or else its typedef would have been a builtin
-            throw new TypeCheckingException("Only numeric types can be casted to numeric types like " + myTypeDef.name() + ", but the expression has type " + lhsTypeDef.name(), loc, cause);
+            throw new TypeCheckingException("Only numeric topLevelTypes can be casted to numeric topLevelTypes like " + myTypeDef.name() + ", but the expression has type " + lhsTypeDef.name(), loc, cause);
         }
 
         //Remaining cases: Check subtyping relationships
@@ -70,7 +70,7 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
                 throw new TypeCheckingException("Cannot cast from type \"" + myTypeDef.name() + "\" to itself. This would be useless, and so is likely to be a bug", loc, cause);
             } else {
                 //Case 4: Casting a subtype to a supertype.
-                //Similar to numeric types above, the "as?" operator is useless here, so error if we see it.
+                //Similar to numeric topLevelTypes above, the "as?" operator is useless here, so error if we see it.
                 if (isMaybe)
                     throw new TypeCheckingException("The \"as?\" operator cannot be used to convert from subtype to supertype; the conversion will always succeed! Use regular \"as\" instead here.", loc, cause);
                 //Otherwise, the cast is successful.

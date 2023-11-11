@@ -27,7 +27,7 @@ public class OptionType implements BuiltinType {
 
     @Override
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
-        //Get some types
+        //Get some topLevelTypes
         TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
         TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
