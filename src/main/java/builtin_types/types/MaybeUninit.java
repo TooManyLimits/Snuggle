@@ -50,7 +50,7 @@ public class MaybeUninit implements BuiltinType {
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef thisType = checker.getGenericBuiltin(INSTANCE, generics, instantiationLoc, cause);
         TypeDef innerType = generics.get(0);
-        TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeDef unitType = checker.getTuple(List.of());
         return List.of(
                 //new with no args -> empty
                 new BytecodeMethodDef("new", false, thisType, List.of(), unitType, true, v -> {

@@ -31,11 +31,11 @@ public class Lexer {
             "(?:(\\*\\*)|&&|\\|\\|)=?" + "|" +
             //Assign variants for bit shifts, <<= and >>=
             ">>=|<<=" + "|" +
-            //Other 2-character symbols, .. ::
-            "\\.\\.|::" + "|" +
+            //Other 2-character symbols, .. :: -> =>
+            "\\.\\.|::|->|=>" + "|" +
             //1-character operators and versions with = after
             //ex. + and +=, < and <=, ! and !=, = and ==, even though these are very different situations
-            "[-+*/%&|^=><!]=?" + "|" +
+            "[-+*/%=&|^><!]=?" + "|" +
             //Other punctuation, () [] {} . : ; ? # ~
             "[()\\[\\]{}.:;,?#~]" + "|" +
             //Number literals

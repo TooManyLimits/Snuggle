@@ -1,23 +1,14 @@
-package ast.ir.def;
+package ast.ir.def.method;
 
+import ast.ir.def.CodeBlock;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-public record GeneratedMethod(SnuggleMethodDef methodDef, CodeBlock body) {
-
-    public static GeneratedMethod of(MethodDef methodDef) throws CompilationException {
-        if (methodDef instanceof SnuggleMethodDef snuggleMethodDef && snuggleMethodDef.numGenerics() == 0) {
-            CodeBlock body = snuggleMethodDef.compileToCodeBlock();
-            return new GeneratedMethod(snuggleMethodDef, body);
-        } else {
-            return null;
-        }
-    }
+public record GeneratedSnuggleMethod(SnuggleMethodDef methodDef, CodeBlock body) implements GeneratedMethod {
 
     public void compile(ClassVisitor classWriter) throws CompilationException {
         int access = Opcodes.ACC_PUBLIC;

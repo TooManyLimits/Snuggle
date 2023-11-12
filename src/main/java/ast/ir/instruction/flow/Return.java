@@ -2,11 +2,9 @@ package ast.ir.instruction.flow;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
-import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.BoolType;
-import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import org.objectweb.asm.MethodVisitor;
@@ -21,14 +19,6 @@ public record Return(MethodDef methodDef, TypeDef returnType) implements Instruc
             //Plural returns need to set some static fields
             storePluralFieldsRecurse(jvm, returnType, "", returnType);
             jvm.visitInsn(Opcodes.RETURN);
-        } else if (returnType.builtin() == UnitType.INSTANCE) {
-            if (methodDef.isConstructor()) {
-                //Constructors can't return any value in the jvm
-                jvm.visitInsn(Opcodes.POP);
-                jvm.visitInsn(Opcodes.RETURN);
-            } else {
-                jvm.visitInsn(Opcodes.ARETURN);
-            }
         } else if (returnType.builtin() instanceof IntegerType i) {
             if (i.bits <= 32)
                 jvm.visitInsn(Opcodes.IRETURN);
@@ -62,6 +52,6 @@ public record Return(MethodDef methodDef, TypeDef returnType) implements Instruc
 
     @Override
     public long cost() {
-        return 1;
+        return 1 + (returnType.stackSlots() - 1) / 2;
     }
 }

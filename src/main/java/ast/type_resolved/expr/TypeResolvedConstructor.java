@@ -2,7 +2,6 @@ package ast.type_resolved.expr;
 
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.UnitType;
 import exceptions.compile_time.CompilationException;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
@@ -26,7 +25,7 @@ public record TypeResolvedConstructor(Loc loc, ResolvedType type, List<TypeResol
 
     private TypedExpr typeWithKnownType(TypeDef typeToConstruct, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Get the expected return type of the new() method
-        TypeDef expectedConstructorOutput = typeToConstruct.get() instanceof StructDef sd ? sd : checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeDef expectedConstructorOutput = typeToConstruct.get() instanceof StructDef sd ? sd : checker.getTuple(List.of());
         //Lookup the best method
         TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, typeToConstruct, "new", args, List.of(), typeGenerics, methodGenerics, false, false, expectedConstructorOutput, cause);
         return new TypedConstructor(loc, typeToConstruct, best.methodDef(), best.typedArgs());

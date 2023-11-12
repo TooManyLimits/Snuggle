@@ -44,19 +44,19 @@ public class ReflectedMethod {
         descriptor = org.objectweb.asm.Type.getMethodDescriptor(method);
 
         paramTypeGetters = ListUtils.map(List.of(method.getAnnotatedParameterTypes()), ReflectedMethod::getTypeGetter);
-        ownerTypeGetter = (pool, loc, cause) -> pool.getReflectedBuiltin(method.getDeclaringClass());
+        ownerTypeGetter = (checker, loc, cause) -> checker.getReflectedBuiltin(method.getDeclaringClass());
         returnTypeGetter = getTypeGetter(method.getAnnotatedReturnType());
 
         bytecode = getBytecode();
     }
 
-    public MethodDef get(TypeChecker pool, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public MethodDef get(TypeChecker checker, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         return new BytecodeMethodDef(
                 name,
                 isStatic,
-                ownerTypeGetter.apply(pool, instantiationLoc, cause),
-                ListUtils.map(paramTypeGetters, g -> g.apply(pool, instantiationLoc, cause)),
-                returnTypeGetter.apply(pool, instantiationLoc, cause),
+                ownerTypeGetter.apply(checker, instantiationLoc, cause),
+                ListUtils.map(paramTypeGetters, g -> g.apply(checker, instantiationLoc, cause)),
+                returnTypeGetter.apply(checker, instantiationLoc, cause),
                 false,
                 bytecode
         );
@@ -68,17 +68,13 @@ public class ReflectedMethod {
             throw new IllegalArgumentException("Inline not available");
         } else {
             //Not inline, so just call the method in question:
-            return v -> {
-                v.visitMethodInsn(
-                        isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
-                        owner,
-                        origName,
-                        descriptor,
-                        false
-                );
-                //If the return type is void, then we have to push unit
-                if (isVoid) BytecodeHelper.pushUnit(v);
-            };
+            return v -> v.visitMethodInsn(
+                    isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
+                    owner,
+                    origName,
+                    descriptor,
+                    false
+            );
         }
     }
 
@@ -89,7 +85,7 @@ public class ReflectedMethod {
         //Array topLevelTypes
         if (type instanceof AnnotatedArrayType arrayType) {
             ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> inner = getTypeGetter(arrayType.getAnnotatedGenericComponentType());
-            return (pool, loc, cause) -> pool.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(pool, loc, cause)), loc, cause);
+            return (checker, loc, cause) -> checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(inner.apply(checker, loc, cause)), loc, cause);
         }
 
         return switch (className) {
@@ -128,17 +124,17 @@ public class ReflectedMethod {
             case "float" -> basicBuiltin(FloatType.F32);
             case "double" -> basicBuiltin(FloatType.F64);
             case "char" -> throw new IllegalArgumentException("Cannot reflect methods accepting char");
-            case "void" -> basicBuiltin(UnitType.INSTANCE); //void becomes unit
+            case "void" -> (checker, loc, cause) -> checker.getTuple(List.of()); //void becomes unit
             //Builtin objects
             case "java/lang/String" -> basicBuiltin(StringType.INSTANCE);
             case "java/lang/Object" -> basicBuiltin(ObjType.INSTANCE);
             //Default
-            default -> (pool, loc, cause) -> pool.getReflectedBuiltin(c);
+            default -> (checker, loc, cause) -> checker.getReflectedBuiltin(c);
         };
     }
 
     private static ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> basicBuiltin(BuiltinType b) {
-        return (pool, loc, cause) -> pool.getBasicBuiltin(b);
+        return (checker, loc, cause) -> checker.getBasicBuiltin(b);
     }
 
 }

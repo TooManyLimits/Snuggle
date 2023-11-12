@@ -5,6 +5,7 @@ import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
+import ast.typed.def.type.FuncTypeDef;
 import ast.typed.def.type.IndirectTypeDef;
 import ast.typed.def.type.TupleTypeDef;
 import ast.typed.def.type.TypeDef;
@@ -57,6 +58,7 @@ public class TypeChecker {
     //A cache for mapping ResolvedType -> TypeDef
     private final Map<Integer, LinkedHashMap<List<TypeDef>, TypeDef>> cache = new HashMap<>();
     private final Map<List<TypeDef>, TypeDef> tupleCache = new HashMap<>();
+    private final Map<List<TypeDef>, Map<TypeDef, TypeDef>> funcCache = new HashMap<>();
     //The set of all TypeDefs created here
     private final List<TypeDef> allTypeDefs = new ArrayList<>();
 
@@ -104,6 +106,10 @@ public class TypeChecker {
         } else if (resolvedType instanceof ResolvedType.Tuple tuple) {
             List<TypeDef> convertedGenerics = ListUtils.map(tuple.elements(), e -> getOrInstantiate(e, typeGenerics, methodGenerics, instantiationLoc, cause));
             return getTuple(convertedGenerics);
+        } else if (resolvedType instanceof ResolvedType.Func func) {
+            List<TypeDef> convertedParams = ListUtils.map(func.paramTypes(), p -> getOrInstantiate(p, typeGenerics, methodGenerics, instantiationLoc, cause));
+            TypeDef convertedResult = getOrInstantiate(func.resultType(), typeGenerics, methodGenerics, instantiationLoc, cause);
+            return getFunc(convertedParams, convertedResult);
         } else {
             throw new IllegalStateException("Unexpected ResolvedType; bug in compiler, please report!");
         }
@@ -112,6 +118,14 @@ public class TypeChecker {
     public TypeDef getTuple(List<TypeDef> typeDefs) {
         return tupleCache.computeIfAbsent(typeDefs, t -> {
             TypeDef res = new TupleTypeDef(t);
+            allTypeDefs.add(res);
+            return res;
+        });
+    }
+
+    public TypeDef getFunc(List<TypeDef> paramTypes, TypeDef resultType) {
+        return funcCache.computeIfAbsent(paramTypes, unused -> new HashMap<>()).computeIfAbsent(resultType, unused -> {
+            TypeDef res = new FuncTypeDef(this, paramTypes, resultType);
             allTypeDefs.add(res);
             return res;
         });
@@ -146,6 +160,10 @@ public class TypeChecker {
         resultType.fill(instantiated);
         //And return
         return resultType;
+    }
+
+    public void registerTypeDef(TypeDef completedTypeDef) {
+        allTypeDefs.add(completedTypeDef);
     }
 
 
@@ -264,8 +282,6 @@ public class TypeChecker {
                     throw new IllegalStateException("Only snuggle method defs can be generic? Bug in compiler, please report!");
                 }
             }
-
-
 
             //Now that we've filtered out those which obviously don't match, move on to less obvious situations.
             //First, invalid return topLevelTypes we can filter out:

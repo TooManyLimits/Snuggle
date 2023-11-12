@@ -20,4 +20,8 @@ public sealed interface ResolvedType {
 
     }
 
+    record Func(List<ResolvedType> paramTypes, ResolvedType resultType) implements ResolvedType {
+
+    }
+
 }

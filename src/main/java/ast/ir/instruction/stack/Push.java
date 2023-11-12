@@ -2,7 +2,6 @@ package ast.ir.instruction.stack;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.StringType;
 import builtin_types.types.numbers.FloatType;
@@ -13,8 +12,6 @@ import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-import runtime.Unit;
 import util.Fraction;
 
 import java.math.BigInteger;
@@ -26,6 +23,9 @@ public record Push(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, T
     public void accept(CodeBlock block, MethodVisitor jvm) throws CompilationException {
         Object obj = obj();
         TypeDef type = type().get();
+
+        if (type.stackSlots() == 0)
+            return; //no-op
 
         //Convert fractions ahead of time to either double or float, to save code
         if (obj instanceof Fraction f) {
@@ -81,8 +81,6 @@ public record Push(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, T
                 throw new IllegalStateException("Literal obj is string, but type is not StringType? Bug in compiler, please report!");
         } else if (obj instanceof Boolean b) {
             jvm.visitInsn(b ? Opcodes.ICONST_1 : Opcodes.ICONST_0);
-        } else if (obj == Unit.INSTANCE) {
-            BytecodeHelper.pushUnit(jvm);
         } else if (obj instanceof Float f) {
             if (f == 0)
                 jvm.visitInsn(Opcodes.FCONST_0);
@@ -106,6 +104,6 @@ public record Push(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, T
 
     @Override
     public long cost() {
-        return 1; //Cost is always considered 1
+        return type.stackSlots() == 0 ? 0 : 1;
     }
 }

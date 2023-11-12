@@ -72,7 +72,6 @@ public class BuiltinTypes {
         addType(MaybeUninit.INSTANCE);
 
         addType(ObjType.INSTANCE);
-        addType(UnitType.INSTANCE);
         addType(BoolType.INSTANCE);
 
         addType(IntLiteralType.INSTANCE);

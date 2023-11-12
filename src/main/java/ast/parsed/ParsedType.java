@@ -69,4 +69,27 @@ public sealed interface ParsedType {
         }
     }
 
+    record Func(List<ParsedType> paramTypes, ParsedType resultType) implements ParsedType {
+
+        @Override
+        public ResolvedType resolve(Loc loc, TypeResolver resolver) throws CompilationException {
+            return new ResolvedType.Func(ListUtils.map(paramTypes, p -> p.resolve(loc, resolver)), resultType.resolve(loc, resolver));
+        }
+
+        @Override
+        public String toString() {
+            if (paramTypes.size() == 0) {
+                return "() -> " + resultType;
+            } else if (paramTypes.size() == 1) {
+                return paramTypes.get(0) + " -> " + resultType;
+            } else {
+                StringBuilder s = new StringBuilder("(");
+                for (ParsedType p : paramTypes)
+                    s.append(p).append(", ");
+                s.delete(s.length() - 2, s.length());
+                return s.toString();
+            }
+        }
+    }
+
 }

@@ -6,7 +6,6 @@ import ast.type_resolved.ResolvedType;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedTypeDefExpr;
-import builtin_types.types.UnitType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
@@ -23,7 +22,7 @@ public record TypeResolvedTypeDefExpr(Loc loc, ResolvedType.Basic basicTypeHandl
 
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeDef unitType = checker.getTuple(List.of());
         return new TypedTypeDefExpr(cause, loc, () -> checker.getAllInstantiated(basicTypeHandle), unitType);
     }
 

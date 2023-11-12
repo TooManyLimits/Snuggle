@@ -19,13 +19,10 @@ import ast.typed.def.type.EnumDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.ArrayType;
 import builtin_types.types.MaybeUninit;
-import builtin_types.types.UnitType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import runtime.Unit;
 import util.LateInit;
 import util.ListUtils;
 
@@ -152,9 +149,6 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
                 staticInitBlock.emit(new SetField(List.of(field)));
             }
 
-            //Finally push unit
-            staticInitBlock.emit(new Push(cause, loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE)));
-
             return staticInitBlock;
         });
 
@@ -178,7 +172,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
                     });
                 }),
                 //Static initializer, which fills all the fields
-                List.of(new BytecodeMethodDef("#init", true, currentType, List.of(), checker.getBasicBuiltin(UnitType.INSTANCE), true,
+                List.of(new BytecodeMethodDef("#init", true, currentType, List.of(), checker.getTuple(List.of()), true,
                         v -> staticInitBlockLazy.get().writeJvmBytecode(v),
                         new LateInit<>(() -> staticInitBlockLazy.get().cost()) //Custom cost
                 )),

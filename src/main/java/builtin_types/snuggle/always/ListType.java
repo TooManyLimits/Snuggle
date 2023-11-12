@@ -23,11 +23,6 @@ public class ListType extends SnuggleDefinedType {
                     
                     //Create a new List<T> with the passed backing size
                     pub fn new(startingBackingSize: u32) {
-                        if startingBackingSize == 0 {
-                            //error :P
-                            var x = 0i32
-                            1i32 / x;
-                        }
                         super()
                         backing = new(backingSize = startingBackingSize);
                     }
@@ -62,7 +57,7 @@ public class ListType extends SnuggleDefinedType {
                     //Push an element into the list, double the size if it fills up
                     pub fn push(elem: T): List<T> {
                         if size == #backing {
-                            var newBacking = new MaybeUninit<T>[](size * 2)
+                            var newBacking = new MaybeUninit<T>[](size * 2 + 1)
                             var i: u32 = 0
                             while i < #backing {
                                 newBacking[i] = new(backing[i].get())
@@ -84,6 +79,47 @@ public class ListType extends SnuggleDefinedType {
                         var elem = backing[size].get()
                         backing[size] = new()
                         elem
+                    }
+                    
+                    //Functional helpers
+                    
+                    pub fn forEach(func: T -> ()) {
+                        var i = 0u32
+                        while i < #this {
+                            func(this[i])
+                            i += 1;
+                        };
+                    }
+                    
+                    pub fn map<R>(func: T -> R): List<R> {
+                        var res = new List<R>(#this)
+                        var i = 0u32
+                        while i < #this {
+                            res += func(this[i])
+                            i += 1;
+                        }
+                        res
+                    }
+                    
+                    pub fn mapIndexed<R>(func: (T, u32) -> R): List<R> {
+                        var res = new List<R>(#this)
+                        var i = 0u32
+                        while i < #this {
+                            res += func(this[i], i)
+                            i += 1;
+                        }
+                        res
+                    }
+                    
+                    pub fn filter(func: T -> bool): List<T> {
+                        var res = new List<T>()
+                        var i = 0u32
+                        while i < #this {
+                            if func(this[i])
+                                res += this[i]
+                            i += 1;
+                        }
+                        res
                     }
                     
                 }

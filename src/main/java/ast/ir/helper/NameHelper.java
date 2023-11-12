@@ -4,8 +4,6 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.util.CheckClassAdapter;
 import util.ListUtils;
 
-import java.util.List;
-
 /**
  * Manages the various topLevelTypes during the compiler stage;
  * Particularly, keeps track of various generated generatedClasses and their compiled java-side names.
@@ -23,7 +21,7 @@ public class NameHelper {
 
     //Helper to generate and set up a class writer with the given parameters
     //Adds a default constructor, assuming the supertype also has a default constructor
-    public static ClassVisitor generateClassWriter(String name, String supertypeName, boolean defaultConstructor, Class<?>... interfaces) {
+    public static ClassVisitor generateWriter(String name, String supertypeName, boolean defaultConstructor, boolean isInterface, String... interfaces) {
         ClassVisitor writer = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES) {
             @Override
             protected String getCommonSuperClass(String type1, String type2) {
@@ -33,9 +31,8 @@ public class NameHelper {
         if (DEBUG_BYTECODE_GENERATION)
             writer = new CheckClassAdapter(writer);
         int version = Opcodes.V17; //version 61.0
-        int access = Opcodes.ACC_PUBLIC;
-        String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
-        writer.visit(version, access, name, null, supertypeName, interfacesMapped);
+        int access = Opcodes.ACC_PUBLIC + (isInterface ? Opcodes.ACC_INTERFACE + Opcodes.ACC_ABSTRACT : 0);
+        writer.visit(version, access, name, null, supertypeName, interfaces);
 
         //Add a default constructor if asked
         if (defaultConstructor) {
@@ -57,8 +54,19 @@ public class NameHelper {
         return writer;
     }
 
+    public static ClassVisitor generateClassWriter(String name, String supertypeName, boolean defaultConstructor, Class<?>... interfaces) {
+        String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
+        return generateWriter(name, supertypeName, defaultConstructor, false, interfacesMapped);
+    }
+
     public static ClassVisitor generateClassWriter(String name, boolean defaultConstructor, Class<?>... interfaces) {
-        return generateClassWriter(name, "java/lang/Object", defaultConstructor, interfaces);
+        String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
+        return generateWriter(name, "java/lang/Object", defaultConstructor, false, interfacesMapped);
+    }
+
+    public static ClassVisitor generateInterfaceWriter(String name, Class<?>... interfaces) {
+        String[] interfacesMapped = ListUtils.mapArray(interfaces, String.class, org.objectweb.asm.Type::getInternalName);
+        return generateWriter(name, "java/lang/Object", false, true, interfacesMapped);
     }
 
 }

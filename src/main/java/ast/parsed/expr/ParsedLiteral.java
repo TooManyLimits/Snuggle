@@ -6,12 +6,10 @@ import ast.type_resolved.expr.TypeResolvedLiteral;
 import builtin_types.BuiltinType;
 import builtin_types.types.BoolType;
 import builtin_types.types.StringType;
-import builtin_types.types.UnitType;
 import builtin_types.types.numbers.FloatLiteralType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import lexing.Loc;
-import runtime.Unit;
 import util.Fraction;
 import util.IntLiteralData;
 
@@ -34,7 +32,6 @@ public record ParsedLiteral(Loc loc, Object value) implements ParsedExpr {
         else if (value instanceof Fraction) builtin = FloatLiteralType.INSTANCE;
         else if (value instanceof Float) builtin = FloatType.F32;
         else if (value instanceof Double) builtin = FloatType.F64;
-        else if (value == Unit.INSTANCE) builtin = UnitType.INSTANCE;
         else throw new IllegalStateException("Unrecognized literal value: " + value);
 
         return new TypeResolvedLiteral(loc, value, resolver.resolveBasicBuiltin(builtin));

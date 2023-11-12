@@ -34,7 +34,7 @@ public class ArrayType implements BuiltinType {
         TypeDef type = checker.getGenericBuiltin(this, generics, instantiationLoc, cause);
         TypeDef elementType = generics.get(0);
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
-        TypeDef unit = checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeDef unit = checker.getTuple(List.of());
 
         ArrayList<MethodDef> methods = new ArrayList<>();
 

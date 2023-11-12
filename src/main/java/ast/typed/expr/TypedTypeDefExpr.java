@@ -5,7 +5,6 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import runtime.Unit;
 import util.ListUtils;
 
 import java.util.ArrayList;
@@ -26,11 +25,8 @@ public record TypedTypeDefExpr(TypeDef.InstantiationStackFrame cause, Loc loc, S
             //And call said method.
             exprs.add(new TypedStaticMethodCall(loc, type, initMethod, List.of(), type));
         }
-        if (exprs.size() == 0) {
-            new TypedLiteral(cause, loc, Unit.INSTANCE, type).compile(block, desiredFields);
-        } else {
+        if (exprs.size() != 0) {
             new TypedBlock(loc, exprs, type).compile(block, desiredFields);
         }
-
     }
 }

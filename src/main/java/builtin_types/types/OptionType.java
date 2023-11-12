@@ -32,7 +32,7 @@ public class OptionType implements BuiltinType {
         TypeDef innerType = generics.get(0);
         TypeDef stringType = checker.getBasicBuiltin(StringType.INSTANCE);
         TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
-        TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
+        TypeDef unitType = checker.getTuple(List.of());
 
         //Different set of methods if inner type is a reference type
         if (innerType.isReferenceType()) {

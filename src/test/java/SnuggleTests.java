@@ -88,6 +88,33 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testLambdas() throws CompilationException, SnuggleException {
+        test("""
+                var l = new List<i32>()
+                l += 1
+                l += 2
+                l += 3
+                l += 4
+                
+                var c = l.map::<str>(x -> x.str());
+                Test.assertEquals("1", c[0])
+                Test.assertEquals("2", c[1])
+                Test.assertEquals("3", c[2])
+                Test.assertEquals("4", c[3])
+                
+                var d = l.map::<i32>(x => x * x);
+                Test.assertEquals(1, d[0])
+                Test.assertEquals(4, d[1])
+                Test.assertEquals(9, d[2])
+                Test.assertEquals(16, d[3])
+                
+                var quoteWrap: str -> str = e -> "\\"" + e + "\\""
+                c.map::<str>(quoteWrap).forEach(e -> System.print(e))
+                d.forEach(e -> System.print(e))
+                """);
+    }
+
+    @Test
     public void testMethodGenerics() throws CompilationException, SnuggleException {
         test("""
                 class Mapper<T, R> {

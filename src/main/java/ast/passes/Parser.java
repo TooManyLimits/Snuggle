@@ -16,7 +16,6 @@ import lexing.Lexer;
 import lexing.Loc;
 import lexing.Token;
 import lexing.TokenType;
-import runtime.Unit;
 import util.ListUtils;
 
 import java.util.ArrayList;
@@ -115,7 +114,7 @@ public class Parser {
                 else if (lexer.consume(VAR))
                     fields.add(parseField(isClass, pubMember, true, typeGenerics, methodGenerics));
                 else if (lexer.consume(LEFT_CURLY))
-                    methods.add(new SnuggleParsedMethodDef(lexer.last().loc(), false, true, "#init", 0, List.of(), List.of(), new ParsedType.Basic("unit", List.of()), parseBlock(typeGenerics, methodGenerics)));
+                    methods.add(new SnuggleParsedMethodDef(lexer.last().loc(), false, true, "#init", 0, List.of(), List.of(), ParsedType.Tuple.UNIT, parseBlock(typeGenerics, methodGenerics)));
                 else
                     throw new ParsingException("Expected \"fn\", \"var\", or initializer block after \"static\"", lexer.last().loc());
             }
@@ -241,7 +240,7 @@ public class Parser {
             //ParsedType returnTypeGetter = ParsedType.Tuple.UNIT;
             AtomicInteger i = new AtomicInteger(); //cursed
             ParsedType returnType = switch (typeType) {
-                case CLASS -> new ParsedType.Basic("unit", List.of()); //Class constructors return unit
+                case CLASS -> ParsedType.Tuple.UNIT; //Class constructors return unit
                 case STRUCT -> new ParsedType.Basic(thisTypeName, ListUtils.map(typeGenerics, g -> new ParsedType.Generic(i.getAndIncrement(), false))); //Struct constructors return the type itself
                 case ENUM -> throw new ParsingException("Cannot create constructor for enum", methodLoc);
             };
@@ -258,9 +257,8 @@ public class Parser {
             lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName.string() + "\"", methodName.loc());
             List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName.loc(), "method \"" + methodName + "\"");
 
-            //TODO: Fix unit type
             //ParsedType returnTypeGetter = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
-            ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : new ParsedType.Basic("unit", List.of());
+            ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
 
             ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false, true);
             List<String> paramNames = ListUtils.map(params, ParsedParam::name);
@@ -331,7 +329,7 @@ public class Parser {
      */
     private ParsedExpr parseExpr(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         if (lexer.consume(SEMICOLON))
-            return new ParsedLiteral(lexer.last().loc(), Unit.INSTANCE);
+            return new ParsedTuple(lexer.last().loc(), List.of());
         return parseBinary(0, typeGenerics, methodGenerics, canBeDeclaration, isNested);
     }
 
@@ -659,9 +657,8 @@ public class Parser {
                 else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
             return new ParsedTypeExpr(fullLoc, new ParsedType.Basic(v.name(), typeArguments));
         } else {
-            //Otherwise just return the variable
-            //TODO: Maybe convert to lambda
-            return v;
+            //Otherwise just return the variable, maybe converted to a lambda.
+            return maybeMakeLambda(v, typeGenerics, methodGenerics);
         }
     }
 
@@ -670,12 +667,13 @@ public class Parser {
         Loc parenLoc = lexer.last().loc();
         //If we immediately find a right paren, then it's a tuple of 0 values (aka unit)
         if (lexer.consume(RIGHT_PAREN))
-            return new ParsedTuple(parenLoc.merge(lexer.last().loc()), List.of());
+            return maybeMakeLambda(new ParsedTuple(parenLoc.merge(lexer.last().loc()), List.of()), typeGenerics, methodGenerics);
         ParsedExpr expr = parseExpr(typeGenerics, methodGenerics, canBeDeclaration, true);
         boolean allVariables = (expr instanceof ParsedVariable); //used later, for lambdas
         //If we find a right paren immediately after an expr, then we can return a parsed paren expr
         if (lexer.consume(RIGHT_PAREN)) {
-            //TODO: if allVariables, maybe convert to lambda
+            if (allVariables)
+                return maybeMakeLambda(expr, typeGenerics, methodGenerics);
             return new ParsedParenExpr(parenLoc.merge(lexer.last().loc()), expr);
         }
         //We didn't find a right paren, so let's keep going
@@ -691,10 +689,30 @@ public class Parser {
         lexer.expect(RIGHT_PAREN, "Expected ) to end tuple that began at " + parenLoc, parenLoc);
 
         elems.trimToSize();
-        //TODO: if allVariables, maybe convert to lambda
+        if (allVariables)
+            return maybeMakeLambda(new ParsedTuple(parenLoc.merge(lexer.last().loc()), elems), typeGenerics, methodGenerics);
         return new ParsedTuple(parenLoc.merge(lexer.last().loc()), elems);
     }
 
+    //Lhs is one of:
+    //- a ParsedVariable
+    //- a ParsedTuple containing only ParsedVariables
+    private ParsedExpr maybeMakeLambda(ParsedExpr lhs, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        if (!lexer.consume(ARROW)) //No arrow, just return lhs
+            return lhs;
+        //ParsedVariable:
+        if (lhs instanceof ParsedVariable v) {
+            return new ParsedLambda(lexer.last().loc(), List.of(v.name()), parseExpr(typeGenerics, methodGenerics, false, true));
+        } else if (lhs instanceof ParsedTuple tuple) {
+            List<String> names = ListUtils.map(tuple.elements(), e -> {
+                if (e instanceof ParsedVariable v)
+                    return v.name();
+                throw new IllegalStateException("Bug in parser - should never have tried to make lambda out of tuple containing non-variables? Please report!");
+            });
+            return new ParsedLambda(lexer.last().loc(), names, parseExpr(typeGenerics, methodGenerics, false, true));
+        }
+        throw new IllegalStateException("Tried to make lambda out of something other than variable or tuple? Bug in compiler, please report!");
+    }
 
     private ParsedExpr parseIf(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc ifLoc = lexer.last().loc();
@@ -828,7 +846,7 @@ public class Parser {
             //Tuple time
             //If it ends right away, then just return unit
             if (lexer.consume(RIGHT_PAREN))
-                return addTypeModifiers(startTokLoc, ParsedType.Tuple.UNIT);
+                return addTypeModifiers(startTokLoc, ParsedType.Tuple.UNIT, typeGenerics, methodGenerics);
             startTokString = "(";
             startTokLoc = lexer.last().loc();
 
@@ -844,7 +862,7 @@ public class Parser {
             lexer.expect(RIGHT_PAREN, "Expected ) to end tuple type", startTokLoc);
 
             //Return the tuple
-            return addTypeModifiers(startTokLoc, new ParsedType.Tuple(elements));
+            return addTypeModifiers(startTokLoc, new ParsedType.Tuple(elements), typeGenerics, methodGenerics);
         } else {
             //Not a tuple
             String head = lexer.expect(IDENTIFIER, "Expected type after " + startTokString, startTokLoc).string();
@@ -854,11 +872,11 @@ public class Parser {
             //and can shadow class generics
             int index = genericIndexOf(methodGenerics, head);
             if (index != -1) {
-                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, true));
+                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, true), typeGenerics, methodGenerics);
             }
             index = genericIndexOf(typeGenerics, head);
             if (index != -1) {
-                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, false));
+                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, false), typeGenerics, methodGenerics);
             }
 
             //Otherwise, return a Basic annotatedType
@@ -873,14 +891,14 @@ public class Parser {
                 }
                 generics.trimToSize();
                 lexer.expect(GREATER, "Expected > to end generics list", lessLoc);
-                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, generics));
+                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, generics), typeGenerics, methodGenerics);
             } else {
-                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, List.of()));
+                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, List.of()), typeGenerics, methodGenerics);
             }
         }
     }
 
-    private ParsedType addTypeModifiers(Loc loc, ParsedType t) throws CompilationException {
+    private ParsedType addTypeModifiers(Loc loc, ParsedType t, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         while (lexer.consume(QUESTION_MARK, LEFT_SQUARE)) {
             if (lexer.last().type() == QUESTION_MARK)
                 t = new ParsedType.Basic("Option", List.of(t));
@@ -888,6 +906,14 @@ public class Parser {
                 //was a left square; expect a right square ] immediately after
                 lexer.expect(RIGHT_SQUARE, "Expected ] after [ while parsing type", loc);
                 t = new ParsedType.Basic("Array", List.of(t));
+            }
+        }
+        if (lexer.consume(ARROW)) {
+            Loc arrowLoc = lexer.last().loc();
+            if (t instanceof ParsedType.Tuple parsedTuple) {
+                return new ParsedType.Func(parsedTuple.elements(), parseType("ARROW", arrowLoc, typeGenerics, methodGenerics));
+            } else {
+                return new ParsedType.Func(List.of(t), parseType("ARROW", arrowLoc, typeGenerics, methodGenerics));
             }
         }
         return t;

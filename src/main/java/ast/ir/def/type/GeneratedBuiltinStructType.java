@@ -1,9 +1,8 @@
 package ast.ir.def.type;
 
 import ast.ir.def.Program;
-import ast.ir.def.field.GeneratedField;
+import ast.ir.def.GeneratedField;
 import ast.ir.helper.NameHelper;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.ClassVisitor;
@@ -15,6 +14,8 @@ import java.util.List;
 public record GeneratedBuiltinStructType(String name, List<GeneratedField> fields) implements GeneratedType {
 
     public static GeneratedBuiltinStructType of(TypeDef builtin) {
+        if (builtin.fields().size() == 0)
+            return null;
         return new GeneratedBuiltinStructType(
                 builtin.runtimeName(),
                 ListUtils.map(builtin.fields(), f -> new GeneratedField(true, f))

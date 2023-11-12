@@ -2,17 +2,14 @@ package ast.ir.helper;
 
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.ArrayType;
 import builtin_types.types.BoolType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
-import runtime.Unit;
 import util.ListUtils;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -182,14 +179,6 @@ public class BytecodeHelper {
                 swapBigSmall(visitor);
             else
                 swapBigBig(visitor);
-    }
-
-
-    //Push unit on the stack
-    private static final String unitName = Type.getInternalName(Unit.class);
-    private static final String unitDescriptor = "L" + unitName + ";";
-    public static void pushUnit(MethodVisitor visitor) {
-        visitor.visitFieldInsn(Opcodes.GETSTATIC, unitName, "INSTANCE", unitDescriptor);
     }
 
 }

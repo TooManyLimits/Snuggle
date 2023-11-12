@@ -51,7 +51,7 @@ public record BytecodeMethodDef(String name, boolean isStatic, TypeDef owningTyp
 
     @Override
     public void checkCode() throws CompilationException {
-        //No code to check here
+        //We can't check the code, since it's bytecode
     }
 
     @Override

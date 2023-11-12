@@ -1,4 +1,4 @@
-package ast.ir.def.field;
+package ast.ir.def;
 
 import ast.typed.def.field.FieldDef;
 import org.objectweb.asm.ClassVisitor;
