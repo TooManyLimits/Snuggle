@@ -29,8 +29,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, methodGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
         //If the expr doesn't have a false branch, then the output type of the expression is Option<output of ifTrue>
         //If the expr does have a false branch, then the output topLevelTypes of the branches must match, and the output type
         //of the if-expression is that type.
@@ -39,25 +39,25 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
             if (b) {
                 //Infer the true branch. If there's an else branch, return it as-is.
-                TypedExpr inferredTrueBranch = ifTrue.infer(currentType, checker, typeGenerics, cause);
+                TypedExpr inferredTrueBranch = ifTrue.infer(currentType, checker, typeGenerics, methodGenerics, cause);
                 if (hasFalseBranch()) return inferredTrueBranch;
                 //If there's no false branch, need to wrap this value in an Option<>.
                 return TypeCheckingHelper.wrapInOption(loc, inferredTrueBranch, checker, cause);
             } else {
                 //If this has a false branch, return its inferred value:
                 if (hasFalseBranch())
-                    return ifFalse.infer(currentType, checker, typeGenerics, cause);
+                    return ifFalse.infer(currentType, checker, typeGenerics, methodGenerics, cause);
                 //Otherwise, if there's no false branch, need to return an empty Option<>.
                 //Need to know the generic for the option, so infer the ifTrue branch and grab its type.
-                TypeDef trueType = ifTrue.infer(currentType, checker, typeGenerics, cause).type();
+                TypeDef trueType = ifTrue.infer(currentType, checker, typeGenerics, methodGenerics, cause).type();
                 return TypeCheckingHelper.getEmptyOption(loc, trueType, checker, cause);
             }
         }
 
         //Otherwise, need to output a TypedIf
-        TypedExpr typedTrueBranch = ifTrue.infer(currentType, checker, typeGenerics, cause);
+        TypedExpr typedTrueBranch = ifTrue.infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (hasFalseBranch()) {
-            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, typedTrueBranch.type(), cause);
+            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, methodGenerics, typedTrueBranch.type(), cause);
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, typedTrueBranch.type());
         } else {
             TypedExpr wrappedTrueBranch = TypeCheckingHelper.wrapInOption(loc, typedTrueBranch, checker, cause);
@@ -72,15 +72,15 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
 
     //Works similarly to infer(), but with some infers replaced with checks.
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Check condition is bool
-        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
+        TypedExpr typedCond = cond.check(currentType, checker, typeGenerics, methodGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
         //Check if constant
         if (typedCond instanceof TypedLiteral literal && literal.obj() instanceof Boolean b) {
 
             //If there's an else branch, check the chosen branch is as expected, and return it.
             if (hasFalseBranch())
-                return (b ? ifTrue : ifFalse).check(currentType, checker, typeGenerics, expected, cause);
+                return (b ? ifTrue : ifFalse).check(currentType, checker, typeGenerics, methodGenerics, expected, cause);
 
             //Otherwise, we need to make sure that the expected type is, in fact, an Option.
             if (!(expected.builtin() == OptionType.INSTANCE))
@@ -92,7 +92,7 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
             TypedConstructor constructor; //output
             if (b) {
                 //If there's no else branch, ensure that the true branch is the inner type of the option.
-                TypedExpr checkedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, innerType, cause);
+                TypedExpr checkedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, methodGenerics, innerType, cause);
                 //And then wrap the result in an option.
                 constructor = TypeCheckingHelper.wrapInOption(loc, checkedTrueBranch, checker, cause);
             } else {
@@ -109,8 +109,8 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
 
         //If not constant, need to check both branches
         if (hasFalseBranch()) {
-            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, expected, cause);
-            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, expected, cause);
+            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, methodGenerics, expected, cause);
+            TypedExpr typedFalseBranch = ifFalse.check(currentType, checker, typeGenerics, methodGenerics, expected, cause);
             return new TypedIf(loc, typedCond, typedTrueBranch, typedFalseBranch, expected);
         } else {
             //If there's only one branch, only check it for the inner type.
@@ -120,7 +120,7 @@ public record TypeResolvedIf(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr if
             //Once we know it is, get the inner type of the option
             TypeDef innerType = ((BuiltinTypeDef) expected.get()).generics.get(0);
             //Check the true branch for the inner type of the option
-            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, innerType, cause);
+            TypedExpr typedTrueBranch = ifTrue.check(currentType, checker, typeGenerics, methodGenerics, innerType, cause);
             //Wrap the true branch in an option constructor
             TypedConstructor wrappedTrueBranch = TypeCheckingHelper.wrapInOption(loc, typedTrueBranch, checker, cause);
             //And generate an else branch, which is just an empty option constructor

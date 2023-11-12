@@ -31,14 +31,14 @@ public record TypeResolvedLiteral(Loc loc, Object value, ResolvedType resolved) 
     }
 
     @Override
-    public TypedLiteral infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedLiteral infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         Object newValue = (value instanceof IntLiteralData data) ? data.value() : value;
-        return new TypedLiteral(cause, loc, newValue, checker.getOrInstantiate(resolved, List.of(), loc, cause));
+        return new TypedLiteral(cause, loc, newValue, checker.getOrInstantiate(resolved, List.of(), List.of(), loc, cause));
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedLiteral e = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedLiteral e = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         TypeDef intLiteralType = checker.getBasicBuiltin(IntLiteralType.INSTANCE);
         TypeDef floatLiteralType = checker.getBasicBuiltin(FloatLiteralType.INSTANCE);
         if (e.type().equals(intLiteralType)) {

@@ -80,6 +80,26 @@ public class ListUtils {
         }
     }
 
+    //Sometimes, java's List sort just isn't good enough.
+    public static <T, E extends Throwable> void insertionSort(List<T> list, ThrowingBiFunction<T, T, Integer, E> comparator) throws E {
+        List<T> output = new ArrayList<>(list.size());
+        outer:
+        for (T elem : list) {
+            for (int i = 0; i < output.size(); i++) {
+                int comparison = comparator.apply(output.get(i), elem);
+                if (comparison > 0) { //the element that's currently in output[i] MUST come after elem. So insert it here.
+                    output.add(i, elem);
+                    continue outer;
+                }
+            }
+            output.add(elem);
+        }
+        if (output.size() != list.size())
+            throw new IllegalStateException("Failure in sort algorithm, bug in compiler, please report!");
+        for (int i = 0; i < list.size(); i++)
+            list.set(i, output.get(i));
+    }
+
 
     /**
      * Generate a map from a given list, where the keys are chosen by the given function.

@@ -20,13 +20,13 @@ public record TypeResolvedImport(Loc loc, String fileName) implements TypeResolv
     }
 
     @Override
-    public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         return new TypedImport(loc, fileName, bool);
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         if (!bool.isSubtype(expected))
             throw new TypeCheckingException(expected, "import expression", checker.getBasicBuiltin(BoolType.INSTANCE), loc, cause);

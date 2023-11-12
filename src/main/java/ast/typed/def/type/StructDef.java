@@ -6,6 +6,7 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.ListUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -15,14 +16,14 @@ public class StructDef implements TypeDef {
     private final String name, returnTypeDescriptor;
     private final List<String> descriptor;
     private final List<FieldDef> fields;
-    private final List<MethodDef> methods;
+    private final ArrayList<MethodDef> methods;
     private final int stackSlots;
 
     public StructDef(Loc loc, String name, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
         this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.fields = fields;
-        this.methods = methods;
+        this.methods = new ArrayList<>(methods);
         this.stackSlots = fields.stream().filter(f -> !f.isStatic()).map(f -> f.type().stackSlots()).reduce(Integer::sum).get();
         this.descriptor = ListUtils.join(ListUtils.map(ListUtils.filter(fields, f -> !f.isStatic()), f -> f.type().getDescriptor()));
         this.returnTypeDescriptor = "V";
@@ -84,6 +85,11 @@ public class StructDef implements TypeDef {
     @Override
     public List<MethodDef> methods() {
         return methods;
+    }
+
+    @Override
+    public void addMethod(MethodDef newMethod) {
+        methods.add(newMethod);
     }
 
     @Override

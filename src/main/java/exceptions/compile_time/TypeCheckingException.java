@@ -9,7 +9,7 @@ public class TypeCheckingException extends CompilationException {
     }
 
     public TypeCheckingException(TypeDef expectedType, String context, TypeDef actualType, Loc loc, TypeDef.InstantiationStackFrame cause) {
-        super("Expected " + context + " to evaluate to \"" + expectedType + "\", but it actually was \"" + actualType + "\" at " + loc +
+        super("Expected " + context + " to evaluate to \"" + expectedType.name() + "\", but it actually was \"" + actualType.name() + "\" at " + loc +
                 (cause == null ? "." : ".\n" + cause.stackTrace()),
                 loc
         );

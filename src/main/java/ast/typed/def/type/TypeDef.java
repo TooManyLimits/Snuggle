@@ -24,6 +24,7 @@ public interface TypeDef {
     default List<FieldDef> nonStaticFields() {return ListUtils.filter(fields(), f -> !f.isStatic());} //The non-static fields of this type
 
     List<MethodDef> methods(); //The methods of this type.
+    void addMethod(MethodDef newMethod); //Add a new method to the type
     List<String> getDescriptor(); //The descriptor(s) of this type when not a return type. Multiple descriptors when isPlural().
     String getReturnTypeDescriptor(); //The descriptor of this type when it is a return type.
 

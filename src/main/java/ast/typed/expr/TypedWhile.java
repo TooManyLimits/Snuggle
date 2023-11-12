@@ -23,7 +23,7 @@ public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, TypeDef type) 
         Label endLabel = new Label();
 
         //Push optional "none" as the current "result" :iea:
-        MethodDef constructorDef = ListUtils.find(type.methods(), method -> method.name().equals("new") && method.paramTypes().size() == 0);
+        MethodDef constructorDef = ListUtils.find(type.methods(), method -> method.name().equals("new") && method.numParams() == 0);
         if (constructorDef == null)
             throw new IllegalStateException("Options of non-reference topLevelTypes not yet implemented!");
         new TypedConstructor(loc, type, constructorDef, List.of()).compile(code, null);

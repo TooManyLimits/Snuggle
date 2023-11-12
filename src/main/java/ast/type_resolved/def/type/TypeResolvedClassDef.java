@@ -40,7 +40,7 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, boolea
     public ClassDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef.InstantiationStackFrame newStackFrame = new TypeDef.InstantiationStackFrame(instantiationLoc, currentType, cause);
         LateInit<TypeDef, CompilationException> instantiatedSupertype = new LateInit<>(() -> {
-            TypeDef res = supertype == null ? checker.getBasicBuiltin(ObjType.INSTANCE) : checker.getOrInstantiate(supertype, generics, loc, newStackFrame);
+            TypeDef res = supertype == null ? checker.getBasicBuiltin(ObjType.INSTANCE) : checker.getOrInstantiate(supertype, generics, List.of(), loc, newStackFrame);
             if (res != null && !res.extensible())
                 throw new TypeCheckingException("Cannot extend from \"" + res.name() + "\"", loc, newStackFrame);
             return res;

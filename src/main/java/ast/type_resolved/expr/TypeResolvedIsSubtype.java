@@ -24,15 +24,15 @@ public record TypeResolvedIsSubtype(Loc loc, ResolvedType type1, ResolvedType ty
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypeDef type1Def = checker.getOrInstantiate(type1, typeGenerics, loc, cause);
-        TypeDef type2Def = checker.getOrInstantiate(type2, typeGenerics, loc, cause);
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypeDef type1Def = checker.getOrInstantiate(type1, typeGenerics, methodGenerics, loc, cause);
+        TypeDef type2Def = checker.getOrInstantiate(type2, typeGenerics, methodGenerics, loc, cause);
         return new TypedLiteral(cause, loc, type1Def.isSubtype(type2Def), checker.getBasicBuiltin(BoolType.INSTANCE));
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr res = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr res = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (!res.type().isSubtype(expected))
             throw new TypeCheckingException(expected, "subtype check", checker.getBasicBuiltin(BoolType.INSTANCE), loc, cause);
         return res;

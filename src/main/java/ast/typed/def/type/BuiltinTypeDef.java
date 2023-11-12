@@ -12,6 +12,7 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import util.ListUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,7 +27,7 @@ public class BuiltinTypeDef implements TypeDef {
     private final Set<TypeDef> typeCheckingSupertypes;
     private final TypeDef inheritanceSupertype;
     private final List<FieldDef> fields;
-    private final List<MethodDef> methods;
+    private final ArrayList<MethodDef> methods;
 
     public BuiltinTypeDef(BuiltinType builtinType, List<TypeDef> generics, TypeChecker checker, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         this.builtin = builtinType;
@@ -44,7 +45,7 @@ public class BuiltinTypeDef implements TypeDef {
         this.typeCheckingSupertypes = builtinType.getTypeCheckingSupertypes(checker, generics);
         this.inheritanceSupertype = builtinType.getInheritanceSupertype(checker, generics);
         this.fields = builtinType.getFields(checker, generics, instantiationLoc, cause);
-        this.methods = builtinType.getMethods(checker, generics, instantiationLoc, cause);
+        this.methods = new ArrayList<>(builtinType.getMethods(checker, generics, instantiationLoc, cause));
     }
 
     //Whether this should generate a struct class at runtime.
@@ -150,6 +151,11 @@ public class BuiltinTypeDef implements TypeDef {
     @Override
     public List<MethodDef> methods() {
         return methods;
+    }
+
+    @Override
+    public void addMethod(MethodDef newMethod) {
+        methods.add(newMethod);
     }
 
     @Override

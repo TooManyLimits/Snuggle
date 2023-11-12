@@ -238,7 +238,7 @@ public class Parser {
             List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodLoc, "method \"" + methodName + "\"");
 
             //TODO: Fix unit type
-            //ParsedType returnType = ParsedType.Tuple.UNIT;
+            //ParsedType returnTypeGetter = ParsedType.Tuple.UNIT;
             AtomicInteger i = new AtomicInteger(); //cursed
             ParsedType returnType = switch (typeType) {
                 case CLASS -> new ParsedType.Basic("unit", List.of()); //Class constructors return unit
@@ -259,7 +259,7 @@ public class Parser {
             List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName.loc(), "method \"" + methodName + "\"");
 
             //TODO: Fix unit type
-            //ParsedType returnType = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
+            //ParsedType returnTypeGetter = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
             ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : new ParsedType.Basic("unit", List.of());
 
             ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false, true);

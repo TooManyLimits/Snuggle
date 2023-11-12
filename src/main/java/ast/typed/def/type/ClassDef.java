@@ -8,6 +8,7 @@ import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import util.LateInit;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -18,14 +19,14 @@ public class ClassDef implements TypeDef {
     private final String name;
     private final LateInit<TypeDef, CompilationException> supertype;
     private final List<FieldDef> fields;
-    private final List<MethodDef> methods;
+    private final ArrayList<MethodDef> methods;
 
     public ClassDef(Loc loc, String name, LateInit<TypeDef, CompilationException> supertype, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
         this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.supertype = supertype;
         this.fields = fields;
-        this.methods = methods;
+        this.methods = new ArrayList<>(methods);
     }
 
     @Override
@@ -95,6 +96,11 @@ public class ClassDef implements TypeDef {
     @Override
     public List<MethodDef> methods() {
         return methods;
+    }
+
+    @Override
+    public void addMethod(MethodDef newMethod) {
+        methods.add(newMethod);
     }
 
     @Override

@@ -10,6 +10,7 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedMethodCall;
 import lexing.Loc;
+import util.ListUtils;
 import util.throwing_interfaces.ThrowingSupplier;
 
 import java.util.List;
@@ -26,17 +27,18 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, cause);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, methodGenerics, cause);
+        List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
         TypeChecker.BestMethodInfo bestMethod;
         try {
-            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, null, cause);
+            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, null, cause);
         } catch (CompilationException e) {
             //If the method wasn't found, then try moving on to the next one using the nextSupplier
             if (nextSupplier == null)
                 throw e;
-            return nextSupplier.get().infer(currentType, checker, typeGenerics, cause);
+            return nextSupplier.get().infer(currentType, checker, typeGenerics, methodGenerics, cause);
         }
 
         MethodDef matchingMethod = bestMethod.methodDef();
@@ -48,17 +50,18 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Look up best method
-        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, cause);
+        TypedExpr typedReceiver = receiver().infer(currentType, checker, typeGenerics, methodGenerics, cause);
+        List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
         TypeChecker.BestMethodInfo bestMethod;
         try {
-            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, genericArgs, typeGenerics, false, false, expected, cause);
+            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, expected, cause);
         } catch (CompilationException e) {
             //If the method wasn't found, then try moving on to the next one using the nextSupplier
             if (nextSupplier == null)
                 throw e;
-            return nextSupplier.get().check(currentType, checker, typeGenerics, expected, cause);
+            return nextSupplier.get().check(currentType, checker, typeGenerics, methodGenerics, expected, cause);
         }
 
         MethodDef matchingMethod = bestMethod.methodDef();

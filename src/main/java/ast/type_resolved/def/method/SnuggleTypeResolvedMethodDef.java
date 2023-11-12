@@ -10,6 +10,7 @@ import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.expr.TypedExpr;
 import lexing.Loc;
 import util.LateInit;
+import util.LateInitFunction;
 import util.ListUtils;
 
 import java.util.List;
@@ -28,20 +29,20 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
     }
 
     //allMethods are passed in for disambiguating between method names.
-    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> generics, TypeDef.InstantiationStackFrame cause) {
-        List<TypeDef> newParamTypes = ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, generics, loc, cause));
-        TypeDef newReturnType = checker.getOrInstantiate(returnType, generics, loc, cause);
-        //TypedBody must be computed *after* we know all the method signatures and such
-        LateInit<TypedExpr, CompilationException> typedBody = new LateInit<>(() -> {
+    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) {
+        LateInitFunction<List<TypeDef>, List<TypeDef>, RuntimeException> newParamTypes = new LateInitFunction<>(methodGenerics -> ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, typeGenerics, methodGenerics, loc, cause)));
+        LateInitFunction<List<TypeDef>, TypeDef, RuntimeException> newReturnType = new LateInitFunction<>(methodGenerics -> checker.getOrInstantiate(returnType, typeGenerics, methodGenerics, loc, cause));
+        //TypedBody must be computed later, once we know method signatures and such
+        LateInitFunction<List<TypeDef>, TypedExpr, CompilationException> typedBody = new LateInitFunction<>(methodGenerics -> {
             checker.push();
             if (!isStatic) {
                 if (!isConstructor() || !currentType.isPlural()) //Don't give a "this" local to plural-type constructors
                     checker.declare(loc, "this", currentType);
             }
 
-            for (int i = 0; i < newParamTypes.size(); i++)
-                checker.declare(loc, paramNames.get(i), newParamTypes.get(i));
-            TypedExpr res = body.check(currentType, checker, generics, newReturnType, cause);
+            for (int i = 0; i < paramNames.size(); i++)
+                checker.declare(loc, paramNames.get(i), newParamTypes.get(methodGenerics).get(i));
+            TypedExpr res = body.check(currentType, checker, typeGenerics, methodGenerics, newReturnType.get(methodGenerics), cause);
             checker.pop();
             return res;
         });
@@ -53,7 +54,7 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
             if (method.name().equals(name))
                 disambiguationIndex++;
         }
-        return new SnuggleMethodDef(loc, pub, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames, newParamTypes, newReturnType, typedBody);
+        return new SnuggleMethodDef(loc, pub, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames.size(), paramNames, newParamTypes, newReturnType, typedBody);
     }
 
 }

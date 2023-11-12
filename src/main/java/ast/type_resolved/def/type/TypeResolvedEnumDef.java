@@ -60,7 +60,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
                 ListUtils.mapIndexed(properties, (property, index) -> new BuiltinFieldDef(
                     staticArrayName(property, index),
                     currentType,
-                    checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(checker.getOrInstantiate(property.type(), generics, loc, cause)), loc, cause),
+                    checker.getGenericBuiltin(ArrayType.INSTANCE, List.of(checker.getOrInstantiate(property.type(), generics, List.of(), loc, cause)), loc, cause),
                     true
                 )),
                 ListUtils.mapIndexed(elements, (element, index) -> new BuiltinFieldDef(
@@ -73,7 +73,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
 
     }
 
-    private List<MethodDef> getMethods(List<FieldDef> fieldDefs, TypeDef currentType, TypeChecker checker, List<TypeDef> generics, TypeDef.InstantiationStackFrame cause) {
+    private List<MethodDef> getMethods(List<FieldDef> fieldDefs, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) {
 
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
 
@@ -98,7 +98,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
             for (int i = 0; i < numProperties; i++) {
                 //Get property
                 TypeResolvedEnumProperty property = properties.get(i);
-                TypeDef propertyType = checker.getOrInstantiate(property.type, generics, loc, cause);
+                TypeDef propertyType = checker.getOrInstantiate(property.type, typeGenerics, List.of(), loc, cause);
                 //Push the size
                 staticInitBlock.emit(new Push(cause, loc, numElements, u32));
                 //Call the "new array" method...
@@ -137,7 +137,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
                     //Push the index
                     staticInitBlock.emit(new Push(cause, loc, elementIndex, u32));
                     //Compile the element's jth arg
-                    element.args.get(j).check(currentType, checker, generics, propertyTypes[j], cause).compile(staticInitBlock, null);
+                    element.args.get(j).check(currentType, checker, typeGenerics, List.of(), propertyTypes[j], cause).compile(staticInitBlock, null);
                     //Store in array
                     staticInitBlock.emit(new MethodCall(false, propertyArraySetters[j], List.of()));
                     //Pop
@@ -161,11 +161,11 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
         //Return the methods
         return ListUtils.join(
                 //The actual methods which are defined in the enum body
-                ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics, cause)),
+                ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, typeGenerics, cause)),
                 //Methods generated from the properties
                 ListUtils.mapIndexed(properties, (property, index) -> {
                     MethodDef getter = ListUtils.find(fieldDefs.get(index).type().methods(), m -> m.name().equals("get"));
-                    return new BytecodeMethodDef(property.name, false, currentType, List.of(), checker.getOrInstantiate(property.type(), generics, loc, cause), true, (b, d, v) -> {
+                    return new BytecodeMethodDef(property.name, false, currentType, List.of(), checker.getOrInstantiate(property.type(), typeGenerics, List.of(), loc, cause), true, (b, d, v) -> {
                         //Store index as local
                         int localIndex = b.env.maxIndex();
                         v.visitVarInsn(Opcodes.ISTORE, localIndex);

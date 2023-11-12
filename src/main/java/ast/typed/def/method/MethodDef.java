@@ -1,10 +1,8 @@
 package ast.typed.def.method;
 
 import ast.ir.def.CodeBlock;
-import ast.ir.helper.ScopeHelper;
 import ast.ir.instruction.misc.RunBytecode;
 import ast.typed.def.field.FieldDef;
-import ast.typed.def.type.GenericTypeDef;
 import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedStaticMethodCall;
@@ -14,8 +12,6 @@ import ast.typed.expr.TypedMethodCall;
 import org.objectweb.asm.MethodVisitor;
 
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 public interface MethodDef {
 
@@ -24,6 +20,7 @@ public interface MethodDef {
     String name();
     int numGenerics();
     boolean isStatic();
+    default int numParams() { return paramTypes().size(); }; //number of params. Overridden in SnuggleMethodDef because of LateInit and method generics.
     List<TypeDef> paramTypes(); //Some may be GenericTypeDef, if numGenerics > 0
     TypeDef returnType(); //May be GenericTypeDef, if numGenerics > 0
     TypeDef owningType(); //The type that this method is on
@@ -144,14 +141,9 @@ public interface MethodDef {
      * considered overriding it.
      */
     default Signature getSignature() {
-        List<TypeDef> paramTypes = paramTypes();
-        TypeDef returnType = returnType();
-        for (TypeDef paramType : paramTypes)
-            if (paramType instanceof GenericTypeDef)
-                return null;
-        if (returnType instanceof GenericTypeDef)
+        if (numGenerics() > 0)
             return null;
-        return new Signature(name(), paramTypes, returnType);
+        return new Signature(name(), paramTypes(), returnType());
     }
 
     //Literally just a data type used above to figure out method overriding

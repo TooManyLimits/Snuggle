@@ -26,21 +26,21 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //empty block {} just evaluates to unit
         if (exprs.size() == 0)
             return new TypedLiteral(cause, loc, Unit.INSTANCE, checker.getBasicBuiltin(UnitType.INSTANCE));
 
         //Otherwise, map all exprs to inferred exprs, in a pushed checker env
         checker.push();
-        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(currentType, checker, typeGenerics, cause));
+        List<TypedExpr> inferredExprs = ListUtils.map(exprs, e -> e.infer(currentType, checker, typeGenerics, methodGenerics, cause));
         checker.pop();
         //Result type is the type of the last expr in the block
         return new TypedBlock(loc, inferredExprs, inferredExprs.get(inferredExprs.size() - 1).type());
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Empty block case
         if (exprs.size() == 0) {
             if (!checker.getBasicBuiltin(UnitType.INSTANCE).isSubtype(expected))
@@ -53,9 +53,9 @@ public record TypeResolvedBlock(Loc loc, List<TypeResolvedExpr> exprs) implement
         checker.push();
         for (int i = 0; i < exprs.size(); i++) {
             if (i == exprs.size() - 1)
-                typedExprs.add(exprs.get(i).check(currentType, checker, typeGenerics, expected, cause));
+                typedExprs.add(exprs.get(i).check(currentType, checker, typeGenerics, methodGenerics, expected, cause));
             else
-                typedExprs.add(exprs.get(i).infer(currentType, checker, typeGenerics, cause));
+                typedExprs.add(exprs.get(i).infer(currentType, checker, typeGenerics, methodGenerics, cause));
         }
         checker.pop();
         return new TypedBlock(loc, typedExprs, expected);

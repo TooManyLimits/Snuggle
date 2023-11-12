@@ -12,11 +12,39 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import util.LateInit;
+import util.GenericStringUtil;
+import util.LateInitFunction;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambiguationIndex, int numGenerics, boolean isStatic, boolean inline, TypeDef owningType, List<String> paramNames, List<TypeDef> paramTypes, TypeDef returnType, LateInit<TypedExpr, CompilationException> body) implements MethodDef {
+public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambiguationIndex, int numGenerics, boolean isStatic, boolean inline, TypeDef owningType, int numParams, List<String> paramNames,
+                               LateInitFunction<List<TypeDef>, List<TypeDef>, RuntimeException> paramTypeGetter,
+                               LateInitFunction<List<TypeDef>, TypeDef, RuntimeException> returnTypeGetter,
+                               LateInitFunction<List<TypeDef>, TypedExpr, CompilationException> body,
+                               Map<List<TypeDef>, SnuggleMethodDef> instantiationCache) implements MethodDef {
+
+    public SnuggleMethodDef(Loc loc, boolean pub, String name, int disambiguationIndex, int numGenerics, boolean isStatic, boolean inline, TypeDef owningType, int numParams, List<String> paramNames,
+                            LateInitFunction<List<TypeDef>, List<TypeDef>, RuntimeException> paramTypeGetter,
+                            LateInitFunction<List<TypeDef>, TypeDef, RuntimeException> returnTypeGetter,
+                            LateInitFunction<List<TypeDef>, TypedExpr, CompilationException> body) {
+        this(loc, pub, name, disambiguationIndex, numGenerics, isStatic, inline, owningType, numParams, paramNames, paramTypeGetter, returnTypeGetter, body, numGenerics == 0 ? null : new HashMap<>());
+    }
+
+    @Override
+    public List<TypeDef> paramTypes() {
+        if (numGenerics == 0)
+            return paramTypeGetter.get(List.of());
+        throw new IllegalStateException("Attempt to get param types of generic method? Bug in compiler, please report!");
+    }
+
+    @Override
+    public TypeDef returnType() {
+        if (numGenerics == 0)
+            return returnTypeGetter.get(List.of());
+        throw new IllegalStateException("Attempt to get return type of generic method? Bug in compiler, please report!");
+    }
 
     @Override
     public TypedExpr constantFold(TypedMethodCall call) {
@@ -34,7 +62,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     public TypedExpr constantFold(TypedStaticMethodCall call) {
         if (!isStatic) throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
         //If the body is just a literal, then constant fold the method call into that literal. (Also no args allowed, since those could have side effects)
-        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody && paramTypes.size() == 0)
+        if (body.tryGet(List.of(), b -> b) instanceof TypedLiteral literalBody && paramNames.size() == 0)
             return literalBody;
         if (!inline) return call;
         //TODO: Add inlining
@@ -50,15 +78,27 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
         }
 
         for (int i = 0; i < paramNames.size(); i++)
-            block.env.declare(loc, paramNames.get(i), paramTypes.get(i)); //Declare other params
-        body.getAlreadyFilled().compile(block, null); //Compile the body
-        block.emit(new Return(this, returnType.get())); //Return result of the body
+            block.env.declare(loc, paramNames.get(i), paramTypeGetter.get(List.of()).get(i)); //Declare other params
+        body.getAlreadyFilled(List.of()).compile(block, null); //Compile the body
+        block.emit(new Return(this, returnTypeGetter.get(List.of()))); //Return result of the body
         return block;
     }
 
     @Override
     public boolean pub() {
         return pub; //Idk if the record one already overrides, so doing this to be sure
+    }
+
+
+    public SnuggleMethodDef instantiate(List<TypeDef> methodGenerics) {
+        return instantiationCache.computeIfAbsent(methodGenerics, m -> {
+            return new SnuggleMethodDef(
+                    loc, pub, GenericStringUtil.instantiateName(name, methodGenerics), disambiguationIndex, 0, isStatic, inline, owningType, numParams, paramNames,
+                    new LateInitFunction<>(unused -> paramTypeGetter.get(methodGenerics)),
+                    new LateInitFunction<>(unused -> returnTypeGetter.get(methodGenerics)),
+                    new LateInitFunction<>(unused -> body.get(methodGenerics))
+            );
+        });
     }
 
     public String dedupName() {
@@ -69,7 +109,6 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
             name += "$" + disambiguationIndex;
         return name;
     }
-
 
     @Override
     public void compileCall(boolean isSupercall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) {
@@ -85,6 +124,8 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
 
     @Override
     public void checkCode() throws CompilationException {
-        body.get(); //Evaluate the lazy body
+        if (numGenerics == 0)
+            body.get(List.of()); //Evaluate the lazy body, if no generics
+        //If there are generics, nothing to be done here.
     }
 }

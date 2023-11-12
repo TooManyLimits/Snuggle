@@ -24,11 +24,11 @@ public record TypeResolvedLogicalBinOp(Loc loc, boolean and, TypeResolvedExpr lh
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         //check both sides are bool
-        TypedExpr typedLhs = lhs.check(currentType, checker, typeGenerics, bool, cause);
-        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, bool, cause);
+        TypedExpr typedLhs = lhs.check(currentType, checker, typeGenerics, methodGenerics, bool, cause);
+        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, methodGenerics, bool, cause);
         //Const fold as much as we can
         if (typedLhs instanceof TypedLiteral lhsLiteral) {
             boolean lhs = ((Boolean) lhsLiteral.obj());
@@ -73,8 +73,8 @@ public record TypeResolvedLogicalBinOp(Loc loc, boolean and, TypeResolvedExpr lh
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr result = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr result = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (!result.type().isSubtype(expected))
             throw new TypeCheckingException(expected, (and ? "and" : "or") + "-expression", checker.getBasicBuiltin(BoolType.INSTANCE), loc, cause);
         return result;

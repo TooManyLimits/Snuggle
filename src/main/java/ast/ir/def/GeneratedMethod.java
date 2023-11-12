@@ -11,7 +11,7 @@ import org.objectweb.asm.Opcodes;
 public record GeneratedMethod(SnuggleMethodDef methodDef, CodeBlock body) {
 
     public static GeneratedMethod of(MethodDef methodDef) throws CompilationException {
-        if (methodDef instanceof SnuggleMethodDef snuggleMethodDef) {
+        if (methodDef instanceof SnuggleMethodDef snuggleMethodDef && snuggleMethodDef.numGenerics() == 0) {
             CodeBlock body = snuggleMethodDef.compileToCodeBlock();
             return new GeneratedMethod(snuggleMethodDef, body);
         } else {

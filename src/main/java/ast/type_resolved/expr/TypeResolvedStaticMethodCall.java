@@ -10,6 +10,7 @@ import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedStaticMethodCall;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
+import util.ListUtils;
 
 import java.util.List;
 
@@ -25,10 +26,11 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Lookup best method
-        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, loc, cause);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, null, cause);
+        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, methodGenerics, loc, cause);
+        List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, null, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -38,10 +40,11 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Lookup best method
-        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, loc, cause);
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, genericArgs, typeGenerics, true, false, expected, cause);
+        TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, methodGenerics, loc, cause);
+        List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, expected, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

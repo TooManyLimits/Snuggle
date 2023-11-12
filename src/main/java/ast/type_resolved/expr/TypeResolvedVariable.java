@@ -21,11 +21,11 @@ public record TypeResolvedVariable(Loc loc, String name) implements TypeResolved
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef t = checker.lookup(name);
         if (t == null) {
             if (!name.equals("this") && checker.lookup("this") != null) {
-                return new TypeResolvedFieldAccess(loc, new TypeResolvedVariable(loc, "this"), name, true).infer(currentType, checker, typeGenerics, cause);
+                return new TypeResolvedFieldAccess(loc, new TypeResolvedVariable(loc, "this"), name, true).infer(currentType, checker, typeGenerics, methodGenerics, cause);
             }
             throw new UndeclaredVariableException("Variable \"" + name + "\" was not declared in this scope", loc);
         } else {
@@ -34,8 +34,8 @@ public record TypeResolvedVariable(Loc loc, String name) implements TypeResolved
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr e = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr e = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (!e.type().isSubtype(expected))
             throw new TypeCheckingException(expected, "local variable \"" + name + "\"", e.type(), loc, cause);
         return e;

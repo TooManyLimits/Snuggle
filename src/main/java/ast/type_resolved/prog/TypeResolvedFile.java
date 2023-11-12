@@ -18,7 +18,7 @@ public record TypeResolvedFile(String name, List<ResolvedType.Basic> topLevelTyp
                 name,
 //                ListUtils.map(imports, i -> i.infer(null, checker, List.of(), null)),
                 new LateInit<>(() -> ListUtils.flatten(ListUtils.map(topLevelTypes, checker::getAllInstantiated))),
-                ListUtils.map(code, e -> e.infer(null, checker, List.of(), null))
+                ListUtils.map(code, e -> e.infer(null, checker, List.of(), List.of(), null))
         );
     }
 

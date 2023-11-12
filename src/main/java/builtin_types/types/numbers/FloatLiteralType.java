@@ -58,7 +58,7 @@ public class FloatLiteralType implements BuiltinType {
                     String desiredName = "n_" + name;
                     MethodDef neededMethodDef = ListUtils.find(
                             checker.getBasicBuiltin(unmappedArgType).methods(),
-                            m -> m.name().equals(desiredName) && m.paramTypes().get(0).equals(argType)
+                            m -> m.name().equals(desiredName) //&& m.paramTypeGetter().get(0).equals(argType)
                     );
                     //And return a new typed call using it.
                     return new TypedMethodCall(call.loc(), typedReceiver.pullTypeUpwards(argType), neededMethodDef, call.args(), returnType);

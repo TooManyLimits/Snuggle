@@ -39,11 +39,11 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
     //   Performing this action does not usually have much purpose.
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //First get my type in the pool.
-        TypeDef myTypeDef = checker.getOrInstantiate(type, typeGenerics, loc, cause);
+        TypeDef myTypeDef = checker.getOrInstantiate(type, typeGenerics, methodGenerics, loc, cause);
         //Also infer the lhs:
-        TypedExpr inferredLhs = lhs.infer(currentType, checker, typeGenerics, cause);
+        TypedExpr inferredLhs = lhs.infer(currentType, checker, typeGenerics, methodGenerics, cause);
         TypeDef lhsTypeDef = inferredLhs.type();
 
         //Case 1: numeric type -> numeric type:
@@ -123,8 +123,8 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr inferred = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr inferred = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (!inferred.type().isSubtype(expected))
             throw new TypeCheckingException(expected, "\"as\" expression", inferred.type(), loc, cause);
         return inferred;

@@ -63,7 +63,7 @@ public class IntLiteralType implements BuiltinType {
                     String desiredName = "n_" + name;
                     MethodDef neededMethodDef = ListUtils.find(
                             checker.getBasicBuiltin(unmappedArgType).methods(),
-                            m -> m.name().equals(desiredName) && m.paramTypes().get(0).equals(mappedArgType)
+                            m -> m.name().equals(desiredName) //&& m.paramTypeGetter().get(0).equals(mappedArgType)
                     );
                     //And return a new typed call using it.
                     return new TypedMethodCall(call.loc(), typedReceiver.pullTypeUpwards(mappedArgType), neededMethodDef, call.args(), returnType);

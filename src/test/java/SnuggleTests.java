@@ -88,6 +88,60 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testMethodGenerics() throws CompilationException, SnuggleException {
+        test("""
+                class Mapper<T, R> {
+                    var default: R //used because we have no abstract/interface
+                    fn new(e: R) {
+                        super()
+                        default = e;
+                    }
+                    fn invoke(e: T): R default //need abstract/interface stuff eventually, currently default impl
+                }
+                
+                class FunnyList<T> : List<T> {
+                    fn new() super()
+                    fn map<R>(func: Mapper<T, R>): FunnyList<R> {
+                        var res = new FunnyList<R>()
+                        var i = 0u32
+                        while i < #this {
+                            res += func(this[i])
+                            i += 1;
+                        }
+                        res
+                    }
+                }
+                
+                class StringMapper : Mapper<i32, str> {
+                    fn new() super("")
+                    fn invoke(x: i32): str
+                        x.str()
+                }
+                
+                class SquaringMapper<T> : Mapper<T, T> {
+                    fn new() super(0)
+                    fn invoke(x: T): T
+                        x * x
+                }
+                
+                var l = new FunnyList<i32>()
+                l += 1
+                l += 2
+                l += 3
+                
+                var c = l.map::<str>(new StringMapper());
+                Test.assertEquals("1", c[0])
+                Test.assertEquals("2", c[1])
+                Test.assertEquals("3", c[2])
+                
+                var d = l.map::<i32>(new SquaringMapper<i32>());
+                Test.assertEquals(1, d[0])
+                Test.assertEquals(4, d[1])
+                Test.assertEquals(9, d[2])
+                """);
+    }
+
+    @Test
     public void weirdSubtyping() throws CompilationException, SnuggleException {
         test("""
                 class Mapper<T, R> {

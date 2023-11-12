@@ -22,14 +22,14 @@ public record TypeResolvedTypeDefExpr(Loc loc, ResolvedType.Basic basicTypeHandl
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef unitType = checker.getBasicBuiltin(UnitType.INSTANCE);
         return new TypedTypeDefExpr(cause, loc, () -> checker.getAllInstantiated(basicTypeHandle), unitType);
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr typed = infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typed = infer(currentType, checker, typeGenerics, methodGenerics, cause);
         if (!typed.type().isSubtype(expected))
             throw new TypeCheckingException(expected, "Type definition", typed.type(), loc, cause);
         return typed;

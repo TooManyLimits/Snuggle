@@ -23,11 +23,11 @@ public record TypeResolvedWhile(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Check cond is a bool
-        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
+        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, methodGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
         //Infer the body
-        TypedExpr inferredBody = body.infer(currentType, checker, typeGenerics, cause);
+        TypedExpr inferredBody = body.infer(currentType, checker, typeGenerics, methodGenerics, cause);
         //Create an Option<> around the body's inferred type
         TypeDef optionalType = checker.getGenericBuiltin(OptionType.INSTANCE, List.of(inferredBody.type()), loc, cause);
         inferredBody = TypeCheckingHelper.wrapInOption(loc, inferredBody, checker, cause);
@@ -35,15 +35,15 @@ public record TypeResolvedWhile(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //Check cond is a bool
-        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
+        TypedExpr checkedCond = cond.check(currentType, checker, typeGenerics, methodGenerics, checker.getBasicBuiltin(BoolType.INSTANCE), cause);
         //Ensure that the expected type is an Option
         if (expected.builtin() == OptionType.INSTANCE) {
             //It was an Option, so grab its inner nested type
             TypeDef expectedBodyType = ((BuiltinTypeDef) expected.get()).generics.get(0);
             //And check() the body for that type
-            TypedExpr typedBody = body.check(currentType, checker, typeGenerics, expectedBodyType, cause);
+            TypedExpr typedBody = body.check(currentType, checker, typeGenerics, methodGenerics, expectedBodyType, cause);
             //Wrap the body in an option
             typedBody = TypeCheckingHelper.wrapInOption(loc, typedBody, checker, cause);
             //Return the result

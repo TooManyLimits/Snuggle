@@ -18,14 +18,14 @@ public record TypeResolvedReturn(Loc loc, TypeResolvedExpr rhs) implements TypeR
     }
 
     @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics, cause);
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics, methodGenerics, cause);
         return new TypedReturn(loc, typedRhs, typedRhs.type());
     }
 
     @Override
-    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        TypedExpr typedRhs = rhs.check(currentType, checker, typeGenerics, expected, cause);
-        return new TypedReturn(loc, typedRhs, typedRhs.type());
+    public TypedExpr check(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef expected, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        TypedExpr typedRhs = rhs.infer(currentType, checker, typeGenerics, methodGenerics, cause);
+        return new TypedReturn(loc, typedRhs, expected); //return always matches the expected type
     }
 }

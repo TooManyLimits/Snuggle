@@ -1,12 +1,10 @@
 package ast.passes;
 
 import ast.type_resolved.ResolvedType;
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
-import ast.typed.def.type.GenericTypeDef;
 import ast.typed.def.type.IndirectTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
@@ -20,7 +18,6 @@ import util.ListUtils;
 import util.MapStack;
 import util.MapUtils;
 
-import java.lang.reflect.Type;
 import java.util.*;
 
 /**
@@ -67,11 +64,11 @@ public class TypeChecker {
     }
 
     //Converts from ResolvedType to TypeDef.
-    public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public TypeDef getOrInstantiate(ResolvedType resolvedType, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         if (resolvedType instanceof ResolvedType.Basic basic) {
             //Convert the generics and check if we've cached this already.
             //If we have, return that value.
-            List<TypeDef> convertedGenerics = ListUtils.map(basic.generics(), g -> getOrInstantiate(g, typeGenerics, instantiationLoc, cause));
+            List<TypeDef> convertedGenerics = ListUtils.map(basic.generics(), g -> getOrInstantiate(g, typeGenerics, methodGenerics, instantiationLoc, cause));
             Map<List<TypeDef>, TypeDef> tMap = cache.get(basic.index());
             if (tMap != null) {
                 TypeDef t = tMap.get(convertedGenerics);
@@ -98,9 +95,9 @@ public class TypeChecker {
             //And return
             return resultType;
         } else if (resolvedType instanceof ResolvedType.Generic generic) {
-            if (generic.isMethod())
-                return new GenericTypeDef(generic.index());
-            else
+            if (generic.isMethod()) {
+                return methodGenerics.get(generic.index());
+            } else
                 return typeGenerics.get(generic.index());
         } else {
             throw new IllegalStateException("Unexpected ResolvedType; bug in compiler, please report!");
@@ -108,7 +105,7 @@ public class TypeChecker {
     }
 
     public TypeDef getBasicBuiltin(BuiltinType type) {
-        return getOrInstantiate(new ResolvedType.Basic(ast.builtinIds().get(type), List.of()), List.of(), null, null);
+        return getOrInstantiate(new ResolvedType.Basic(ast.builtinIds().get(type), List.of()), List.of(), List.of(), null, null);
     }
 
     public TypeDef getReflectedBuiltin(Class<?> clazz) {
@@ -200,7 +197,7 @@ public class TypeChecker {
      * @param cause              The stack frame for the cause of the instantiation of new topLevelTypes while checking a method.
      */
 
-    public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<ResolvedType> genericArgs, List<TypeDef> typeGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public BestMethodInfo getBestMethod(Loc loc, TypeDef currentType, TypeDef receiverType, String methodName, List<TypeResolvedExpr> args, List<TypeDef> genericArgs, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, boolean isCallStatic, boolean isSuperCall, TypeDef expectedReturnType, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         //First step: find a list of potentially matching methods we can call.
 
         List<MethodDef> matchingMethods = new ArrayList<>();
@@ -234,7 +231,7 @@ public class TypeChecker {
             //Filter out ones which clearly don't match
             if (!def.name().equals(methodName)) continue; //Name doesn't match
             if (def.isStatic() != isCallStatic) continue; //static vs non-static
-            if (def.paramTypes().size() != args.size()) continue; //Arity doesn't match
+            if (def.numParams() != args.size()) continue; //Arity doesn't match
             if (!def.pub()) {
                 if (def instanceof SnuggleMethodDef snuggleMethodDef) {
                     if (!snuggleMethodDef.loc().fileName().equals(loc.fileName()))
@@ -243,8 +240,19 @@ public class TypeChecker {
                     throw new IllegalStateException("Method defs aside from SnuggleMethodDef should always be pub! Bug in compiler, please report!");
             }
             //TODO: Add support for method generics. Taking things slow.
-            if (def.numGenerics() > 0) throw new IllegalStateException("Generic methods not yet implemented");
-            if (def.numGenerics() > 0 && genericArgs.size() != 0 && genericArgs.size() != def.numGenerics()) continue;
+//            if (def.numGenerics() > 0) throw new IllegalStateException("Generic methods not yet implemented");
+            if (def.numGenerics() > 0 && genericArgs.size() != def.numGenerics()) continue;
+
+            if (def.numGenerics() > 0) {
+                if (def instanceof SnuggleMethodDef snuggleDef) {
+                    def = snuggleDef.instantiate(genericArgs);
+                    receiverType.addMethod(def); //add a new method, the instantiated one
+                } else {
+                    throw new IllegalStateException("Only snuggle method defs can be generic? Bug in compiler, please report!");
+                }
+            }
+
+
 
             //Now that we've filtered out those which obviously don't match, move on to less obvious situations.
             //First, invalid return topLevelTypes we can filter out:
@@ -275,7 +283,7 @@ public class TypeChecker {
                             continue outer;
                         }
                         //We haven't checked this arg with this type yet, so do it now:
-                        typedArg = args.get(i).check(currentType, this, typeGenerics, expectedParamType, cause);
+                        typedArg = args.get(i).check(currentType, this, typeGenerics, methodGenerics, expectedParamType, cause);
                         //If that didn't throw an exception, then add it to the cache
                         checkCache.get(i).put(expectedParamType, typedArg);
                     }
@@ -325,7 +333,7 @@ public class TypeChecker {
                         //Iterate over the expected params and check() them all
                         for (int i = 0; i < thrownOut.paramTypes().size(); i++) {
                             TypeDef expectedParamType = thrownOut.paramTypes().get(i);
-                            args.get(i).check(currentType, this, typeGenerics, expectedParamType, cause);
+                            args.get(i).check(currentType, this, typeGenerics, methodGenerics, expectedParamType, cause);
                         }
                     } catch (TypeCheckingException e) {
                         continue;
@@ -364,7 +372,7 @@ public class TypeChecker {
             arr.add(i);
 
         //Sort, so the most specific wind up at the front
-        ListUtils.sort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)), CompilationException.class);
+        ListUtils.insertionSort(arr, (a, b) -> matchingMethods.get(a).compareSpecificity(matchingMethods.get(b)));
 
         //If the first 2 are equally specific, error
         if (matchingMethods.get(arr.get(0)).compareSpecificity(matchingMethods.get(arr.get(1))) == 0)

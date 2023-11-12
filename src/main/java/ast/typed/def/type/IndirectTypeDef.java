@@ -120,6 +120,11 @@ public class IndirectTypeDef implements TypeDef {
     }
 
     @Override
+    public void addMethod(MethodDef newMethod) {
+        check().addMethod(newMethod);
+    }
+
+    @Override
     public int hashCode() {
         return check().hashCode();
     }
@@ -133,6 +138,6 @@ public class IndirectTypeDef implements TypeDef {
 
     @Override
     public String toString() {
-        return get().toString();
+        return get().name();
     }
 }

@@ -2,10 +2,8 @@ package ast.ir.def;
 
 import ast.ir.def.type.GeneratedType;
 import ast.ir.helper.NameHelper;
-import ast.ir.instruction.objects.MethodCall;
 import ast.ir.instruction.stack.Pop;
 import ast.typed.def.method.MethodDef;
-import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.prog.TypedAST;
 import exceptions.compile_time.CompilationException;
@@ -35,13 +33,13 @@ public record Program(List<GeneratedType> generatedClasses, Map<String, CodeBloc
 
     public static Program of(TypedAST typedAST) throws CompilationException {
         //Create the generatedClasses:
-        ListUtils.sort(typedAST.typeDefs(), (a, b) -> {
+        ListUtils.insertionSort(typedAST.typeDefs(), (a, b) -> {
             if (a.isSubtype(b))
                 return 1;
             if (b.isSubtype(a))
                 return -1;
             return 0;
-        }, CompilationException.class);
+        });
         List<GeneratedType> classes = ListUtils.filter(ListUtils.map(
                 typedAST.typeDefs(),
                 GeneratedType::of
@@ -61,7 +59,7 @@ public record Program(List<GeneratedType> generatedClasses, Map<String, CodeBloc
 //                if (initMethod == null)
 //                    continue;
 //                codeBlock.emit(new MethodCall(false, initMethod, List.of()));
-//                codeBlock.emit(new Pop(initMethod.returnType().get()));
+//                codeBlock.emit(new Pop(initMethod.returnTypeGetter().get()));
 //            }
             //Run the top-level code
             for (TypedExpr expr : file.code()) {

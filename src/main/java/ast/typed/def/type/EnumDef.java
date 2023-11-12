@@ -5,6 +5,7 @@ import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -13,7 +14,7 @@ public class EnumDef implements TypeDef {
     public final Loc loc;
     public final int numElements;
     private final String name, descriptor;
-    private final List<MethodDef> methods;
+    private final ArrayList<MethodDef> methods;
     private final List<FieldDef> fields;
 
     public EnumDef(Loc loc, String name, int numElements, List<FieldDef> fieldDefs, List<MethodDef> methodDefs) {
@@ -21,7 +22,7 @@ public class EnumDef implements TypeDef {
         this.name = name;
         this.numElements = numElements;
         this.fields = fieldDefs;
-        this.methods = methodDefs;
+        this.methods = new ArrayList<>(methodDefs);
 
         if (numElements > 1 << 16)
             descriptor = "I";
@@ -91,6 +92,11 @@ public class EnumDef implements TypeDef {
     @Override
     public List<MethodDef> methods() {
         return methods;
+    }
+
+    @Override
+    public void addMethod(MethodDef newMethod) {
+        methods.add(newMethod);
     }
 
     @Override
