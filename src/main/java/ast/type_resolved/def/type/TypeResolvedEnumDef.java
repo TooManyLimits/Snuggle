@@ -54,7 +54,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
     }
 
     private List<FieldDef> getFields(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, TypeDef.InstantiationStackFrame cause) {
-        //First, the arrays holding the property values
+        //First, the arrays holding the property elements
         //Second, the enum elements
         return ListUtils.join(
                 ListUtils.mapIndexed(properties, (property, index) -> new BuiltinFieldDef(
@@ -126,7 +126,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
                 staticInitBlock.emit(new SetField(List.of(fieldDefs.get(i))));
             }
 
-            //Fill the property arrays with the elements, also fill the element values
+            //Fill the property arrays with the elements, also fill the element elements
             for (int i = 0; i < elements.size(); i++) {
                 TypeResolvedEnumElement element = elements.get(i);
                 BigInteger elementIndex = BigInteger.valueOf(i);

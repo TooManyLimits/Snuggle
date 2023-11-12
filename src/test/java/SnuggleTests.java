@@ -142,6 +142,36 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testTuples() throws CompilationException, SnuggleException {
+        test("""
+                class Rect {
+                    var p1: (f32, f32)
+                    var p2: (f32, f32)
+                    
+                    pub fn new(p1: (f32, f32), p2: (f32, f32)) {
+                        super()
+                        this.p1 = p1
+                        this.p2 = p2;
+                    }
+                    
+                    pub fn dimensions(): (f32, f32)
+                        (p2.v0 - p1.v0, p2.v1 - p1.v1)
+                        
+                    pub fn area(): f32
+                        (p2.v0 - p1.v0) * (p2.v1 - p1.v1)
+                }
+                
+                var rect: Rect = new((10, 20), (30, 40))
+                System.print(rect.dimensions().v0)
+                Test.assertEquals(20, rect.dimensions().v0)
+                System.print(rect.dimensions().v1)
+                Test.assertEquals(20, rect.dimensions().v1)
+                System.print(rect.area())
+                Test.assertEquals(400, rect.area())
+                """);
+    }
+
+    @Test
     public void weirdSubtyping() throws CompilationException, SnuggleException {
         test("""
                 class Mapper<T, R> {

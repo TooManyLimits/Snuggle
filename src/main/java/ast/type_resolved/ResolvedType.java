@@ -16,4 +16,8 @@ public sealed interface ResolvedType {
 
     }
 
+    record Tuple(List<ResolvedType> elements) implements ResolvedType {
+
+    }
+
 }

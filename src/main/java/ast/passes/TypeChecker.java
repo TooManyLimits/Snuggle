@@ -6,6 +6,7 @@ import ast.type_resolved.expr.TypeResolvedExpr;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.IndirectTypeDef;
+import ast.typed.def.type.TupleTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.type_resolved.prog.TypeResolvedAST;
@@ -55,6 +56,7 @@ public class TypeChecker {
 
     //A cache for mapping ResolvedType -> TypeDef
     private final Map<Integer, LinkedHashMap<List<TypeDef>, TypeDef>> cache = new HashMap<>();
+    private final Map<List<TypeDef>, TypeDef> tupleCache = new HashMap<>();
     //The set of all TypeDefs created here
     private final List<TypeDef> allTypeDefs = new ArrayList<>();
 
@@ -99,9 +101,20 @@ public class TypeChecker {
                 return methodGenerics.get(generic.index());
             } else
                 return typeGenerics.get(generic.index());
+        } else if (resolvedType instanceof ResolvedType.Tuple tuple) {
+            List<TypeDef> convertedGenerics = ListUtils.map(tuple.elements(), e -> getOrInstantiate(e, typeGenerics, methodGenerics, instantiationLoc, cause));
+            return getTuple(convertedGenerics);
         } else {
             throw new IllegalStateException("Unexpected ResolvedType; bug in compiler, please report!");
         }
+    }
+
+    public TypeDef getTuple(List<TypeDef> typeDefs) {
+        return tupleCache.computeIfAbsent(typeDefs, t -> {
+            TypeDef res = new TupleTypeDef(t);
+            allTypeDefs.add(res);
+            return res;
+        });
     }
 
     public TypeDef getBasicBuiltin(BuiltinType type) {
@@ -204,7 +217,7 @@ public class TypeChecker {
         //The cached typed args of the matching methods
         List<List<TypedExpr>> matchingMethodsTypedArgs = new ArrayList<>();
         //Create a cache for the check() lookups.
-        //null map values mean that we already tried check()ing this, and it failed.
+        //null map elements mean that we already tried check()ing this, and it failed.
         List<IdentityHashMap<TypeDef, TypedExpr>> checkCache = new ArrayList<>(args.size());
         for (int i = 0; i < args.size(); i++) checkCache.add(new IdentityHashMap<>());
         //Keep track of info for no-matching-method errors

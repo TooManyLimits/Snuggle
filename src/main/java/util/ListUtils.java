@@ -28,6 +28,16 @@ public class ListUtils {
         return result;
     }
 
+    //Map 2 lists at once
+    public static <T1, T2, R, E extends Throwable> List<R> mapTwo(List<T1> list1, List<T2> list2, ThrowingBiFunction<T1, T2, R, E> func) throws E {
+        if (list1.size() != list2.size())
+            throw new IllegalStateException("mapTwo expected lists of the same size");
+        ArrayList<R> result = new ArrayList<>(list1.size());
+        for (int i = 0; i < list1.size(); i++)
+            result.add(func.apply(list1.get(i), list2.get(i)));
+        return result;
+    }
+
     public static <R, E extends Throwable> List<R> generate(int size, ThrowingFunction<Integer, R, E> func) throws E {
         ArrayList<R> result = new ArrayList<>(size);
         for (int i = 0; i < size; i++)

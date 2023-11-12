@@ -41,10 +41,9 @@ public class GenericVerifier {
 
     //Verify a single annotatedType. Helper method for implementors of verifyGenericArgCounts
     public void verifyType(ResolvedType type, Loc loc) throws CompilationException {
-        if (type instanceof ResolvedType.Generic)
-            return; //Generics are always alright
+        if (!(type instanceof ResolvedType.Basic basic))
+            return;
 
-        ResolvedType.Basic basic = (ResolvedType.Basic) type;
         TypeResolvedTypeDef def = startingTypeDefs.get(basic.index());
         int expectedGenerics = def.numGenerics();
         int givenGenerics = basic.generics().size();

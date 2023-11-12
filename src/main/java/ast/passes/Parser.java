@@ -281,6 +281,8 @@ public class Parser {
         Loc colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in " + name + " is missing a annotatedType annotation", loc).loc();
         params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         while (lexer.consume(COMMA)) {
+            if (lexer.check(RIGHT_PAREN))
+                break;
             paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for " + name, loc).string();
             colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in " + name + " is missing a annotatedType annotation", loc).loc();
             params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
@@ -327,16 +329,16 @@ public class Parser {
      * - - So, for example, if a block is an argument to a method, then declarations are still legal inside that block.
      * - - If the context of the block cannot contain a declaration, the last expression in the block cannot either.
      */
-    private ParsedExpr parseExpr(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+    private ParsedExpr parseExpr(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         if (lexer.consume(SEMICOLON))
             return new ParsedLiteral(lexer.last().loc(), Unit.INSTANCE);
-        return parseBinary(0, classGenerics, methodGenerics, canBeDeclaration, isNested);
+        return parseBinary(0, typeGenerics, methodGenerics, canBeDeclaration, isNested);
     }
 
-    private ParsedExpr parseBinary(int precedence, List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+    private ParsedExpr parseBinary(int precedence, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         if (precedence >= TOK_TYPES.size())
-            return parseAs(classGenerics, methodGenerics, canBeDeclaration, isNested);
-        ParsedExpr lhs = parseBinary(precedence + 1, classGenerics, methodGenerics, canBeDeclaration, isNested);
+            return parseAs(typeGenerics, methodGenerics, canBeDeclaration, isNested);
+        ParsedExpr lhs = parseBinary(precedence + 1, typeGenerics, methodGenerics, canBeDeclaration, isNested);
         int rhsPrecedence = RIGHT_ASSOCIATIVE.get(precedence) ? precedence : precedence + 1;
         while (lexer.consume(TOK_TYPES.get(precedence))) {
             TokenType op = lexer.last().type();
@@ -375,7 +377,7 @@ public class Parser {
                 default -> throw new IllegalStateException("parseBinary found invalid token \"" + op.exactStrings[0] + "\". Bug in compiler, please report!");
             };
 
-            ParsedExpr rhs = parseBinary(rhsPrecedence, classGenerics, methodGenerics, false, true);
+            ParsedExpr rhs = parseBinary(rhsPrecedence, typeGenerics, methodGenerics, false, true);
             Loc fullLoc = Loc.merge(lhs.loc(), rhs.loc());
 
             //Special handling for and/or operations. They can't be method calls
@@ -399,20 +401,20 @@ public class Parser {
         return lhs;
     }
 
-    private ParsedExpr parseAs(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
-        ParsedExpr lhs = parseUnary(classGenerics, methodGenerics, canBeDeclaration, isNested);
+    private ParsedExpr parseAs(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+        ParsedExpr lhs = parseUnary(typeGenerics, methodGenerics, canBeDeclaration, isNested);
         while (lexer.consume(AS)) {
             //Since this is a while loop, you can technically do "1 as i32 as u32 as f32".
             //idk why you would, but you can, lol
             Token as = lexer.last();
             boolean isMaybe = lexer.consume(QUESTION_MARK);
-            ParsedType type = parseType(isMaybe ? "as?" : "as", isMaybe ? as.loc().merge(lexer.last().loc()) : as.loc(), classGenerics, methodGenerics);
+            ParsedType type = parseType(isMaybe ? "as?" : "as", isMaybe ? as.loc().merge(lexer.last().loc()) : as.loc(), typeGenerics, methodGenerics);
             lhs = new ParsedCast(lhs.loc().merge(lexer.last().loc()), as.loc().startLine(), lhs, isMaybe, type);
         }
         return lhs;
     }
 
-    private ParsedExpr parseUnary(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+    private ParsedExpr parseUnary(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         if (lexer.consume(MINUS, NOT, BITWISE_NOT, HASHTAG)) {
             String methodName = switch (lexer.last().type()) {
                 case MINUS -> "neg";
@@ -422,23 +424,23 @@ public class Parser {
                 default -> throw new IllegalStateException("parseUnary found invalid token \"" + lexer.last().type() + "\". Bug in compiler, please report!");
             };
             Loc operatorLoc = lexer.last().loc();
-            ParsedExpr operand = parseUnary(classGenerics, methodGenerics, canBeDeclaration, true);
+            ParsedExpr operand = parseUnary(typeGenerics, methodGenerics, canBeDeclaration, true);
             return new ParsedMethodCall(operatorLoc, operand, methodName, List.of(), List.of());
         }
 
-        return parseCallOrFieldOrAssignment(classGenerics, methodGenerics, canBeDeclaration, isNested);
+        return parseCallOrFieldOrAssignment(typeGenerics, methodGenerics, canBeDeclaration, isNested);
     }
 
-    private ParsedExpr parseCallOrFieldOrAssignment(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+    private ParsedExpr parseCallOrFieldOrAssignment(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //Parse lhs first
-        ParsedExpr lhs = parseCallOrField(classGenerics, methodGenerics, canBeDeclaration, isNested);
+        ParsedExpr lhs = parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, isNested);
 
         //Once it's done, check for an assignment (or augmented assignment)
         if (lexer.consume(ASSIGN)) {
             Loc eqLoc = lexer.last().loc();
             //Regular assignment, = operator.
             //Parse the rhs:
-            ParsedExpr rhs = parseExpr(classGenerics, methodGenerics, canBeDeclaration, isNested);
+            ParsedExpr rhs = parseExpr(typeGenerics, methodGenerics, canBeDeclaration, isNested);
             //Assert the lhs to be a Variable, FieldAccess, or MethodCall("get")
             if (lhs instanceof ParsedVariable || lhs instanceof ParsedFieldAccess) {
                 return new ParsedAssignment(eqLoc, lhs, rhs);
@@ -481,7 +483,7 @@ public class Parser {
             String methodName = fallback + "Assign"; //Assignment versions are just the same as regular, but with "Assign" appended
 
             //Parse the rhs:
-            ParsedExpr rhs = parseCallOrFieldOrAssignment(classGenerics, methodGenerics, canBeDeclaration, isNested);
+            ParsedExpr rhs = parseCallOrFieldOrAssignment(typeGenerics, methodGenerics, canBeDeclaration, isNested);
             //Assert and return
             if (lhs instanceof ParsedVariable || lhs instanceof ParsedSuper || lhs instanceof ParsedFieldAccess || lhs instanceof ParsedMethodCall parsedCall && parsedCall.methodName().equals("get")) {
                 return new ParsedAugmentedAssignment(opLoc, methodName, fallback, lhs, rhs);
@@ -496,13 +498,13 @@ public class Parser {
         }
     }
 
-    private ParsedExpr parseCallOrField(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
+    private ParsedExpr parseCallOrField(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //If we find STAR, then output is automatically recurse().get()
         //no, no, bad, do not, the syntax is not enjoyable
 //        if (lexer.consume(STAR))
-//            return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(classGenerics, methodGenerics, canBeDeclaration), "get", List.of(), List.of());
+//            return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration), "get", List.of(), List.of());
         //Get the lhs
-        ParsedExpr lhs = parseUnit(classGenerics, methodGenerics, canBeDeclaration, isNested);
+        ParsedExpr lhs = parseUnit(typeGenerics, methodGenerics, canBeDeclaration, isNested);
         //Any of these equal-precedence "call" operations can happen left-to-right
         while (lexer.consume(LEFT_PAREN, DOT, LEFT_SQUARE)) {
             TokenType op = lexer.last().type();
@@ -510,9 +512,9 @@ public class Parser {
             switch (op) {
                 case DOT -> {
                     Token name = lexer.expect(IDENTIFIER, "Expected methodName after \".\" at " + loc);
-                    List<ParsedType> typeArgs = parseTypeArguments(classGenerics, methodGenerics);
+                    List<ParsedType> typeArgs = parseTypeArguments(typeGenerics, methodGenerics);
                     if (lexer.consume(LEFT_PAREN)) {
-                        List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+                        List<ParsedExpr> args = parseArguments(RIGHT_PAREN, typeGenerics, methodGenerics);
                         lhs = new ParsedMethodCall(name.loc(), lhs, name.string(), typeArgs, args);
                     } else {
                         if (typeArgs.size() > 0)
@@ -523,12 +525,12 @@ public class Parser {
                 case LEFT_PAREN -> {
                     //super() is super.new(), while anythingElse() is anythingElse.invoke().
                     String methodName = (lhs instanceof ParsedSuper) ? "new" : "invoke";
-                    List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+                    List<ParsedExpr> args = parseArguments(RIGHT_PAREN, typeGenerics, methodGenerics);
                     Loc callLoc = (lhs instanceof ParsedSuper || lhs instanceof ParsedVariable) ? lhs.loc() : loc.merge(lexer.last().loc());
                     lhs = new ParsedMethodCall(callLoc, lhs, methodName, List.of(), args);
                 }
                 case LEFT_SQUARE -> {
-                    List<ParsedExpr> args = parseArguments(RIGHT_SQUARE, classGenerics, methodGenerics);
+                    List<ParsedExpr> args = parseArguments(RIGHT_SQUARE, typeGenerics, methodGenerics);
                     Loc indexLoc = lhs.loc().merge(lexer.last().loc());
                     lhs = new ParsedMethodCall(indexLoc, lhs, "get", List.of(), args);
                 }
@@ -540,16 +542,19 @@ public class Parser {
 
     //If there's a ::, then parses annotatedType arguments list
     //If there isn't, returns an empty list
-    private List<ParsedType> parseTypeArguments(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    private List<ParsedType> parseTypeArguments(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         if (lexer.consume(DOUBLE_COLON)) {
             lexer.expect(LESS, "Expected < after :: to begin generic type arguments list", lexer.last().loc());
             if (lexer.consume(GREATER))
                 return List.of(); //If it's immediately a >, then just return empty list. ::<>
             Token less = lexer.last();
             ArrayList<ParsedType> result = new ArrayList<>();
-            result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
-            while (lexer.consume(COMMA))
-                result.add(parseType("<", less.loc(), classGenerics, methodGenerics));
+            result.add(parseType("<", less.loc(), typeGenerics, methodGenerics));
+            while (lexer.consume(COMMA)) {
+                if (lexer.check(GREATER))
+                    break;
+                result.add(parseType("<", less.loc(), typeGenerics, methodGenerics));
+            }
             lexer.expect(GREATER, "Expected > to end generic type arguments list that began at " + less.loc());
             result.trimToSize();
             return result;
@@ -559,14 +564,17 @@ public class Parser {
     }
 
     //The paren was just parsed
-    private List<ParsedExpr> parseArguments(TokenType endingType, List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    private List<ParsedExpr> parseArguments(TokenType endingType, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         if (lexer.consume(endingType))
             return List.of();
         Loc parenLoc = lexer.last().loc();
         ArrayList<ParsedExpr> arguments = new ArrayList<>();
-        arguments.add(parseExpr(classGenerics, methodGenerics, false, true)); //all arguments are nested in something
-        while (lexer.consume(COMMA))
-            arguments.add(parseExpr(classGenerics, methodGenerics, false, true)); //^
+        arguments.add(parseExpr(typeGenerics, methodGenerics, false, true)); //all arguments are nested in something
+        while (lexer.consume(COMMA)) {
+            if (lexer.check(endingType))
+                break;
+            arguments.add(parseExpr(typeGenerics, methodGenerics, false, true)); //^
+        }
         lexer.expect(endingType, "Expected " + endingType.exactStrings[0] + " to end args list", parenLoc);
         arguments.trimToSize();
         return arguments;
@@ -578,14 +586,18 @@ public class Parser {
             //Eof
             case EOF -> throw new ParsingException("Unexpected end of file, expected expression", lexer.last().loc());
 
-            //Literals and objects
+            //Things
             case    INT_LITERAL,
                     BOOL_LITERAL,
                     STRING_LITERAL,
                     FLOAT_LITERAL -> new ParsedLiteral(lexer.last().loc(), lexer.last().value());
             case NEW -> parseConstructor(typeGenerics, methodGenerics);
+            case IDENTIFIER -> parseIdentOrTypeExpr(typeGenerics, methodGenerics);
+            case THIS -> new ParsedVariable(lexer.last().loc(), "this");
+            case SUPER -> new ParsedSuper(lexer.last().loc());
+            case LEFT_PAREN -> parseParenExpr(typeGenerics, methodGenerics, canBeDeclaration);
 
-            //Types
+            //Declarations
             case    CLASS,
                     STRUCT -> parseClassOrStruct(lexer.last().type() == CLASS, false, typeGenerics, methodGenerics, isNested);
             case ENUM -> parseEnum(false, typeGenerics, methodGenerics, isNested);
@@ -600,6 +612,14 @@ public class Parser {
                     default -> throw new ParsingException("Expected class, struct, or enum after \"pub\"", lexer.last().loc());
                 };
             }
+            case VAR -> parseDeclaration(typeGenerics, methodGenerics, canBeDeclaration);
+            case IMPORT -> parseImport();
+
+            //Control flow
+            case IF -> parseIf(typeGenerics, methodGenerics);
+            case WHILE -> parseWhile(typeGenerics, methodGenerics);
+            case LEFT_CURLY -> parseBlock(typeGenerics, methodGenerics);
+            case RETURN -> new ParsedReturn(lexer.last().loc(), parseExpr(typeGenerics, methodGenerics, false, true));
 
             //Other
             case IS -> { //is Type1 Type2
@@ -608,44 +628,6 @@ public class Parser {
                 ParsedType type2 = parseType("is", startLoc, typeGenerics, methodGenerics);
                 yield new ParsedIsSubtype(startLoc.merge(lexer.last().loc()), type1, type2);
             }
-
-            //Identifiers
-            case IDENTIFIER -> {
-                ParsedVariable v = new ParsedVariable(lexer.last().loc(), lexer.last().string());
-                //Double colon means it's a type reference
-                if (lexer.check(DOUBLE_COLON)) {
-                    List<ParsedType> typeArguments = parseTypeArguments(typeGenerics, methodGenerics);
-                    Loc fullLoc = v.loc().merge(lexer.last().loc());
-                    int index = genericIndexOf(methodGenerics, v.name());
-                    if (index != -1)
-                        if (typeArguments.size() == 0)
-                            yield new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, true));
-                        else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
-                    index = genericIndexOf(typeGenerics, v.name());
-                    if (index != -1)
-                        if (typeArguments.size() == 0)
-                            yield new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, false));
-                        else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
-                    yield new ParsedTypeExpr(fullLoc, new ParsedType.Basic(v.name(), typeArguments));
-                } else {
-                    //Otherwise just yield the variable
-                    yield v;
-                }
-            }
-            case THIS -> new ParsedVariable(lexer.last().loc(), "this");
-            case SUPER -> new ParsedSuper(lexer.last().loc());
-
-            //Control flow
-            case IF -> parseIf(typeGenerics, methodGenerics);
-            case WHILE -> parseWhile(typeGenerics, methodGenerics);
-            case LEFT_CURLY -> parseBlock(typeGenerics, methodGenerics);
-            case RETURN -> new ParsedReturn(lexer.last().loc(), parseExpr(typeGenerics, methodGenerics, false, true));
-
-            //Variable declaration
-            case VAR -> parseDeclaration(typeGenerics, methodGenerics, canBeDeclaration);
-
-            //Imports
-            case IMPORT -> parseImport();
 
             default -> throw new ParsingException("Unexpected token " + lexer.last().type() + ". Expected expression", lexer.last().loc());
         };
@@ -658,26 +640,82 @@ public class Parser {
         return new ParsedImport(loc, str.string());
     }
 
-    private ParsedExpr parseIf(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    //The identifier token was already consumed
+    private ParsedExpr parseIdentOrTypeExpr(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        ParsedVariable v = new ParsedVariable(lexer.last().loc(), lexer.last().string());
+        //Double colon means it's a type reference
+        if (lexer.check(DOUBLE_COLON)) {
+            List<ParsedType> typeArguments = parseTypeArguments(typeGenerics, methodGenerics);
+            Loc fullLoc = v.loc().merge(lexer.last().loc());
+            int index = genericIndexOf(methodGenerics, v.name());
+            if (index != -1)
+                if (typeArguments.size() == 0)
+                    return new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, true));
+                else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
+            index = genericIndexOf(typeGenerics, v.name());
+            if (index != -1)
+                if (typeArguments.size() == 0)
+                    return new ParsedTypeExpr(fullLoc, new ParsedType.Generic(index, false));
+                else throw new ParsingException("Cannot put type parameters on a generic (" + v.name() + ")", fullLoc);
+            return new ParsedTypeExpr(fullLoc, new ParsedType.Basic(v.name(), typeArguments));
+        } else {
+            //Otherwise just return the variable
+            //TODO: Maybe convert to lambda
+            return v;
+        }
+    }
+
+    //The left paren was just parsed
+    private ParsedExpr parseParenExpr(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
+        Loc parenLoc = lexer.last().loc();
+        //If we immediately find a right paren, then it's a tuple of 0 values (aka unit)
+        if (lexer.consume(RIGHT_PAREN))
+            return new ParsedTuple(parenLoc.merge(lexer.last().loc()), List.of());
+        ParsedExpr expr = parseExpr(typeGenerics, methodGenerics, canBeDeclaration, true);
+        boolean allVariables = (expr instanceof ParsedVariable); //used later, for lambdas
+        //If we find a right paren immediately after an expr, then we can return a parsed paren expr
+        if (lexer.consume(RIGHT_PAREN)) {
+            //TODO: if allVariables, maybe convert to lambda
+            return new ParsedParenExpr(parenLoc.merge(lexer.last().loc()), expr);
+        }
+        //We didn't find a right paren, so let's keep going
+        ArrayList<ParsedExpr> elems = new ArrayList<>();
+        elems.add(expr);
+        while (lexer.consume(COMMA)) {
+            if (lexer.check(RIGHT_PAREN))
+                break;
+            expr = parseExpr(typeGenerics, methodGenerics, canBeDeclaration, true);
+            elems.add(expr);
+            allVariables &= (expr instanceof ParsedVariable);
+        }
+        lexer.expect(RIGHT_PAREN, "Expected ) to end tuple that began at " + parenLoc, parenLoc);
+
+        elems.trimToSize();
+        //TODO: if allVariables, maybe convert to lambda
+        return new ParsedTuple(parenLoc.merge(lexer.last().loc()), elems);
+    }
+
+
+    private ParsedExpr parseIf(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc ifLoc = lexer.last().loc();
-        ParsedExpr cond = wrapTruthy(parseExpr(classGenerics, methodGenerics, false, true)); //things inside an if-expression are always nested
-        ParsedExpr ifTrue = parseExpr(classGenerics, methodGenerics, false, true);
-        ParsedExpr ifFalse = lexer.consume(ELSE) ? parseExpr(classGenerics, methodGenerics, false, true) : null;
+        ParsedExpr cond = wrapTruthy(parseExpr(typeGenerics, methodGenerics, false, true)); //things inside an if-expression are always nested
+        ParsedExpr ifTrue = parseExpr(typeGenerics, methodGenerics, false, true);
+        ParsedExpr ifFalse = lexer.consume(ELSE) ? parseExpr(typeGenerics, methodGenerics, false, true) : null;
 
         Loc fullLoc = Loc.merge(ifLoc, (ifFalse == null ? ifTrue : ifFalse).loc());
         return new ParsedIf(fullLoc, cond, ifTrue, ifFalse);
     }
 
-    private ParsedExpr parseWhile(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    private ParsedExpr parseWhile(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc whileLoc = lexer.last().loc();
-        ParsedExpr cond = wrapTruthy(parseExpr(classGenerics, methodGenerics, false, true));
-        ParsedExpr body = parseExpr(classGenerics, methodGenerics, false, true);
+        ParsedExpr cond = wrapTruthy(parseExpr(typeGenerics, methodGenerics, false, true));
+        ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false, true);
         Loc fullLoc = whileLoc.merge(body.loc());
         return new ParsedWhile(fullLoc, cond, body);
     }
 
     //"{" has already been parsed
-    private ParsedExpr parseBlock(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    private ParsedExpr parseBlock(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc loc = lexer.last().loc();
         //Empty block, return with List.of()
         if (lexer.consume(RIGHT_CURLY))
@@ -686,7 +724,7 @@ public class Parser {
         //Non-empty block
         ArrayList<ParsedExpr> exprs = new ArrayList<>();
         while (!lexer.consume(RIGHT_CURLY)) {
-            exprs.add(parseExpr(classGenerics, methodGenerics, true, true));
+            exprs.add(parseExpr(typeGenerics, methodGenerics, true, true));
             if (lexer.isDone())
                 throw new ParsingException("Unmatched {", loc);
         }
@@ -694,47 +732,47 @@ public class Parser {
     }
 
     // "var" was just consumed
-    private ParsedExpr parseDeclaration(List<GenericDef> classGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
+    private ParsedExpr parseDeclaration(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration) throws CompilationException {
         Loc varLoc = lexer.last().loc();
         String varName = lexer.expect(IDENTIFIER, "Expected methodName after \"var\" at " + varLoc).string();
 
         if (!canBeDeclaration)
             throw new ParsingException("Invalid declaration location for variable \"" + varName + "\"", varLoc);
 
-        ParsedType annotatedType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), classGenerics, methodGenerics) : null;
+        ParsedType annotatedType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : null;
         lexer.expect(ASSIGN, "Expected '=' after variable \"" + varName + "\" at " + varLoc);
-        ParsedExpr rhs = parseExpr(classGenerics, methodGenerics, true, true);
+        ParsedExpr rhs = parseExpr(typeGenerics, methodGenerics, true, true);
         return new ParsedDeclaration(Loc.merge(varLoc, rhs.loc()), varName, annotatedType, rhs);
     }
 
     //Token "new" was just parsed
-    private ParsedExpr parseConstructor(List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+    private ParsedExpr parseConstructor(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
         Loc newLoc = lexer.last().loc();
 
         //First check for "new()" or "new {}", where we will later try to infer the type from context
         if (lexer.consume(LEFT_PAREN)) {
-            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, typeGenerics, methodGenerics);
             return new ParsedConstructor(newLoc, null, args);
         } else if (lexer.consume(LEFT_CURLY)) {
-            return parseStructConstructor(newLoc, null, classGenerics, methodGenerics);
+            return parseStructConstructor(newLoc, null, typeGenerics, methodGenerics);
         }
 
         //Wasn't those, so it must be explicitly typed
-        ParsedType constructedType = parseType("new", lexer.last().loc(), classGenerics, methodGenerics);
+        ParsedType constructedType = parseType("new", lexer.last().loc(), typeGenerics, methodGenerics);
 
         //Branch here - either a calling constructor new Type(), or a struct constructor new Type { }
         if (lexer.consume(LEFT_CURLY)) {
-            return parseStructConstructor(newLoc, constructedType, classGenerics, methodGenerics);
+            return parseStructConstructor(newLoc, constructedType, typeGenerics, methodGenerics);
         } else {
             lexer.expect(LEFT_PAREN, "Expected ( or { to start constructor of annotatedType " + constructedType, newLoc);
-            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, classGenerics, methodGenerics);
+            List<ParsedExpr> args = parseArguments(RIGHT_PAREN, typeGenerics, methodGenerics);
             return new ParsedConstructor(newLoc, constructedType, args);
         }
     }
 
     //Left curly { was already parsed
-    private ParsedStructConstructor parseStructConstructor(Loc newLoc, ParsedType constructedType, List<GenericDef> classGenerics, List<GenericDef> methodGenerics) throws CompilationException {
-        List<ParsedExpr> args = parseArguments(RIGHT_CURLY, classGenerics, methodGenerics);
+    private ParsedStructConstructor parseStructConstructor(Loc newLoc, ParsedType constructedType, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        List<ParsedExpr> args = parseArguments(RIGHT_CURLY, typeGenerics, methodGenerics);
         if (args.stream().allMatch(a -> a instanceof ParsedAssignment parsedAssignment && parsedAssignment.lhs() instanceof ParsedVariable)) {
             //Using the named format
             List<String> argNames = new ArrayList<>(args.size());
@@ -786,32 +824,59 @@ public class Parser {
 //        if (lexer.consume(AMPERSAND))
 //            return new ParsedType.Basic("Box", List.of(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics)));
 
-        String head = lexer.expect(IDENTIFIER, "Expected type after " + startTokString, startTokLoc).string();
+        if (lexer.consume(LEFT_PAREN)) {
+            //Tuple time
+            //If it ends right away, then just return unit
+            if (lexer.consume(RIGHT_PAREN))
+                return addTypeModifiers(startTokLoc, ParsedType.Tuple.UNIT);
+            startTokString = "(";
+            startTokLoc = lexer.last().loc();
 
-        //If the annotatedType is a generic, return a generic TypeString
-        //Search method generics first, as they're more recently defined,
-        //and can shadow class generics
-        int index = genericIndexOf(methodGenerics, head);
-        if (index != -1) {
-            return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, true));
-        }
-        index = genericIndexOf(typeGenerics, head);
-        if (index != -1) {
-            return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, false));
-        }
+            //Parse elements of the tuple
+            ArrayList<ParsedType> elements = new ArrayList<>();
+            elements.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
+            while (lexer.consume(COMMA)) {
+                if (lexer.check(RIGHT_PAREN))
+                    break;
+                elements.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
+            }
+            elements.trimToSize();
+            lexer.expect(RIGHT_PAREN, "Expected ) to end tuple type", startTokLoc);
 
-        //Otherwise, return a Basic annotatedType
-        if (lexer.consume(LESS)) {
-            Loc lessLoc = lexer.last().loc();
-            ArrayList<ParsedType> generics = new ArrayList<>();
-            generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
-            while (lexer.consume(COMMA))
-                generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
-            generics.trimToSize();
-            lexer.expect(GREATER, "Expected > to end generics list", lessLoc);
-            return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, generics));
+            //Return the tuple
+            return addTypeModifiers(startTokLoc, new ParsedType.Tuple(elements));
         } else {
-            return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, List.of()));
+            //Not a tuple
+            String head = lexer.expect(IDENTIFIER, "Expected type after " + startTokString, startTokLoc).string();
+
+            //If the annotatedType is a generic, return a generic TypeString
+            //Search method generics first, as they're more recently defined,
+            //and can shadow class generics
+            int index = genericIndexOf(methodGenerics, head);
+            if (index != -1) {
+                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, true));
+            }
+            index = genericIndexOf(typeGenerics, head);
+            if (index != -1) {
+                return addTypeModifiers(startTokLoc, new ParsedType.Generic(index, false));
+            }
+
+            //Otherwise, return a Basic annotatedType
+            if (lexer.consume(LESS)) {
+                Loc lessLoc = lexer.last().loc();
+                ArrayList<ParsedType> generics = new ArrayList<>();
+                generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
+                while (lexer.consume(COMMA)) {
+                    if (lexer.check(GREATER))
+                        break;
+                    generics.add(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics));
+                }
+                generics.trimToSize();
+                lexer.expect(GREATER, "Expected > to end generics list", lessLoc);
+                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, generics));
+            } else {
+                return addTypeModifiers(startTokLoc, new ParsedType.Basic(head, List.of()));
+            }
         }
     }
 
@@ -857,8 +922,11 @@ public class Parser {
             } else {
                 ArrayList<GenericDef> generics = new ArrayList<>();
                 generics.add(parseGenericDef(loc));
-                while (lexer.consume(COMMA))
+                while (lexer.consume(COMMA)) {
+                    if (lexer.check(GREATER))
+                        break;
                     generics.add(parseGenericDef(loc));
+                }
                 lexer.expect(GREATER, "Expected > to end generics list", loc);
                 generics.trimToSize();
                 return generics;

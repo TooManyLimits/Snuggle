@@ -56,19 +56,19 @@ public record TypeResolvedStructConstructor(Loc loc, ResolvedType type, List<Str
                 Set<String> actualFieldNames = typeToConstruct.nonStaticFields().stream().map(FieldDef::name).collect(Collectors.toSet());
                 Set<String> providedFieldNames = new HashSet<>(argKeys);
                 providedFieldNames.removeAll(actualFieldNames);
-                throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " has too many values - expected only " + numFields + ", got " + argValues.size() + ". Fields " + providedFieldNames + " are not defined on this type.", loc, cause);
+                throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " has too many elements - expected only " + numFields + ", got " + argValues.size() + ". Fields " + providedFieldNames + " are not defined on this type.", loc, cause);
             }
         } else {
             int i = 0;
             for (FieldDef f : typeToConstruct.nonStaticFields()) {
                 if (i >= argValues.size())
-                    throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " does not have enough values", loc, cause);
+                    throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " does not have enough elements", loc, cause);
                 TypedExpr checked = argValues.get(i).check(currentType, checker, typeGenerics, methodGenerics, f.type(), cause);
                 checkedValues.add(checked);
                 i++;
             }
             if (i != argValues.size())
-                throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " has too many values - expected only " + i + ", got " + argValues.size(), loc, cause);
+                throw new TypeCheckingException("Struct constructor for " + typeToConstruct.name() + " has too many elements - expected only " + i + ", got " + argValues.size(), loc, cause);
         }
         return new TypedStructConstructor(loc, typeToConstruct, checkedValues);
     }

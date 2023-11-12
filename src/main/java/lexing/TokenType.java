@@ -5,7 +5,7 @@ public enum TokenType {
     //Different
     EOF,
 
-    //Types with values
+    //Types with elements
     BOOL_LITERAL, //Boolean
     STRING_LITERAL, //String
     INT_LITERAL, //BigInteger
@@ -82,6 +82,7 @@ public enum TokenType {
     DOUBLE_COLON("::"),
     SEMICOLON(";"),
     COMMA(","),
+    ARROW("->", "=>"),
 
     //in-class things
     THIS("this"),

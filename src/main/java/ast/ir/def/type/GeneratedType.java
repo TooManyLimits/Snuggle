@@ -15,8 +15,9 @@ public interface GeneratedType {
             return GeneratedClass.of(c);
         if (typeDef instanceof StructDef || typeDef instanceof EnumDef)
             return GeneratedValueType.of(typeDef);
-        if (typeDef instanceof BuiltinTypeDef b && b.shouldGenerateStructClassAtRuntime())
-            return GeneratedBuiltinStructType.of(b);
+        if (typeDef instanceof BuiltinTypeDef b && b.shouldGenerateStructClassAtRuntime() ||
+            typeDef instanceof TupleTypeDef t)
+            return GeneratedBuiltinStructType.of(typeDef);
         return null;
     }
 

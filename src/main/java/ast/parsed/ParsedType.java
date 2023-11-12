@@ -55,12 +55,17 @@ public sealed interface ParsedType {
         }
     }
 
-    record Tuple(List<ParsedType> values) implements ParsedType {
+    record Tuple(List<ParsedType> elements) implements ParsedType {
         public static final Tuple UNIT = new Tuple(List.of());
 
         @Override
         public ResolvedType resolve(Loc loc, TypeResolver resolver) throws CompilationException {
-            throw new UnsupportedOperationException("Tuples are TODO");
+            return new ResolvedType.Tuple(ListUtils.map(elements, e -> e.resolve(loc, resolver)));
+        }
+
+        @Override
+        public String toString() {
+            return "Tuple" + elements;
         }
     }
 
