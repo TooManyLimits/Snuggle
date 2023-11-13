@@ -57,7 +57,7 @@ public interface TypeDef {
 
     record InstantiationStackFrame(Loc location, TypeDef typeDef, InstantiationStackFrame cause) {
         public String stackTrace() {
-            String s = "Was compiling type \"" + typeDef.name() + "\", used at " + location + ".";
+            String s = "Was compiling \"" + typeDef.name() + "\", used at " + location + ".";
             if (cause != null)
                 return s + "\n" + cause.stackTrace();
             return s;

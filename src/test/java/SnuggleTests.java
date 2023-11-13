@@ -91,9 +91,12 @@ public class SnuggleTests {
     public void testTopLevelFunctions() throws CompilationException, SnuggleException {
         test("""
                 fn square(x: i32): i32 x * x
+                fn genericSquare<T>(x: T): T x * x
                 
                 System.print(square(5))
                 System.print(square(7))
+                System.print(genericSquare::<f32>(10.5))
+//                System.print(genericSquare::<str>("hi")) //Errors with a descriptive error message.
                 
                 Test.assertEquals(10001, square(square(10)) + 1)
                 """);

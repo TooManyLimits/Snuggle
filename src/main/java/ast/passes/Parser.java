@@ -807,16 +807,16 @@ public class Parser {
                 //This basic has generics.
                 //Attempt to re-interpret b's generics as GenericDef instead of ParsedType
                 List<GenericDef> genericParams = ListUtils.map(b.generics(), g -> {
-                    if (g instanceof ParsedType.Basic b2 && b.generics().size() == 0)
+                    if (g instanceof ParsedType.Basic b2 && b2.generics().size() == 0)
                         return new GenericDef(b2.name());
                     throw new ParsingException("Expected identifiers for function generics in function \"" + funcName + "\"", fnLoc);
                 });
-                methodGenerics = ListUtils.join(methodGenerics, genericParams);
+                typeGenerics = ListUtils.join(typeGenerics, genericParams);
                 //Get the method def
                 lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
                 List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
                 ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, 0, isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", genericParams.size(),
+                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, genericParams.size(), isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
                         ListUtils.map(params, ParsedParam::name),
                         ListUtils.map(params, ParsedParam::type),
                         resultType,
