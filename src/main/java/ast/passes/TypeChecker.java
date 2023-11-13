@@ -3,7 +3,6 @@ package ast.passes;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
-import ast.type_resolved.expr.TypeResolvedVariable;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.FuncTypeDef;
@@ -17,6 +16,7 @@ import ast.typed.prog.TypedFile;
 import builtin_types.BuiltinType;
 import exceptions.compile_time.*;
 import lexing.Loc;
+import util.LateInit;
 import util.ListUtils;
 import util.MapStack;
 import util.MapUtils;
@@ -39,20 +39,22 @@ public class TypeChecker {
         scopeVariables.push(new MapStack<>());
 //        closedVariableAttempts.push(new ArrayList<>());
         isLambdaEnv.push(isLambda);
+        desiredReturnTypes.push(null);
     }
 
     private final Stack<MapStack<String, TypeDef>> scopeVariables = new Stack<>();
 //    private final Stack<List<ClosureAttempt>> closedVariableAttempts = new Stack<>();
     private final Stack<Boolean> isLambdaEnv = new Stack<>();
+    private final Stack<LateInit<TypeDef, CompilationException>> desiredReturnTypes = new Stack<>();
 //    public record ClosureAttempt(Loc loc, String varName, TypeDef expectedType) {}
 
     public void push() {
         scopeVariables.peek().push();
     }
-    public void pushNewEnv(boolean isLambda) {
+    public void pushNewEnv(boolean isLambda, LateInit<TypeDef, CompilationException> desiredReturnType) {
         scopeVariables.push(new MapStack<>());
-//        closedVariableAttempts.push(isLambda ? new ArrayList<>() : null);
         isLambdaEnv.push(isLambda);
+        desiredReturnTypes.push(desiredReturnType);
     }
     public void pop() {
         scopeVariables.peek().pop();
@@ -60,7 +62,7 @@ public class TypeChecker {
     public void popEnv() {
         scopeVariables.pop();
         isLambdaEnv.pop();
-//        return closedVariableAttempts.pop();
+        desiredReturnTypes.pop();
     }
     public MapStack<String, TypeDef> peekEnv() {
         return scopeVariables.peek();
@@ -76,6 +78,9 @@ public class TypeChecker {
     }
     public boolean isLambda() {
         return isLambdaEnv.peek();
+    }
+    public TypeDef getDesiredReturnType() throws CompilationException {
+        return desiredReturnTypes.peek() == null ? null : desiredReturnTypes.peek().get();
     }
 
     //A cache for mapping ResolvedType -> TypeDef

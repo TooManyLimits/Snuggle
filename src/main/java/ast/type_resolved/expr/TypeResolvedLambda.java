@@ -13,6 +13,7 @@ import ast.typed.expr.TypedExpr;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
+import util.LateInit;
 import util.LateInitFunction;
 import util.ListUtils;
 
@@ -38,7 +39,7 @@ public record TypeResolvedLambda(Loc loc, List<String> paramNames, TypeResolvedE
                     new LateInitFunction<>(unused -> funcTypeDef.paramTypes),
                     new LateInitFunction<>(unused -> funcTypeDef.resultType),
                     new LateInitFunction<>(unused -> {
-                        checker.pushNewEnv(true);
+                        checker.pushNewEnv(true, new LateInit<>(() -> funcTypeDef.resultType));
                         //Declare "this"
                         checker.declare(loc, "this", indirect);
                         //Declare params

@@ -34,7 +34,7 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
         LateInitFunction<List<TypeDef>, TypeDef, RuntimeException> newReturnType = new LateInitFunction<>(methodGenerics -> checker.getOrInstantiate(returnType, typeGenerics, methodGenerics, loc, cause));
         //TypedBody must be computed later, once we know method signatures and such
         LateInitFunction<List<TypeDef>, TypedExpr, CompilationException> typedBody = new LateInitFunction<>(methodGenerics -> {
-            checker.pushNewEnv(false);
+            checker.pushNewEnv(false, new LateInit<>(() -> newReturnType.get(methodGenerics)));
             if (!isStatic) {
                 if (!isConstructor() || !currentType.isPlural()) //Don't give a "this" local to plural-type constructors
                     checker.declare(loc, "this", currentType);

@@ -19,10 +19,8 @@ public record TypedReturn(Loc loc, TypedExpr rhs, TypeDef type) implements Typed
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
         if (block.methodDef == null)
-            throw new ParsingException("Cannot return here - can only return inside a method", loc);
-        if (!type().isSubtype(block.methodDef.returnType()))
-            throw new ParsingException("Method \"" + block.methodDef.name() + "\" wants to return \"" + block.methodDef.returnType().name() + "\", but return-expression is returning \"" + type.name() + "\"", loc);
+            throw new IllegalStateException("Cannot return here - can only return inside a method. But this should have been caught earlier - bug in compiler, please report! loc = " + loc);
         rhs.compile(block, null);
-        block.emit(new Return(block.methodDef, type));
+        block.emit(new Return(block.methodDef, rhs.type()));
     }
 }
