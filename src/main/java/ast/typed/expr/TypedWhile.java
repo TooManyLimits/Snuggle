@@ -14,8 +14,15 @@ import org.objectweb.asm.Label;
 import util.ListUtils;
 
 import java.util.List;
+import java.util.Set;
 
 public record TypedWhile(Loc loc, TypedExpr cond, TypedExpr body, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        cond.findAllThisFieldAccesses(setToFill);
+        body.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {

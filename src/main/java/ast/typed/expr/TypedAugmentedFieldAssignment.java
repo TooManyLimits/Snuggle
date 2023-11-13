@@ -17,11 +17,18 @@ import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 //a.x += b
 //a.x is lhs, b is rhs
 //a.x = a.x.method(b)
 public record TypedAugmentedFieldAssignment(TypeDef.InstantiationStackFrame cause, Loc loc, MethodDef method, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        lhs.findAllThisFieldAccesses(setToFill);
+        rhs.findAllThisFieldAccesses(setToFill);
+    }
 
     //Very similar to TypedAssignment's code, slightly different things emitted to the CodeBlock arg
     @Override

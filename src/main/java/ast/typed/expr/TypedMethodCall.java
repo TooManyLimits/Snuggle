@@ -11,8 +11,16 @@ import lexing.Loc;
 import util.ListUtils;
 
 import java.util.List;
+import java.util.Set;
 
 public record TypedMethodCall(Loc loc, TypedExpr receiver, MethodDef method, List<TypedExpr> args, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        receiver.findAllThisFieldAccesses(setToFill);
+        for (TypedExpr e : args)
+            e.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {

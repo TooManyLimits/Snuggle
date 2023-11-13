@@ -7,7 +7,14 @@ import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.ParsingException;
 import lexing.Loc;
 
+import java.util.Set;
+
 public record TypedReturn(Loc loc, TypedExpr rhs, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        rhs.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {

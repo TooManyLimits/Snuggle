@@ -500,8 +500,8 @@ public class Parser {
     private ParsedExpr parseCallOrField(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //If we find STAR, then output is automatically recurse().get()
         //no, no, bad, do not, the syntax is not enjoyable
-//        if (lexer.consume(STAR))
-//            return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration), "get", List.of(), List.of());
+        if (lexer.consume(STAR))
+            return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, true), "get", List.of(), List.of());
         //Get the lhs
         ParsedExpr lhs = parseUnit(typeGenerics, methodGenerics, canBeDeclaration, isNested);
         //Any of these equal-precedence "call" operations can happen left-to-right

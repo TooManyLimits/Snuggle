@@ -10,9 +10,16 @@ import util.ListUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public record TypedTypeDefExpr(TypeDef.InstantiationStackFrame cause, Loc loc, Supplier<Collection<TypeDef>> instantiatedDefGetter, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+
+    }
+
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {
         ArrayList<TypedExpr> exprs = new ArrayList<>();

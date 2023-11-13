@@ -9,8 +9,17 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;
+import java.util.Set;
 
 public record TypedFieldAccess(Loc loc, TypedExpr lhs, FieldDef field, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        if (lhs instanceof TypedVariable v && v.name().equals("this"))
+            setToFill.add(field.name());
+        else
+            lhs.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {

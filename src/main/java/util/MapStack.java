@@ -36,4 +36,11 @@ public class MapStack<K, V> {
         return null;
     }
 
+    public Map<K, V> getFlattenedMap() {
+        Map<K, V> result = new HashMap<>();
+        for (Map<K, V> m : maps)
+            result.putAll(m);
+        return result;
+    }
+
 }

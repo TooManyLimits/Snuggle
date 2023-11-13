@@ -1,5 +1,6 @@
 package util;
 
+import util.throwing_interfaces.ThrowingBiConsumer;
 import util.throwing_interfaces.ThrowingBiFunction;
 import util.throwing_interfaces.ThrowingConsumer;
 import util.throwing_interfaces.ThrowingFunction;
@@ -14,6 +15,11 @@ public class ListUtils {
         for (int i = 0; i < arr.length; i++)
             result[i] = func.apply(arr[i]);
         return result;
+    }
+
+    public static <T, E extends Throwable> void forEachIndexed(List<T> list, ThrowingBiConsumer<T, Integer, E> func) throws E {
+        for (int i = 0; i < list.size(); i++)
+            func.accept(list.get(i), i);
     }
 
     public static <T, E extends Throwable> void iterBackwards(List<T> list, ThrowingConsumer<T, E> func) throws E {

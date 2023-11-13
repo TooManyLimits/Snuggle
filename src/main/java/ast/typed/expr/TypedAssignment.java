@@ -17,12 +17,19 @@ import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 //lhs starts as one of:
 //- TypedFieldAccess
 //- TypedVariable
 //- TypedStaticFieldAccess
 public record TypedAssignment(TypeDef.InstantiationStackFrame cause, Loc loc, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        lhs.findAllThisFieldAccesses(setToFill);
+        rhs.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {

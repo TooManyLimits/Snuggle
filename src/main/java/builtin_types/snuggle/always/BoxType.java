@@ -15,8 +15,8 @@ public class BoxType extends SnuggleDefinedType {
                         super()
                         v = e;
                     }
-//                    pub fn get(): T v
-//                    pub fn set(e: T): T v = e
+                    pub fn get(): T v
+                    pub fn set(e: T): T v = e
                 }
                 
                 """);

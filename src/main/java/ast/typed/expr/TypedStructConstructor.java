@@ -8,8 +8,15 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
 import java.util.List;
+import java.util.Set;
 
 public record TypedStructConstructor(Loc loc, TypeDef type, List<TypedExpr> values) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        for (TypedExpr e : values)
+            e.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {

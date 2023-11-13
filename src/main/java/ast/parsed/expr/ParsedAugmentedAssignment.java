@@ -79,14 +79,14 @@ public record ParsedAugmentedAssignment(Loc loc, String methodName, String fallb
                         List.of(new TypeResolvedStaticMethodCall(loc, staticMethodCall.type(), "set", staticMethodCall.genericArgs(), ListUtils.join(
                                 //grab all temp vars
                                 ListUtils.generate(staticMethodCall.args().size(), i ->
-                                        new TypeResolvedVariable(loc, tempIndexName + i)
+                                        new TypeResolvedVariable(loc, tempIndexName + i, false)
                                 ),
                                 //.add or addAssign
                                 List.of(new TypeResolvedMethodCall(loc,
                                         //a.get(
                                         new TypeResolvedStaticMethodCall(loc, staticMethodCall.type(), "get", staticMethodCall.genericArgs(), ListUtils.generate(staticMethodCall.args().size(), i ->
                                                 //grab all the temp vars
-                                                new TypeResolvedVariable(loc, tempIndexName + i)
+                                                new TypeResolvedVariable(loc, tempIndexName + i, false)
                                         )),
                                         fallback,
                                         null,
@@ -105,14 +105,14 @@ public record ParsedAugmentedAssignment(Loc loc, String methodName, String fallb
                         List.of(new TypeResolvedSuperMethodCall(loc, "set", superMethodCall.genericArgs(), ListUtils.join(
                                 //grab all temp vars
                                 ListUtils.generate(superMethodCall.args().size(), i ->
-                                        new TypeResolvedVariable(loc, tempIndexName + i)
+                                        new TypeResolvedVariable(loc, tempIndexName + i, false)
                                 ),
                                 //.add or addAssign
                                 List.of(new TypeResolvedMethodCall(loc,
                                         //a.get(
                                         new TypeResolvedSuperMethodCall(loc, "get", superMethodCall.genericArgs(), ListUtils.generate(superMethodCall.args().size(), i ->
                                                 //grab all the temp vars
-                                                new TypeResolvedVariable(loc, tempIndexName + i)
+                                                new TypeResolvedVariable(loc, tempIndexName + i, false)
                                         )),
                                         fallback,
                                         null,
@@ -130,18 +130,20 @@ public record ParsedAugmentedAssignment(Loc loc, String methodName, String fallb
                                 new TypeResolvedDeclaration(loc, tempIndexName + i, null, arg)
                         ),
                         //tempReceiver.set(
-                        List.of(new TypeResolvedMethodCall(loc, new TypeResolvedVariable(loc, tempReceiver), "set", null, getMethodCall.genericArgs(), ListUtils.join(
+                        List.of(new TypeResolvedMethodCall(loc, new TypeResolvedVariable(loc, tempReceiver, false), "set", null, getMethodCall.genericArgs(), ListUtils.join(
                                 //grab all temp vars
                                 ListUtils.generate(getMethodCall.args().size(), i ->
-                                        new TypeResolvedVariable(loc, tempIndexName + i)
+                                        new TypeResolvedVariable(loc, tempIndexName + i, false)
                                 ),
                                 //.add or addAssign
                                 List.of(new TypeResolvedMethodCall(loc,
                                         //tempReceiver.get()
-                                        new TypeResolvedMethodCall(loc, new TypeResolvedVariable(loc, tempReceiver), "get", null, getMethodCall.genericArgs(), List.of(
+                                        new TypeResolvedMethodCall(loc, new TypeResolvedVariable(loc, tempReceiver, false), "get", null, getMethodCall.genericArgs(),
                                                 //grab all temp vars
-                                                new TypeResolvedVariable(loc, tempIndexName)
-                                        )),
+                                                ListUtils.generate(getMethodCall.args().size(), i ->
+                                                        new TypeResolvedVariable(loc, tempIndexName + i, false)
+                                                )
+                                        ),
                                         fallback,
                                         null,
                                         List.of(),

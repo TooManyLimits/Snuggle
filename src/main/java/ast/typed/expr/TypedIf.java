@@ -10,12 +10,21 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
 
+import java.util.Set;
+
 /**
  * At this stage of the AST, a TypedIf always has an ifFalse branch.
  * If it didn't have one at the previous stage of the AST, it was filled
  * in with an empty Option constructor.
  */
 public record TypedIf(Loc loc, TypedExpr cond, TypedExpr ifTrue, TypedExpr ifFalse, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        cond.findAllThisFieldAccesses(setToFill);
+        ifTrue.findAllThisFieldAccesses(setToFill);
+        ifFalse.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock code, DesiredFieldNode desiredFields) throws CompilationException {

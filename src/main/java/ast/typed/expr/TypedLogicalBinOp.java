@@ -12,7 +12,15 @@ import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Label;
 
+import java.util.Set;
+
 public record TypedLogicalBinOp(Loc loc, boolean and, TypedExpr lhs, TypedExpr rhs, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        lhs.findAllThisFieldAccesses(setToFill);
+        rhs.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFields) throws CompilationException {

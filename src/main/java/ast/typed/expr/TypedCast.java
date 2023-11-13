@@ -9,7 +9,14 @@ import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
+import java.util.Set;
+
 public record TypedCast(Loc loc, int tokenLine, TypedExpr lhs, boolean isMaybe, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        lhs.findAllThisFieldAccesses(setToFill);
+    }
 
     @Override
     public void compile(CodeBlock block, DesiredFieldNode desiredFieldNode) throws CompilationException {

@@ -6,11 +6,12 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
+import util.throwing_interfaces.ThrowingConsumer;
 
 import java.util.List;
 import java.util.function.Consumer;
 
-public record CustomMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, CallCompiler callCompiler, Consumer<ClassVisitor> visitor) implements MethodDef {
+public record CustomMethodDef(String name, boolean isStatic, TypeDef owningType, List<TypeDef> paramTypes, TypeDef returnType, CallCompiler callCompiler, ThrowingConsumer<ClassVisitor, CompilationException> visitor) implements MethodDef {
 
     @Override
     public int numGenerics() {
@@ -29,6 +30,6 @@ public record CustomMethodDef(String name, boolean isStatic, TypeDef owningType,
 
     @FunctionalInterface
     public interface CallCompiler {
-        void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm);
+        void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) throws CompilationException;
     }
 }

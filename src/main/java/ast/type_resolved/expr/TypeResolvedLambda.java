@@ -38,25 +38,35 @@ public record TypeResolvedLambda(Loc loc, List<String> paramNames, TypeResolvedE
                     new LateInitFunction<>(unused -> funcTypeDef.paramTypes),
                     new LateInitFunction<>(unused -> funcTypeDef.resultType),
                     new LateInitFunction<>(unused -> {
-                        checker.push();
+                        checker.pushNewEnv(true);
+                        //Declare "this"
+                        checker.declare(loc, "this", indirect);
+                        //Declare params
                         for (int i = 0; i < paramNames.size(); i++)
                             checker.declare(loc, paramNames.get(i), funcTypeDef.paramTypes.get(i));
                         try {
                             TypedExpr res = body.check(currentType, checker, typeGenerics, methodGenerics, funcTypeDef.resultType, cause);
-                            checker.pop();
+                            checker.popEnv();
                             return res;
                         } catch (Throwable e) {
-                            checker.pop();
+                            checker.popEnv();
                             throw e;
                         }
                     }));
-            generatedSnuggleMethod.checkCode(); //Check if it works...
-            //If it didn't work, then it would have just thrown an error, so now we know it does in fact work. So let's emit successfully.
+            //Create the impl type def and fill in the indirect
             FuncImplTypeDef implDef = new FuncImplTypeDef(checker, funcTypeDef, generatedSnuggleMethod);
             indirect.fill(implDef);
+            //Now check the snuggle method body, and also remove any redundant closure fields
+            implDef.finalizeImpl(checker);
+            //Register the type def
             checker.registerTypeDef(implDef);
+            //Construct it
             MethodDef constructor = ListUtils.find(implDef.methods(), MethodDef::isConstructor);
-            return new TypedConstructor(loc, implDef, constructor, List.of());
+            List<TypedExpr> args = ListUtils.map(implDef.fields(), f ->
+                    new TypeResolvedVariable(loc, f.name(), false)
+                            .check(currentType, checker, typeGenerics, methodGenerics, f.type(), cause)
+            );
+            return new TypedConstructor(loc, implDef, constructor, args);
         } else {
             throw new TypeCheckingException("Expected type \"" + expected.name() + "\", but lambda expression returns a function type", loc, cause);
         }

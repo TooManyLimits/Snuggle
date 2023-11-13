@@ -7,7 +7,14 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 
+import java.util.Set;
+
 public record TypedDeclaration(Loc loc, String name, TypeDef type, TypedExpr rhs) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+        rhs.findAllThisFieldAccesses(setToFill);
+    }
 
     //Largely taken from TypedAssignment
     @Override

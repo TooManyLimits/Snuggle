@@ -3,6 +3,7 @@ package ast.passes;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
+import ast.type_resolved.expr.TypeResolvedVariable;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.FuncTypeDef;
@@ -33,26 +34,48 @@ public class TypeChecker {
 
     private final TypeResolvedAST ast;
 
-    private TypeChecker(TypeResolvedAST ast) throws CompilationException {
+    private TypeChecker(TypeResolvedAST ast, boolean isLambda) throws CompilationException {
         this.ast = ast;
+        scopeVariables.push(new MapStack<>());
+//        closedVariableAttempts.push(new ArrayList<>());
+        isLambdaEnv.push(isLambda);
     }
 
-    private final MapStack<String, TypeDef> scopeVariables = new MapStack<>();
-    public void push() { scopeVariables.push(); }
-    public void pop() { scopeVariables.pop(); }
+    private final Stack<MapStack<String, TypeDef>> scopeVariables = new Stack<>();
+//    private final Stack<List<ClosureAttempt>> closedVariableAttempts = new Stack<>();
+    private final Stack<Boolean> isLambdaEnv = new Stack<>();
+//    public record ClosureAttempt(Loc loc, String varName, TypeDef expectedType) {}
+
+    public void push() {
+        scopeVariables.peek().push();
+    }
+    public void pushNewEnv(boolean isLambda) {
+        scopeVariables.push(new MapStack<>());
+//        closedVariableAttempts.push(isLambda ? new ArrayList<>() : null);
+        isLambdaEnv.push(isLambda);
+    }
+    public void pop() {
+        scopeVariables.peek().pop();
+    }
+    public void popEnv() {
+        scopeVariables.pop();
+        isLambdaEnv.pop();
+//        return closedVariableAttempts.pop();
+    }
+    public MapStack<String, TypeDef> peekEnv() {
+        return scopeVariables.peek();
+    }
     public void declare(Loc loc, String name, TypeDef type) throws CompilationException {
-        TypeDef prevType = scopeVariables.putIfAbsent(name, type);
+        TypeDef prevType = scopeVariables.peek().putIfAbsent(name, type);
         if (prevType != null)
             throw new AlreadyDeclaredException("Variable \"" + name + "\" is already declared in this scope!", loc);
     }
-
     //Returns null if the variable was not found
     public TypeDef lookup(String name) { //throws CompilationException {
-//        TypeDef t = scopeVariables.get(name);
-//        if (t == null)
-//            throw new UndeclaredVariableException(errorMessage, loc);
-//        return t;
-        return scopeVariables.get(name);
+        return scopeVariables.peek().get(name);
+    }
+    public boolean isLambda() {
+        return isLambdaEnv.peek();
     }
 
     //A cache for mapping ResolvedType -> TypeDef
@@ -172,7 +195,7 @@ public class TypeChecker {
      */
     public static TypedAST type(TypeResolvedAST resolvedAST) throws CompilationException {
         //Create the checker
-        TypeChecker checker = new TypeChecker(resolvedAST);
+        TypeChecker checker = new TypeChecker(resolvedAST, false);
         //Type check all the top-level code
         Map<String, TypedFile> typedFiles = MapUtils.mapValues(resolvedAST.files(), file -> file.type(checker));
         //Type check the method bodies, repeatedly, until there are no more

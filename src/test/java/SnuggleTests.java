@@ -88,6 +88,33 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testClosure2() throws CompilationException, SnuggleException {
+        test("""
+                fn incrementor(): () -> i32 {
+                    var x: Box<i32> = new(0);
+                    () -> *x += 1
+                }
+                
+                var inc = incrementor()
+                Test.assertEquals(1, inc())
+                Test.assertEquals(2, inc())
+                Test.assertEquals(3, inc())
+                """);
+    }
+
+    @Test
+    public void testClosure() throws CompilationException, SnuggleException {
+        test("""
+                fn add(x: i32): i32 -> i32
+                    y -> x + y
+                    
+                var add5 = add(5)
+                Test.assertEquals(15, add5(10))
+                Test.assertEquals(35, add5(add(10)(20)))
+                """);
+    }
+
+    @Test
     public void testTopLevelFunctions() throws CompilationException, SnuggleException {
         test("""
                 fn square(x: i32): i32 x * x

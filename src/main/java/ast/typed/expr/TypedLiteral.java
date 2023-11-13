@@ -10,8 +10,14 @@ import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
 import java.math.BigInteger;
+import java.util.Set;
 
 public record TypedLiteral(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, TypeDef type) implements TypedExpr {
+
+    @Override
+    public void findAllThisFieldAccesses(Set<String> setToFill) {
+
+    }
 
     /**
      * Used in the circumstance of type() being a non-storable type (like a literal),

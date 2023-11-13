@@ -14,7 +14,7 @@ import lexing.Loc;
 import java.util.List;
 
 
-public record TypeResolvedVariable(Loc loc, String name) implements TypeResolvedExpr {
+public record TypeResolvedVariable(Loc loc, String name, boolean isImplicitThis) implements TypeResolvedExpr {
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
         //do nothing
@@ -23,9 +23,15 @@ public record TypeResolvedVariable(Loc loc, String name) implements TypeResolved
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         TypeDef t = checker.lookup(name);
-        if (t == null) {
+        //If we're in a lambda, and either of:
+        //- the variable name is "this"
+        //- the variable does not exist
+        //Then wrap it in a field access
+        if (!isImplicitThis && checker.isLambda() && (t == null || name.equals("this"))) {
+            return new TypeResolvedFieldAccess(loc, new TypeResolvedVariable(loc, "this", true), name, true).infer(currentType, checker, typeGenerics, methodGenerics, cause);
+        } else if (t == null) {
             if (!name.equals("this") && checker.lookup("this") != null) {
-                return new TypeResolvedFieldAccess(loc, new TypeResolvedVariable(loc, "this"), name, true).infer(currentType, checker, typeGenerics, methodGenerics, cause);
+                return new TypeResolvedFieldAccess(loc, new TypeResolvedVariable(loc, "this", true), name, true).infer(currentType, checker, typeGenerics, methodGenerics, cause);
             }
             throw new UndeclaredVariableException("Variable \"" + name + "\" was not declared in this scope", loc);
         } else {
