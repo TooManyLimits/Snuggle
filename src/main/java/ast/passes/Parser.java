@@ -10,6 +10,7 @@ import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.*;
 import ast.parsed.prog.ParsedAST;
 import ast.parsed.prog.ParsedFile;
+import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.ParsingException;
 import lexing.Lexer;
@@ -599,15 +600,17 @@ public class Parser {
             case    CLASS,
                     STRUCT -> parseClassOrStruct(lexer.last().type() == CLASS, false, typeGenerics, methodGenerics, isNested);
             case ENUM -> parseEnum(false, typeGenerics, methodGenerics, isNested);
+            case FN -> parseFn(false, typeGenerics, methodGenerics, isNested);
             case PUB -> {
                 if (isNested)
-                    throw new ParsingException("Types defined within other types cannot be \"pub\"", lexer.last().loc());
+                    throw new ParsingException("Types/functions nested in other expressions cannot be \"pub\"", lexer.last().loc());
 
                 yield switch (lexer.take().type()) {
                     case    CLASS,
                             STRUCT -> parseClassOrStruct(lexer.last().type() == CLASS, true, typeGenerics, methodGenerics, false);
                     case ENUM -> parseEnum(true, typeGenerics, methodGenerics, false);
-                    default -> throw new ParsingException("Expected class, struct, or enum after \"pub\"", lexer.last().loc());
+                    case FN -> parseFn(true, typeGenerics, methodGenerics, false);
+                    default -> throw new ParsingException("Expected class, struct, enum, or fn after \"pub\"", lexer.last().loc());
                 };
             }
             case VAR -> parseDeclaration(typeGenerics, methodGenerics, canBeDeclaration);
@@ -704,6 +707,7 @@ public class Parser {
         if (lhs instanceof ParsedVariable v) {
             return new ParsedLambda(lexer.last().loc(), List.of(v.name()), parseExpr(typeGenerics, methodGenerics, false, true));
         } else if (lhs instanceof ParsedTuple tuple) {
+            //Tuple:
             List<String> names = ListUtils.map(tuple.elements(), e -> {
                 if (e instanceof ParsedVariable v)
                     return v.name();
@@ -761,6 +765,67 @@ public class Parser {
         lexer.expect(ASSIGN, "Expected '=' after variable \"" + varName + "\" at " + varLoc);
         ParsedExpr rhs = parseExpr(typeGenerics, methodGenerics, true, true);
         return new ParsedDeclaration(Loc.merge(varLoc, rhs.loc()), varName, annotatedType, rhs);
+    }
+
+    //The "fn" was already consumed
+    private ParsedExpr parseFn(boolean pub, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean isNested) throws CompilationException {
+        Loc fnLoc = lexer.last().loc();
+        ParsedType receiverType = parseType("fn", fnLoc, typeGenerics, methodGenerics);
+        //Depending on the receiver type and dot consumption, do various things
+
+        if (lexer.consume(DOT)) {
+            //fn someType.funcName<genericParams>() ...
+            String funcName = lexer.expect(IDENTIFIER, "Expected function name after DOT").string();
+            List<GenericDef> genericParams = parseGenerics(); //Parse generics
+            methodGenerics = ListUtils.join(methodGenerics, genericParams); //Extend method generics with new ones
+
+            lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
+            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
+            ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+            return new ParsedExtensionFunction(fnLoc, receiverType, funcName, new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", genericParams.size(),
+                    ListUtils.map(params, ParsedParam::name),
+                    ListUtils.map(params, ParsedParam::type),
+                    resultType,
+                    parseExpr(typeGenerics, methodGenerics, false, true)
+            ));
+        } else {
+            if (receiverType instanceof ParsedType.Basic b && b.generics().size() == 0) {
+                //fn funcName() ...
+                String funcName = b.name();
+                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
+                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
+                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, 0, isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
+                        ListUtils.map(params, ParsedParam::name),
+                        ListUtils.map(params, ParsedParam::type),
+                        resultType,
+                        parseExpr(typeGenerics, methodGenerics, false, true)
+                )), List.of()));
+            } else if (receiverType instanceof ParsedType.Basic b) {
+                String funcName = b.name();
+                //fn funcName<generics>() ...
+                //This basic has generics.
+                //Attempt to re-interpret b's generics as GenericDef instead of ParsedType
+                List<GenericDef> genericParams = ListUtils.map(b.generics(), g -> {
+                    if (g instanceof ParsedType.Basic b2 && b.generics().size() == 0)
+                        return new GenericDef(b2.name());
+                    throw new ParsingException("Expected identifiers for function generics in function \"" + funcName + "\"", fnLoc);
+                });
+                methodGenerics = ListUtils.join(methodGenerics, genericParams);
+                //Get the method def
+                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
+                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
+                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, 0, isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", genericParams.size(),
+                        ListUtils.map(params, ParsedParam::name),
+                        ListUtils.map(params, ParsedParam::type),
+                        resultType,
+                        parseExpr(typeGenerics, methodGenerics, false, true)
+                )), List.of()));
+            } else {
+                throw new ParsingException("Expected identifier for function name, got " + receiverType.getClass().getSimpleName(), fnLoc);
+            }
+        }
     }
 
     //Token "new" was just parsed
@@ -934,7 +999,7 @@ public class Parser {
 
     //Allow indexOf() with a string on a generic def list
     private static int genericIndexOf(List<GenericDef> genericDefs, String name) {
-        for (int i = 0; i < genericDefs.size(); i++)
+        for (int i = genericDefs.size() - 1; i >= 0; i--)
             if (genericDefs.get(i).name().equals(name))
                 return i;
         return -1;

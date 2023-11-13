@@ -88,6 +88,34 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testTopLevelFunctions() throws CompilationException, SnuggleException {
+        test("""
+                fn square(x: i32): i32 x * x
+                
+                System.print(square(5))
+                System.print(square(7))
+                
+                Test.assertEquals(10001, square(square(10)) + 1)
+                """);
+
+    }
+
+    @Test
+    public void testFunnierTopLevelFunctions() throws CompilationException, SnuggleException {
+        test("""
+                struct square {
+                    static fn invoke(x: i32): i32 x * x
+                }
+                
+                System.print(square(5))
+                System.print(square(7))
+                
+                Test.assertEquals(10001, square(square(10)) + 1)
+                """);
+
+    }
+
+    @Test
     public void testLambdas() throws CompilationException, SnuggleException {
         test("""
                 var l = new List<i32>()

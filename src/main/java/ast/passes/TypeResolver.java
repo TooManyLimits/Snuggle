@@ -73,7 +73,7 @@ public class TypeResolver {
                 if (!fileNames.contains(snuggleDefined.parsedFile.name()))
                     parsedAST.files().add(snuggleDefined.parsedFile);
             } else {
-                //Register the type(s) directly in the current mappings
+                //Register the type(s) directly into the current mappings
                 for (ParsedTypeDef t : snuggleDefined.parsedFile.topLevelTypeDefs()) {
                     if (!t.pub())
                         throw new IllegalStateException("Bug in environment: snuggle-defined builtin \"" + t.name() + "\" is not pub, but it was expected to be!");
