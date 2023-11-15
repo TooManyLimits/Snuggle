@@ -88,6 +88,25 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testEvent() throws CompilationException, SnuggleException {
+        test("""
+                class Event<InputType> : List<InputType -> ()> {
+                    pub fn new() super()
+                    pub fn invoke(input: InputType)
+                        this.forEach(e -> e(input))
+                }
+                
+                var myEvent = new Event<f32>()
+                myEvent += x -> System.print(x.str() + " is " + x.str())
+                myEvent += x -> System.print(x.str() + " doubled is " + (x * 2).str())
+                myEvent += x -> System.print(x.str() + " squared is " + (x * x).str())
+                
+                myEvent(3)
+                myEvent(4)
+                """);
+    }
+
+    @Test
     public void testClosure2() throws CompilationException, SnuggleException {
         test("""
                 fn incrementor(): () -> i32 {
