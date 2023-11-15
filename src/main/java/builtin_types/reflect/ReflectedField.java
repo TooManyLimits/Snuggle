@@ -1,6 +1,4 @@
-package builtin_types.reflect.reflect2;
-
-import ast.typed.def.field.FieldDef;
+package builtin_types.reflect;
 
 import java.lang.reflect.Field;
 

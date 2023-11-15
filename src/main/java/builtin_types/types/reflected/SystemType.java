@@ -1,15 +1,13 @@
 package builtin_types.types.reflected;
 
 import builtin_types.BuiltinType;
-import builtin_types.reflect.ReflectedBuiltin;
+import builtin_types.reflect.Reflector;
 import builtin_types.reflect.annotations.*;
 
-@SnuggleType(name = "System")
+@Rename("System")
+@SnuggleType
 @SnuggleWhitelist
 public class SystemType {
-
-    @SnuggleBlacklist
-    public static final BuiltinType INSTANCE = new ReflectedBuiltin(SystemType.class);
 
     public static void print(float f) { System.out.println(f); }
     public static void print(double d) { System.out.println(d); }

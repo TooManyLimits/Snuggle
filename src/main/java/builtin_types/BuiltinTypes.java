@@ -1,6 +1,6 @@
 package builtin_types;
 
-import builtin_types.reflect.ReflectedBuiltin;
+import builtin_types.reflect.Reflector;
 import builtin_types.snuggle.always.BoxType;
 import builtin_types.snuggle.always.ListType;
 import builtin_types.snuggle.SnuggleDefinedType;
@@ -39,9 +39,8 @@ public class BuiltinTypes {
         return this;
     }
 
-
-    public BuiltinTypes reflect(Class<?> clazz) {
-        return addType(new ReflectedBuiltin(clazz));
+    public BuiltinTypes addType(Class<?> clazz) {
+        return addType(Reflector.reflect(clazz));
     }
 
     public BuiltinTypes removeType(BuiltinType builtinType) {
@@ -51,6 +50,11 @@ public class BuiltinTypes {
 
     public BuiltinTypes removeType(SnuggleDefinedType builtinType) {
         registeredSnuggleTypes.remove(builtinType);
+        return this;
+    }
+
+    public BuiltinTypes removeType(Class<?> clazz) {
+        registeredTypes.remove(Reflector.reflect(clazz));
         return this;
     }
 
@@ -64,7 +68,7 @@ public class BuiltinTypes {
         addType(ComplexType.INSTANCE);
 
         //Add builtin java-defined topLevelTypes:
-        addType(SystemType.INSTANCE);
+        addType(SystemType.class);
 
         addType(OptionType.INSTANCE);
         addType(ArrayType.INSTANCE);

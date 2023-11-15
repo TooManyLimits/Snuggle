@@ -1,4 +1,4 @@
-package builtin_types.reflect.reflect2;
+package builtin_types.reflect;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;

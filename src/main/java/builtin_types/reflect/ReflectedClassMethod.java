@@ -1,4 +1,4 @@
-package builtin_types.reflect.reflect2;
+package builtin_types.reflect;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.method.BytecodeMethodDef;
@@ -88,7 +88,7 @@ public class ReflectedClassMethod {
                 ListUtils.map(paramTypeGetters, g -> g.get(checker, instantiationLoc, cause)),
                 returnTypeGetter.get(checker, instantiationLoc, cause),
                 false,
-                v -> {}
+                bytecodeVisitor
         );
     }
 

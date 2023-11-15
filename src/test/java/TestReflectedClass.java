@@ -3,7 +3,8 @@ import builtin_types.reflect.annotations.SnuggleType;
 import builtin_types.reflect.annotations.SnuggleWhitelist;
 import builtin_types.reflect.annotations.Unsigned;
 
-@SnuggleType(name = "TestClass")
+@Rename("TestClass")
+@SnuggleType
 @SnuggleWhitelist
 public class TestReflectedClass {
 

@@ -965,7 +965,7 @@ public class SnuggleTests {
     @Test
     public void testOverloads() throws CompilationException, SnuggleException {
         var types = new BuiltinTypes()
-                .reflect(TestReflectedClass.class);
+                .addType(TestReflectedClass.class);
         test(types, """
                 class Silly {
                     fn new() super()
@@ -1021,8 +1021,8 @@ public class SnuggleTests {
     @Test
     public void testReflectionExtend() throws CompilationException, SnuggleException {
         var types = new BuiltinTypes()
-                .reflect(TestReflectedClass.class)
-                .reflect(TestReflectedClass2.class);
+                .addType(TestReflectedClass.class)
+                .addType(TestReflectedClass2.class);
         test(types, """
                 var x: TestClass = TestClass.get()
                 var y: i32 = x.beeg()
@@ -1039,7 +1039,7 @@ public class SnuggleTests {
     @Test
     public void testReflection() throws CompilationException, SnuggleException {
         var types = new BuiltinTypes()
-                .reflect(TestReflectedClass.class);
+                .addType(TestReflectedClass.class);
         test(types, """
                 TestClass.printSilly()
                 TestClass.printSilly()
@@ -1106,8 +1106,7 @@ public class SnuggleTests {
     }
 
     public void test(BuiltinTypes types, Map<String, String> files, File export) throws CompilationException, SnuggleException {
-        types.reflect(TestBindings.class);
-
+        types.addType(TestBindings.class);
         try {
             var before = System.nanoTime();
             var instance = CompileAll.compileAllToInstance(types, files);

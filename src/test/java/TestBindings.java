@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Assertions;
 
 import java.util.HexFormat;
 
-@SnuggleType(name = "Test")
+@Rename("Test")
+@SnuggleType
 @SnuggleWhitelist
 public class TestBindings {
 

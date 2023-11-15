@@ -1,6 +1,5 @@
 package ast.passes;
 
-import ast.parsed.ParsedType;
 import ast.parsed.def.type.BuiltinParsedTypeDef;
 import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.ParsedImport;
@@ -8,10 +7,8 @@ import ast.parsed.prog.ParsedAST;
 import ast.parsed.prog.ParsedFile;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
-import ast.type_resolved.expr.TypeResolvedImport;
 import ast.type_resolved.prog.TypeResolvedAST;
 import ast.type_resolved.prog.TypeResolvedFile;
-import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.BuiltinTypes;
 import builtin_types.reflect.ReflectedBuiltin;
@@ -98,9 +95,9 @@ public class TypeResolver {
             builtins.put(builtin, mapping);
             //If it's a reflected builtin, add it into the reflected map
             if (builtin instanceof ReflectedBuiltin reflected) {
-                if (reflectedBuiltins.containsKey(reflected.reflectedClass))
+                if (reflectedBuiltins.containsKey(reflected.getJavaClass()))
                     throw new IllegalStateException("Multiple reflections on the same class? Likely bug by environment designer, please report if not!");
-                reflectedBuiltins.put(reflected.reflectedClass, reflected);
+                reflectedBuiltins.put(reflected.getJavaClass(), reflected);
             }
         }
 
