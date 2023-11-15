@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SnuggleType {
-    String name(); //The name of the type
+    String name() default ""; //The name of the type. Default is the name of the class
     boolean nameable() default true; //Whether this type should be nameable
     String descriptor() default ""; //The descriptor of this type. If none is specified, will try to auto-calculate.
     boolean forceSupertype() default false; //If false, will try to infer the supertype.

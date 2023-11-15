@@ -27,13 +27,12 @@ import java.util.List;
 public class ReflectedMethod {
 
     private final String origName, name, owner, descriptor;
-    private final boolean inlined, isStatic, isVoid;
+    private final boolean isStatic, isVoid;
     private final List<ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException>> paramTypeGetters;
     private final ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> ownerTypeGetter, returnTypeGetter;
     private final ThrowingConsumer<MethodVisitor, CompilationException> bytecode;
 
     ReflectedMethod(Method method) {
-        inlined = method.getAnnotation(Inline.class) != null;
         isStatic = Modifier.isStatic(method.getModifiers());
         isVoid = method.getReturnType() == void.class;
 
@@ -63,19 +62,14 @@ public class ReflectedMethod {
     }
 
     private ThrowingConsumer<MethodVisitor, CompilationException> getBytecode() {
-        if (inlined) {
-            //special thingis
-            throw new IllegalArgumentException("Inline not available");
-        } else {
-            //Not inline, so just call the method in question:
-            return v -> v.visitMethodInsn(
-                    isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
-                    owner,
-                    origName,
-                    descriptor,
-                    false
-            );
-        }
+        //Just call the method in question:
+        return v -> v.visitMethodInsn(
+                isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
+                owner,
+                origName,
+                descriptor,
+                false
+        );
     }
 
     private static ThrowingTriFunction<TypeChecker, Loc, TypeDef.InstantiationStackFrame, TypeDef, RuntimeException> getTypeGetter(AnnotatedType type) {
