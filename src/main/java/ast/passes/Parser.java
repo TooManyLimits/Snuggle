@@ -795,7 +795,7 @@ public class Parser {
                 lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
                 List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
                 ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, 0, isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
+                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, 0, isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
                         ListUtils.map(params, ParsedParam::name),
                         ListUtils.map(params, ParsedParam::type),
                         resultType,
@@ -816,7 +816,7 @@ public class Parser {
                 lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
                 List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
                 ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-                return new ParsedTypeDefExpr(fnLoc, new ParsedStructDef(fnLoc, pub, funcName, genericParams.size(), isNested, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
+                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, genericParams.size(), isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
                         ListUtils.map(params, ParsedParam::name),
                         ListUtils.map(params, ParsedParam::type),
                         resultType,
