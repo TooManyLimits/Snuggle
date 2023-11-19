@@ -21,7 +21,7 @@ public enum TokenType {
     STAR("*"),
     SLASH("/"),
     PERCENT("%"),
-    POWER("**"),
+//    POWER("**"),
 
     //Bitwise operators
     AMPERSAND("&"),

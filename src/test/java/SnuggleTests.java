@@ -88,6 +88,24 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testPipe() throws CompilationException, SnuggleException {
+        test("""
+                fn rep(x: str, y: u32): str {
+                    if y == 0 return ""
+                    var res = x
+                    while y > 1 {
+                        res = res + x
+                        y -= 1
+                    }
+                    res
+                }
+                
+                System.print("hi"|rep(10))
+                Test.assertEquals("CutieCutieCutie", "Cutie"|rep(3))
+                """);
+    }
+
+    @Test
     public void testEvent() throws CompilationException, SnuggleException {
         test("""
                 class Event<InputType> : List<InputType -> ()> {
@@ -141,7 +159,7 @@ public class SnuggleTests {
                 
                 System.print(square(5))
                 System.print(square(7))
-                System.print(genericSquare::<f32>(10.5))
+                System.print(genericSquare.invoke::<f32>(10.5)) //TODO: Method generic type inference...
 //                System.print(genericSquare::<str>("hi")) //Errors with a descriptive error message.
                 
                 Test.assertEquals(10001, square(square(10)) + 1)
@@ -1061,8 +1079,8 @@ public class SnuggleTests {
                 System.print(~y)
                 System.print(-y)
                 System.print(y / y)
-                System.print(y & y)
-                System.print(y ^ y)
+                System.print(y.band(y))
+                System.print(y.bxor(y))
                 
                 var x: i32 = ~10
                 System.print(x)

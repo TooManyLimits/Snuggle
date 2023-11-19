@@ -90,15 +90,17 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
     }
 
 
+    //Has this method def been instantiated with the given generics before?
+    public boolean hasInstantiated(List<TypeDef> methodGenerics) {
+        return instantiationCache.containsKey(methodGenerics);
+    }
     public SnuggleMethodDef instantiate(List<TypeDef> methodGenerics) {
-        return instantiationCache.computeIfAbsent(methodGenerics, m -> {
-            return new SnuggleMethodDef(
-                    loc, pub, GenericStringUtil.instantiateName(name, methodGenerics), disambiguationIndex, 0, isStatic, inline, owningType, numParams, paramNames,
-                    new LateInitFunction<>(unused -> paramTypeGetter.get(methodGenerics)),
-                    new LateInitFunction<>(unused -> returnTypeGetter.get(methodGenerics)),
-                    new LateInitFunction<>(unused -> body.get(methodGenerics))
-            );
-        });
+        return instantiationCache.computeIfAbsent(methodGenerics, m -> new SnuggleMethodDef(
+                loc, pub, GenericStringUtil.instantiateName(name, methodGenerics), disambiguationIndex, 0, isStatic, inline, owningType, numParams, paramNames,
+                new LateInitFunction<>(unused -> paramTypeGetter.get(methodGenerics)),
+                new LateInitFunction<>(unused -> returnTypeGetter.get(methodGenerics)),
+                new LateInitFunction<>(unused -> body.get(methodGenerics))
+        ));
     }
 
     public String dedupName() {

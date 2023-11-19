@@ -304,8 +304,10 @@ public class TypeChecker {
 
             if (def.numGenerics() > 0) {
                 if (def instanceof SnuggleMethodDef snuggleDef) {
+                    boolean isNew = !snuggleDef.hasInstantiated(genericArgs);
                     def = snuggleDef.instantiate(genericArgs);
-                    receiverType.addMethod(def); //add a new method, the instantiated one
+                    if (isNew)
+                        receiverType.addMethod(def); //add a new method, the instantiated one
                 } else {
                     throw new IllegalStateException("Only snuggle method defs can be generic? Bug in compiler, please report!");
                 }

@@ -166,7 +166,7 @@ public class Lexer {
 
     public Token expect(TokenType type, String message, Loc startLoc) throws CompilationException {
         if (!check(type))
-            throw new ParsingException(message, Loc.merge(startLoc, peek().loc()));
+            throw new ParsingException("Unexpected token " + peek().type() + ". " + message, Loc.merge(startLoc, peek().loc()));
         return take();
     }
 
