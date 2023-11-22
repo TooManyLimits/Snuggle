@@ -349,11 +349,11 @@ public class Parser {
                 case STAR -> "mul";
                 case SLASH -> "div";
                 case PERCENT -> "rem";
-                case CARAT -> "pow";
+                case POWER -> "pow";
 
-//                case AMPERSAND -> "band";
-//                case PIPE -> "bor";
-//                case CARAT -> "bxor";
+                case AMPERSAND -> "band";
+                case PIPE -> "bor";
+                case CARAT -> "bxor";
 
                 //Special
                 case AND, OR -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
@@ -432,7 +432,7 @@ public class Parser {
 
     private ParsedExpr parseCallOrFieldOrAssignment(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //Parse lhs first
-        ParsedExpr lhs = parsePipe(typeGenerics, methodGenerics, canBeDeclaration, isNested);
+        ParsedExpr lhs = parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, isNested);
 
         //Once it's done, check for an assignment (or augmented assignment)
         if (lexer.consume(ASSIGN)) {
@@ -471,9 +471,9 @@ public class Parser {
                 case MODULO_ASSIGN -> "rem";
                 case POWER_ASSIGN -> "pow";
 
-//                case BITWISE_AND_ASSIGN -> "band";
-//                case BITWISE_OR_ASSIGN -> "bor";
-//                case BITWISE_XOR_ASSIGN -> "bxor";
+                case BITWISE_AND_ASSIGN -> "band";
+                case BITWISE_OR_ASSIGN -> "bor";
+                case BITWISE_XOR_ASSIGN -> "bxor";
 
                 case LEFT_SHIFT_ASSIGN -> "shl";
                 case RIGHT_SHIFT_ASSIGN -> "shr";
@@ -497,30 +497,9 @@ public class Parser {
         }
     }
 
-    //a|b is equivalent to b(a)
-    //a|b(c) is equivalent to b(a, c)
-    private ParsedExpr parsePipe(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
-        ParsedExpr lhs = parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, isNested);
-        while (lexer.consume(PIPE)) {
-            ParsedExpr rhs = parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, isNested);
-            Loc merged = lhs.loc().merge(rhs.loc());
-            if (rhs instanceof ParsedMethodCall rhs2) {
-                List<ParsedExpr> newArgs = new ArrayList<>(rhs2.args().size() + 1);
-                newArgs.add(lhs);
-                newArgs.addAll(rhs2.args());
-                lhs = new ParsedMethodCall(merged, rhs2.receiver(), rhs2.methodName(), rhs2.genericArgs(), newArgs);
-            } else {
-                //a|b -> b(a) -> b.invoke(a)
-                //a|super -> super(a) -> super.new(a)
-                String methodName = rhs instanceof ParsedSuper ? "new" : "invoke";
-                lhs = new ParsedMethodCall(merged, rhs, methodName, List.of(), List.of(lhs));
-            }
-        }
-        return lhs;
-    }
-
     private ParsedExpr parseCallOrField(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //If we find STAR, then output is automatically recurse().get()
+        //no, no, bad, do not, the syntax is not enjoyable
         if (lexer.consume(STAR))
             return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, true), "get", List.of(), List.of());
         //Get the lhs
@@ -791,31 +770,61 @@ public class Parser {
     //The "fn" was already consumed
     private ParsedExpr parseFn(boolean pub, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean isNested) throws CompilationException {
         Loc fnLoc = lexer.last().loc();
-        ParsedType type = parseType("fn", fnLoc, typeGenerics, methodGenerics);
-        if (type instanceof ParsedType.Basic b) {
-            String funcName = b.name();
-            //fn funcName<generics>() ...
-            //This basic has generics.
-            //Attempt to re-interpret b's generics as GenericDef instead of ParsedType
-            List<GenericDef> genericParams = ListUtils.map(b.generics(), g -> {
-                if (g instanceof ParsedType.Basic b2 && b2.generics().size() == 0)
-                    return new GenericDef(b2.name());
-                throw new ParsingException("Expected identifiers for function generics in function \"" + funcName + "\"", fnLoc);
-            });
-            methodGenerics = ListUtils.join(methodGenerics, genericParams);
-            //Get the method def
+        ParsedType receiverType = parseType("fn", fnLoc, typeGenerics, methodGenerics);
+        //Depending on the receiver type and dot consumption, do various things
+
+        if (lexer.consume(DOT)) {
+            //fn someType.funcName<genericParams>() ...
+            String funcName = lexer.expect(IDENTIFIER, "Expected function name after DOT").string();
+            List<GenericDef> genericParams = parseGenerics(); //Parse generics
+            methodGenerics = ListUtils.join(methodGenerics, genericParams); //Extend method generics with new ones
+
             lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
             List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
             ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-            return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, 0, isNested, null, List.of(new SnuggleParsedMethodDef(
-                    fnLoc, true, true, "invoke", genericParams.size(),
+            return new ParsedExtensionFunction(fnLoc, receiverType, funcName, new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", genericParams.size(),
                     ListUtils.map(params, ParsedParam::name),
                     ListUtils.map(params, ParsedParam::type),
                     resultType,
                     parseExpr(typeGenerics, methodGenerics, false, true)
-            )), List.of()));
+            ));
         } else {
-            throw new ParsingException("Expected identifier (with optional generics) for function name, got \"" + type + "\"", fnLoc);
+            if (receiverType instanceof ParsedType.Basic b && b.generics().size() == 0) {
+                //fn funcName() ...
+                String funcName = b.name();
+                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
+                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
+                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, 0, isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
+                        ListUtils.map(params, ParsedParam::name),
+                        ListUtils.map(params, ParsedParam::type),
+                        resultType,
+                        parseExpr(typeGenerics, methodGenerics, false, true)
+                )), List.of()));
+            } else if (receiverType instanceof ParsedType.Basic b) {
+                String funcName = b.name();
+                //fn funcName<generics>() ...
+                //This basic has generics.
+                //Attempt to re-interpret b's generics as GenericDef instead of ParsedType
+                List<GenericDef> genericParams = ListUtils.map(b.generics(), g -> {
+                    if (g instanceof ParsedType.Basic b2 && b2.generics().size() == 0)
+                        return new GenericDef(b2.name());
+                    throw new ParsingException("Expected identifiers for function generics in function \"" + funcName + "\"", fnLoc);
+                });
+                typeGenerics = ListUtils.join(typeGenerics, genericParams);
+                //Get the method def
+                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
+                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
+                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, genericParams.size(), isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
+                        ListUtils.map(params, ParsedParam::name),
+                        ListUtils.map(params, ParsedParam::type),
+                        resultType,
+                        parseExpr(typeGenerics, methodGenerics, false, true)
+                )), List.of()));
+            } else {
+                throw new ParsingException("Expected identifier for function name, got " + receiverType.getClass().getSimpleName(), fnLoc);
+            }
         }
     }
 
@@ -873,9 +882,9 @@ public class Parser {
         register(false, AND);
         register(false, EQUAL, NOT_EQUAL);
         register(false, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL);
-        register(false, PLUS, MINUS); //a + b + c == (a + b) + c
-        register(false, STAR, SLASH, PERCENT);
-        register(true, CARAT); //a ^ b ^ c == a ^ (b ^ c)
+        register(false, PLUS, MINUS, PIPE, CARAT); //a + b + c == (a + b) + c
+        register(false, STAR, SLASH, PERCENT, AMPERSAND);
+        register(true, POWER); //a ** b ** c == a ** (b ** c)
     }
 
     private static void register(boolean rightAssociative, TokenType... tokenTypes) {

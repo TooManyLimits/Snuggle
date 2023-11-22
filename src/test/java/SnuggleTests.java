@@ -189,7 +189,7 @@ public class SnuggleTests {
                 
                 System.print(square(5))
                 System.print(square(7))
-                System.print(genericSquare.invoke::<f32>(10.5)) //TODO: Method generic type inference...
+                System.print(genericSquare::<f32>(10.5))
 //                System.print(genericSquare::<str>("hi")) //Errors with a descriptive error message.
                 
                 Test.assertEquals(10001, square(square(10)) + 1)
@@ -1109,8 +1109,8 @@ public class SnuggleTests {
                 System.print(~y)
                 System.print(-y)
                 System.print(y / y)
-                System.print(y.band(y))
-                System.print(y.bxor(y))
+                System.print(y & y)
+                System.print(y ^ y)
                 
                 var x: i32 = ~10
                 System.print(x)
