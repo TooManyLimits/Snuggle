@@ -19,6 +19,7 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
 
     @Override
     public void verifyGenericArgCounts(GenericVerifier verifier) throws CompilationException {
+        verifier.verifyType(type, loc);
         for (ResolvedType genericArg : genericArgs)
             verifier.verifyType(genericArg, loc);
         for (TypeResolvedExpr arg : args)

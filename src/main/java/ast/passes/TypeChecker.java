@@ -282,7 +282,7 @@ public class TypeChecker {
         for (int i = 0; i < args.size(); i++) checkCache.add(new IdentityHashMap<>());
         //Keep track of info for no-matching-method errors
         boolean foundCheckError = false;
-        TypeCheckingException onlyCheckError = null;
+        CompilationException onlyCheckError = null;
         List<MethodDef> thrownOutDueToWrongReturnType = new ArrayList<>();
 
         //Get the list of methods to look through:
@@ -318,6 +318,7 @@ public class TypeChecker {
             if (def.numGenerics() > 0) {
                 if (def instanceof SnuggleMethodDef snuggleDef) {
                     //We might be trying to use inference, so let's try it:
+                    boolean wasInferred = genericArgs.size() == 0;
                     if (genericArgs.size() == 0) {
                         //No explicit generic args. Let's go for inference.
                         TypeInferenceContext ctx = new TypeInferenceContext(def.numGenerics(), loc, methodName, cause);
@@ -342,6 +343,18 @@ public class TypeChecker {
                     //If it succeeded, then the generic args have been set, and we proceed as normal.
                     boolean isNew = !snuggleDef.hasInstantiated(genericArgs);
                     def = snuggleDef.instantiate(genericArgs);
+                    if (wasInferred)
+                        try {
+                            def.checkCode();
+                        } catch (CompilationException e) {
+                            if (!foundCheckError || onlyCheckError != null && e.getMessage().equals(onlyCheckError.getMessage())) {
+                                foundCheckError = true;
+                                onlyCheckError = e;
+                            } else {
+                                onlyCheckError = null;
+                            }
+                            continue;
+                        }
                     if (isNew)
                         receiverType.addMethod(def); //add a new method, the instantiated one
                 } else {
@@ -385,7 +398,7 @@ public class TypeChecker {
                     //Add it to the list of typed args
                     typedArgs.add(typedArg);
                 }
-            } catch (TypeCheckingException e) {
+            } catch (CompilationException e) {
                 //A type check failed, so this method def is not applicable.
                 //Note this information down and continue.
                 checkCache.get(i).put(expectedParamType, null);

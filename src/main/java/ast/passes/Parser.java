@@ -10,7 +10,6 @@ import ast.parsed.def.type.ParsedTypeDef;
 import ast.parsed.expr.*;
 import ast.parsed.prog.ParsedAST;
 import ast.parsed.prog.ParsedFile;
-import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.ParsingException;
 import lexing.Lexer;
@@ -18,6 +17,7 @@ import lexing.Loc;
 import lexing.Token;
 import lexing.TokenType;
 import util.ListUtils;
+import util.throwing_interfaces.ThrowingFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -235,7 +235,7 @@ public class Parser {
             List<GenericDef> methodGenerics = new ArrayList<>(prevMethodGenerics);
             methodGenerics.addAll(parseGenerics());
             lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName + "\"", methodLoc);
-            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodLoc, "method \"" + methodName + "\"");
+            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodLoc, "method \"" + methodName + "\"", false);
 
             //TODO: Fix unit type
             //ParsedType returnTypeGetter = ParsedType.Tuple.UNIT;
@@ -256,7 +256,7 @@ public class Parser {
             Token methodName = lexer.expect(IDENTIFIER, "Expected method methodName after \"fn\", but got " + lexer.peek().type());
             List<GenericDef> methodGenerics = parseGenerics();
             lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName.string() + "\"", methodName.loc());
-            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName.loc(), "method \"" + methodName + "\"");
+            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodName.loc(), "method \"" + methodName + "\"", false);
 
             //ParsedType returnTypeGetter = lexer.consume(COLON) ? parseType(lexer.last(), typeGenerics, methodGenerics) : null;
             ParsedType returnType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
@@ -270,13 +270,18 @@ public class Parser {
 
     // Parse a params list, not to be confused with an args list
     // The "(" was already consumed
-    private List<ParsedParam> parseParams(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, Loc loc, String name) throws CompilationException {
+    // Boolean arg is whether "this" should be allowed as a name of the first parameter
+    private List<ParsedParam> parseParams(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, Loc loc, String name, boolean acceptThisAsFirstParameter) throws CompilationException {
         if (lexer.consume(RIGHT_PAREN))
             return List.of();
         ArrayList<ParsedParam> params = new ArrayList<>();
 
         //Parse one at least, then continue parsing while we have commas
-        String paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for " + name, loc).string();
+        String paramName;
+        if (acceptThisAsFirstParameter && lexer.consume(THIS))
+            paramName = "this";
+        else
+            paramName = lexer.expect(IDENTIFIER, "Expected ) to end params list for " + name, loc).string();
         Loc colonLoc = lexer.expect(COLON, "Parameter \"" + paramName + "\" in " + name + " is missing a annotatedType annotation", loc).loc();
         params.add(new ParsedParam(paramName, parseType(":", colonLoc, typeGenerics, methodGenerics)));
         while (lexer.consume(COMMA)) {
@@ -767,64 +772,32 @@ public class Parser {
         return new ParsedDeclaration(Loc.merge(varLoc, rhs.loc()), varName, annotatedType, rhs);
     }
 
-    //The "fn" was already consumed
     private ParsedExpr parseFn(boolean pub, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean isNested) throws CompilationException {
         Loc fnLoc = lexer.last().loc();
-        ParsedType receiverType = parseType("fn", fnLoc, typeGenerics, methodGenerics);
-        //Depending on the receiver type and dot consumption, do various things
-
-        if (lexer.consume(DOT)) {
-            //fn someType.funcName<genericParams>() ...
-            String funcName = lexer.expect(IDENTIFIER, "Expected function name after DOT").string();
-            List<GenericDef> genericParams = parseGenerics(); //Parse generics
-            methodGenerics = ListUtils.join(methodGenerics, genericParams); //Extend method generics with new ones
-
-            lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
-            List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
-            ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-            return new ParsedExtensionFunction(fnLoc, receiverType, funcName, new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", genericParams.size(),
-                    ListUtils.map(params, ParsedParam::name),
-                    ListUtils.map(params, ParsedParam::type),
-                    resultType,
-                    parseExpr(typeGenerics, methodGenerics, false, true)
-            ));
+        Token nameTok = lexer.expect(IDENTIFIER, "Expected function name after \"fn\"", fnLoc);
+        List<GenericDef> newGenerics = parseGenerics();
+        methodGenerics = ListUtils.join(methodGenerics, newGenerics); //Append method generics
+        //Parse parameters. We want to accept "this" as a possible first parameter.
+        lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + nameTok.string() + "\"", fnLoc);
+        List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, nameTok.string(), true);
+        ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
+        //Generate the method def
+        SnuggleParsedMethodDef parsedMethodDef = new SnuggleParsedMethodDef(
+                fnLoc, true, true, "invoke", newGenerics.size(),
+                ListUtils.map(params, ParsedParam::name),
+                ListUtils.map(params, ParsedParam::type),
+                resultType,
+                parseExpr(typeGenerics, methodGenerics, false, true)
+        );
+        //Decide what to do with the method def, based on whether this is an extension method or not.
+        if (params.size() > 0 && params.get(0).name.equals("this")) {
+            //It's an extension method
+            return new ParsedExtensionMethod(nameTok.loc(), pub, nameTok.string(), parsedMethodDef);
         } else {
-            if (receiverType instanceof ParsedType.Basic b && b.generics().size() == 0) {
-                //fn funcName() ...
-                String funcName = b.name();
-                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
-                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
-                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, 0, isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
-                        ListUtils.map(params, ParsedParam::name),
-                        ListUtils.map(params, ParsedParam::type),
-                        resultType,
-                        parseExpr(typeGenerics, methodGenerics, false, true)
-                )), List.of()));
-            } else if (receiverType instanceof ParsedType.Basic b) {
-                String funcName = b.name();
-                //fn funcName<generics>() ...
-                //This basic has generics.
-                //Attempt to re-interpret b's generics as GenericDef instead of ParsedType
-                List<GenericDef> genericParams = ListUtils.map(b.generics(), g -> {
-                    if (g instanceof ParsedType.Basic b2 && b2.generics().size() == 0)
-                        return new GenericDef(b2.name());
-                    throw new ParsingException("Expected identifiers for function generics in function \"" + funcName + "\"", fnLoc);
-                });
-                typeGenerics = ListUtils.join(typeGenerics, genericParams);
-                //Get the method def
-                lexer.expect(LEFT_PAREN, "Expected ( to begin arguments list for function \"" + funcName + "\"", fnLoc);
-                List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, fnLoc, funcName);
-                ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
-                return new ParsedTypeDefExpr(fnLoc, new ParsedClassDef(fnLoc, pub, funcName, genericParams.size(), isNested, null, List.of(new SnuggleParsedMethodDef(fnLoc, true, true, "invoke", 0,
-                        ListUtils.map(params, ParsedParam::name),
-                        ListUtils.map(params, ParsedParam::type),
-                        resultType,
-                        parseExpr(typeGenerics, methodGenerics, false, true)
-                )), List.of()));
-            } else {
-                throw new ParsingException("Expected identifier for function name, got " + receiverType.getClass().getSimpleName(), fnLoc);
-            }
+            //Not an extension method
+            return new ParsedTypeDefExpr(nameTok.loc(), new ParsedClassDef(
+                    nameTok.loc(), pub, nameTok.string(), 0, isNested, null, List.of(parsedMethodDef), List.of()
+            ));
         }
     }
 

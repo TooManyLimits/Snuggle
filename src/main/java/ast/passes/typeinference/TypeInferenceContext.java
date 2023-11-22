@@ -72,6 +72,7 @@ public class TypeInferenceContext {
         //Create an array to store whether we need to infer each arg or not.
         //If a param makes no mention of any unknown generic, then we don't need to bother inferring its arg.
         boolean[] needToInferArg = new boolean[args.size()];
+        boolean needToInferResult = containsUnknownGeneric(resultType);
         //Fill out this array with starting data:
         for (int i = 0; i < args.size(); i++)
             needToInferArg[i] = containsUnknownGeneric(paramTypes.get(i));
@@ -82,7 +83,19 @@ public class TypeInferenceContext {
             boolean changed = false;
 
             //Try return type with expectedReturnType:
-            //TODO
+            if (needToInferResult && expectedReturnType != null) {
+                needToInferResult = false;
+                changed = true;
+                //If we have an expected return type, try to destructure
+                //the output with it, then update stuff
+                destructure(expectedReturnType, resultType);
+                //And then update param/result types and needToInferArg
+                paramTypes = paramTypeGetter.get(unknownMethodGenerics);
+                resultType = returnTypeGetter.get(unknownMethodGenerics);
+                needToInferResult &= containsUnknownGeneric(resultType);
+                for (int j = 0; j < args.size(); j++)
+                    needToInferArg[j] &= containsUnknownGeneric(paramTypes.get(j));
+            }
 
             //If done, break out
             if (done()) break inferenceLoop;
@@ -109,6 +122,7 @@ public class TypeInferenceContext {
                             //And then update param/result types, and needToInferArg
                             paramTypes = paramTypeGetter.get(unknownMethodGenerics);
                             resultType = returnTypeGetter.get(unknownMethodGenerics);
+                            needToInferResult &= containsUnknownGeneric(resultType);
                             for (int j = 0; j < args.size(); j++)
                                 needToInferArg[j] &= containsUnknownGeneric(paramTypes.get(j));
                         } else {
@@ -138,6 +152,7 @@ public class TypeInferenceContext {
                     //And then update param/result types and needToInferArg
                     paramTypes = paramTypeGetter.get(unknownMethodGenerics);
                     resultType = returnTypeGetter.get(unknownMethodGenerics);
+                    needToInferResult &= containsUnknownGeneric(resultType);
                     for (int j = 0; j < args.size(); j++)
                         needToInferArg[j] &= containsUnknownGeneric(paramTypes.get(j));
                 }

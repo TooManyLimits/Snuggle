@@ -48,7 +48,7 @@ public class GenericVerifier {
         int expectedGenerics = def.numGenerics();
         int givenGenerics = basic.generics().size();
         if (expectedGenerics != givenGenerics)
-            throw new GenericCountException("Attempt to instantiate annotatedType " + def.name() + " with " + givenGenerics + " generics, but it expected " + expectedGenerics, loc);
+            throw new GenericCountException("Attempt to instantiate " + def.name() + " with " + givenGenerics + " generics, but it expected " + expectedGenerics, loc);
 
         //Ensure the sub-generics are also okay
         for (ResolvedType generic : basic.generics())

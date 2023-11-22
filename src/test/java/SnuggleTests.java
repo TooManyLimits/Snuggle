@@ -88,16 +88,17 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testMonad() throws CompilationException, SnuggleException {
+    public void testSillyMonadOperator() throws CompilationException, SnuggleException {
         test("""
-                fn bind<T, R>(opt: T?, func: T -> R?): R?
-                    if opt func(*opt) else new()
+                // >>= operator overload
+                fn shrAssign<T, R>(this: T?, func: T -> R?): R?
+                    if this func(*this) else new()
                 
                 var a: str? = new("i am present")
                 var b: str? = new() //i am not
                 
-                var alen: u32? = a|bind(x -> new u32?(#x))
-                var blen: u32? = b|bind(x -> new u32?(#x))
+                var alen: u32? = a >>= x -> new(#x)
+                var blen: u32? = b >>= x -> new(#x)
                 
                 if alen System.print(*alen)
                 if blen System.print(*blen)
@@ -108,7 +109,7 @@ public class SnuggleTests {
     @Test
     public void testMethodGenericInference() throws CompilationException, SnuggleException {
         test("""
-                var x: List<i32> =  new()
+                var x: List<i32> = new()
                 x += 1
                 x += 2
                 x += 3
@@ -118,20 +119,20 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testPipe() throws CompilationException, SnuggleException {
+    public void testExtensionMethod() throws CompilationException, SnuggleException {
         test("""
-                fn rep(x: str, y: u32): str {
-                    if y == 0 return ""
-                    var res = x
-                    while y > 1 {
-                        res = res + x
-                        y -= 1
+                fn mul(this: str, count: u32): str {
+                    if count == 0 return ""
+                    var res = this
+                    while count > 1 {
+                        res += this
+                        count -= 1
                     }
                     res
                 }
                 
-                System.print("hi"|rep(10))
-                Test.assertEquals("CutieCutieCutie", "Cutie"|rep(3))
+                System.print("hi" * 10)
+                Test.assertEquals("CutieCutieCutie", "Cutie".rep(3))
                 """);
     }
 
@@ -189,8 +190,8 @@ public class SnuggleTests {
                 
                 System.print(square(5))
                 System.print(square(7))
-                System.print(genericSquare::<f32>(10.5))
-//                System.print(genericSquare::<str>("hi")) //Errors with a descriptive error message.
+                System.print(genericSquare(10.5f32))
+                //System.print(genericSquare.invoke::<str>("hi")) //error, genericSquare<str> doesn't work
                 
                 Test.assertEquals(10001, square(square(10)) + 1)
                 """);
