@@ -1,5 +1,6 @@
 package ast.passes;
 
+import ast.passes.typeinference.TypeInferenceContext;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.type_resolved.expr.TypeResolvedExpr;
@@ -40,12 +41,14 @@ public class TypeChecker {
 //        closedVariableAttempts.push(new ArrayList<>());
         isLambdaEnv.push(isLambda);
         desiredReturnTypes.push(null);
+        attemptedReturnTypes.push(null);
     }
 
     private final Stack<MapStack<String, TypeDef>> scopeVariables = new Stack<>();
 //    private final Stack<List<ClosureAttempt>> closedVariableAttempts = new Stack<>();
     private final Stack<Boolean> isLambdaEnv = new Stack<>();
     private final Stack<LateInit<TypeDef, CompilationException>> desiredReturnTypes = new Stack<>();
+    private final Stack<Set<TypeDef>> attemptedReturnTypes = new Stack<>();
 //    public record ClosureAttempt(Loc loc, String varName, TypeDef expectedType) {}
 
     public void push() {
@@ -55,6 +58,7 @@ public class TypeChecker {
         scopeVariables.push(new MapStack<>());
         isLambdaEnv.push(isLambda);
         desiredReturnTypes.push(desiredReturnType);
+        attemptedReturnTypes.push(isLambda ? new HashSet<>() : null);
     }
     public void pop() {
         scopeVariables.peek().pop();
@@ -63,6 +67,7 @@ public class TypeChecker {
         scopeVariables.pop();
         isLambdaEnv.pop();
         desiredReturnTypes.pop();
+        attemptedReturnTypes.pop();
     }
     public MapStack<String, TypeDef> peekEnv() {
         return scopeVariables.peek();
@@ -79,8 +84,11 @@ public class TypeChecker {
     public boolean isLambda() {
         return isLambdaEnv.peek();
     }
-    public TypeDef getDesiredReturnType() throws CompilationException {
-        return desiredReturnTypes.peek() == null ? null : desiredReturnTypes.peek().get();
+    public LateInit<TypeDef, CompilationException> getDesiredReturnType() {
+        return desiredReturnTypes.peek();
+    }
+    public Set<TypeDef> getAttemptedReturnTypes() {
+        return attemptedReturnTypes.peek();
     }
 
     //A cache for mapping ResolvedType -> TypeDef
@@ -111,16 +119,20 @@ public class TypeChecker {
             //Create the new type, but as an indirect. This adds a layer of indirection
             //to avoid problems in recursion.
             IndirectTypeDef resultType = new IndirectTypeDef();
-            allTypeDefs.add(resultType);
-            cache.computeIfAbsent(basic.index(), x -> new LinkedHashMap<>()).put(convertedGenerics, resultType);
+
+            //Only save this type if NONE of the elements are unknown generics.
+            if (!ListUtils.any(convertedGenerics, TypeInferenceContext::containsUnknownGeneric)) {
+                allTypeDefs.add(resultType);
+                cache.computeIfAbsent(basic.index(), x -> new LinkedHashMap<>()).put(convertedGenerics, resultType);
+            }
             TypeResolvedTypeDef resolved = ast.typeDefs().get(basic.index());
             TypeDef instantiated;
             if (resolved.nested()) { //If the type we're instantiating is nested, then prepend the current TypeGenerics.
                 var prependedGenerics = new ArrayList<>(typeGenerics);
                 prependedGenerics.addAll(convertedGenerics);
-                instantiated = resolved.instantiate(resultType, this, prependedGenerics, instantiationLoc, cause);
+                instantiated = resolved.instantiate(resultType, this, basic.index(), prependedGenerics, instantiationLoc, cause);
             } else {
-                instantiated = resolved.instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
+                instantiated = resolved.instantiate(resultType, this, basic.index(), convertedGenerics, instantiationLoc, cause);
             }
 
             resultType.fill(instantiated);
@@ -146,7 +158,8 @@ public class TypeChecker {
     public TypeDef getTuple(List<TypeDef> typeDefs) {
         return tupleCache.computeIfAbsent(typeDefs, t -> {
             TypeDef res = new TupleTypeDef(t);
-            allTypeDefs.add(res);
+            if (!ListUtils.any(res.generics(), TypeInferenceContext::containsUnknownGeneric))
+                allTypeDefs.add(res);
             return res;
         });
     }
@@ -154,7 +167,8 @@ public class TypeChecker {
     public TypeDef getFunc(List<TypeDef> paramTypes, TypeDef resultType) {
         return funcCache.computeIfAbsent(paramTypes, unused -> new HashMap<>()).computeIfAbsent(resultType, unused -> {
             TypeDef res = new FuncTypeDef(this, paramTypes, resultType);
-            allTypeDefs.add(res);
+            if (!ListUtils.any(res.generics(), TypeInferenceContext::containsUnknownGeneric))
+                allTypeDefs.add(res);
             return res;
         });
     }
@@ -184,7 +198,7 @@ public class TypeChecker {
         IndirectTypeDef resultType = new IndirectTypeDef();
         allTypeDefs.add(resultType);
         cache.computeIfAbsent(index, x -> new LinkedHashMap<>()).put(convertedGenerics, resultType);
-        TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, convertedGenerics, instantiationLoc, cause);
+        TypeDef instantiated = ast.typeDefs().get(index).instantiate(resultType, this, index, convertedGenerics, instantiationLoc, cause);
         resultType.fill(instantiated);
         //And return
         return resultType;
@@ -298,12 +312,34 @@ public class TypeChecker {
                 } else
                     throw new IllegalStateException("Method defs aside from SnuggleMethodDef should always be pub! Bug in compiler, please report!");
             }
-            //TODO: Add support for method generics. Taking things slow.
-//            if (def.numGenerics() > 0) throw new IllegalStateException("Generic methods not yet implemented");
-            if (def.numGenerics() > 0 && genericArgs.size() != def.numGenerics()) continue;
+
+            if (def.numGenerics() > 0 && genericArgs.size() != 0 && genericArgs.size() != def.numGenerics()) continue;
 
             if (def.numGenerics() > 0) {
                 if (def instanceof SnuggleMethodDef snuggleDef) {
+                    //We might be trying to use inference, so let's try it:
+                    if (genericArgs.size() == 0) {
+                        //No explicit generic args. Let's go for inference.
+                        TypeInferenceContext ctx = new TypeInferenceContext(def.numGenerics(), loc, methodName, cause);
+                        try {
+                            //Attempt to infer and set the generic args.
+                            genericArgs = ctx.inferGenericArgs(
+                                    this,
+                                    currentType,
+                                    args,
+                                    typeGenerics,
+                                    methodGenerics,
+                                    expectedReturnType,
+                                    snuggleDef.paramTypeGetter(),
+                                    snuggleDef.returnTypeGetter()
+                            );
+                        } catch (TypeCheckingException e) {
+                            //If it fails, then this method doesn't work. Continue.
+                            continue;
+                        }
+                    }
+
+                    //If it succeeded, then the generic args have been set, and we proceed as normal.
                     boolean isNew = !snuggleDef.hasInstantiated(genericArgs);
                     def = snuggleDef.instantiate(genericArgs);
                     if (isNew)
@@ -439,5 +475,20 @@ public class TypeChecker {
         return arr.get(0);
     }
 
+    //Get the common supertype among all types in the set
+    //If there is no common supertype, returns null
+    public static TypeDef getCommonSupertype(Set<TypeDef> allTypes) throws CompilationException {
+        if (allTypes.size() == 0)
+            return null;
+        Iterator<TypeDef> iter = allTypes.iterator();
+        TypeDef top = iter.next();
+        while (iter.hasNext()) {
+            TypeDef t = iter.next();
+            if (t.isSubtype(top)) continue;
+            else if (top.isSubtype(t)) top = t;
+            else return null;
+        }
+        return top;
+    }
 
 }

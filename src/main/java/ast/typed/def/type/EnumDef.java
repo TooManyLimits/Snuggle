@@ -33,6 +33,11 @@ public class EnumDef implements TypeDef {
     }
 
     @Override
+    public List<TypeDef> generics() {
+        return List.of();
+    }
+
+    @Override
     public void checkCode() throws CompilationException {
         for (MethodDef methodDef : methods)
             methodDef.checkCode();

@@ -37,7 +37,7 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, boolea
 
     //InstantiationStackFrame: Where was *this ClassDef* instantiated from?
     @Override
-    public ClassDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public ClassDef instantiate(TypeDef currentType, TypeChecker checker, int typeHeadId, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef.InstantiationStackFrame newStackFrame = new TypeDef.InstantiationStackFrame(instantiationLoc, currentType, cause);
         LateInit<TypeDef, CompilationException> instantiatedSupertype = new LateInit<>(() -> {
             TypeDef res = supertype == null ? checker.getBasicBuiltin(ObjType.INSTANCE) : checker.getOrInstantiate(supertype, generics, List.of(), loc, newStackFrame);
@@ -47,7 +47,7 @@ public record TypeResolvedClassDef(Loc loc, String name, int numGenerics, boolea
         });
         List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics, newStackFrame));
         List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics, newStackFrame));
-        return new ClassDef(loc, GenericStringUtil.instantiateName(name, generics), instantiatedSupertype, typeInstantiatedFields, typeInstantiatedMethods);
+        return new ClassDef(loc, GenericStringUtil.instantiateName(name, generics), instantiatedSupertype, typeHeadId, generics, typeInstantiatedFields, typeInstantiatedMethods);
     }
 
 }

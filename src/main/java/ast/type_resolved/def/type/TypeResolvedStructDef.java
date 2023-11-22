@@ -29,10 +29,10 @@ public record TypeResolvedStructDef(Loc loc, String name, int numGenerics, boole
     }
 
     @Override
-    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, int typeHeadId, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef.InstantiationStackFrame newStackFrame = new TypeDef.InstantiationStackFrame(instantiationLoc, currentType, cause);
         List<MethodDef> typeInstantiatedMethods = ListUtils.map(methods, m -> m.instantiateType(methods, currentType, checker, generics, newStackFrame));
         List<FieldDef> typeInstantiatedFields = ListUtils.map(fields, f -> f.instantiateType(currentType, checker, generics, newStackFrame));
-        return new StructDef(loc, GenericStringUtil.instantiateName(name, generics), typeInstantiatedFields, typeInstantiatedMethods);
+        return new StructDef(loc, GenericStringUtil.instantiateName(name, generics), typeHeadId, generics, typeInstantiatedFields, typeInstantiatedMethods);
     }
 }

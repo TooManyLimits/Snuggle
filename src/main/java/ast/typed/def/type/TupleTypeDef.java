@@ -32,6 +32,11 @@ public class TupleTypeDef implements TypeDef {
     }
 
     @Override
+    public List<TypeDef> generics() {
+        return elementTypes;
+    }
+
+    @Override
     public String name() {
         return name;
     }

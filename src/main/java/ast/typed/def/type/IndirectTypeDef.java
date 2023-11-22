@@ -41,6 +41,11 @@ public class IndirectTypeDef implements TypeDef {
     }
 
     @Override
+    public List<TypeDef> generics() {
+        return check().generics();
+    }
+
+    @Override
     public void checkCode() throws CompilationException {
         check().checkCode();
     }

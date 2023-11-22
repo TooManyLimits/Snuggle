@@ -42,9 +42,14 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
 
             for (int i = 0; i < paramNames.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(methodGenerics).get(i));
-            TypedExpr res = body.check(currentType, checker, typeGenerics, methodGenerics, newReturnType.get(methodGenerics), cause);
-            checker.popEnv();
-            return res;
+            try {
+                TypedExpr res = body.check(currentType, checker, typeGenerics, methodGenerics, newReturnType.get(methodGenerics), cause);
+                checker.popEnv();
+                return res;
+            } catch (Throwable t) {
+                checker.popEnv();
+                throw t;
+            }
         });
 
         int disambiguationIndex = 0;

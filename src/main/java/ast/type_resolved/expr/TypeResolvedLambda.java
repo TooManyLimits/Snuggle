@@ -2,14 +2,13 @@ package ast.type_resolved.expr;
 
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
+import ast.typed.def.field.BuiltinFieldDef;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.method.SnuggleMethodDef;
-import ast.typed.def.type.FuncImplTypeDef;
-import ast.typed.def.type.FuncTypeDef;
-import ast.typed.def.type.IndirectTypeDef;
-import ast.typed.def.type.TypeDef;
+import ast.typed.def.type.*;
 import ast.typed.expr.TypedConstructor;
 import ast.typed.expr.TypedExpr;
+import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
@@ -17,7 +16,9 @@ import util.LateInit;
 import util.LateInitFunction;
 import util.ListUtils;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public record TypeResolvedLambda(Loc loc, List<String> paramNames, TypeResolvedExpr body) implements TypeResolvedExpr {
     @Override
@@ -28,6 +29,48 @@ public record TypeResolvedLambda(Loc loc, List<String> paramNames, TypeResolvedE
     @Override
     public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
         throw new TypeCheckingException("Unable to infer type of lambda expression. Try adding type annotations or using it in a context that expects a certain lambda.", loc, cause);
+    }
+
+    public TypeDef inferTypeGivenArgTypes(List<TypeDef> argTypes, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        //Create a temporary type def to hold the fields
+        IndirectTypeDef indirect = new IndirectTypeDef();
+        ClassDef tempDef = new ClassDef(loc, "##SnuggleClosureEnvironment##",
+                new LateInit<>(() -> checker.getBasicBuiltin(ObjType.INSTANCE)),
+                -1337,
+                List.of(),
+                ListUtils.map(List.copyOf(checker.peekEnv().getFlattenedMap().entrySet()), e ->
+                        new BuiltinFieldDef(e.getKey(), indirect, e.getValue(), false)),
+                List.of()
+        );
+        indirect.fill(tempDef);
+        //Push a new environment with no particular desired output
+        checker.pushNewEnv(true, new LateInit<>(() -> null));
+        //Bind "this" in the scope
+        checker.declare(loc, "this", indirect);
+        //Bind the param names to the given arg types in the environment
+        if (argTypes.size() != paramNames.size())
+            throw new IllegalStateException("Attempting to infer lambda with wrong number of generic args? Bug in compiler, please report");
+        for (int i = 0; i < argTypes.size(); i++)
+            checker.declare(loc, paramNames.get(i), argTypes.get(i));
+        //Infer the type of the body in the extended environment
+        TypedExpr inferredBody;
+        try {
+            inferredBody = body.infer(currentType, checker, typeGenerics, methodGenerics, cause);
+        } catch (CompilationException | RuntimeException e) {
+            //Pop env even if it errors
+            checker.popEnv();
+            throw e;
+        }
+        //Figure out the return type
+        Set<TypeDef> typeDefs = checker.getAttemptedReturnTypes();
+        checker.popEnv();
+        //Coalesce the return types into one common supertype, if possible
+        typeDefs.add(inferredBody.type());
+        TypeDef commonSupertype = TypeChecker.getCommonSupertype(typeDefs);
+        if (commonSupertype == null)
+            throw new TypeCheckingException("Could not find common supertype for returned types: " + typeDefs, loc, cause);
+        //Return the func type def
+        return new FuncTypeDef(checker, argTypes, commonSupertype);
     }
 
     @Override

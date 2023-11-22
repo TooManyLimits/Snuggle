@@ -41,7 +41,7 @@ public record TypeResolvedEnumDef(Loc loc, String name, boolean nested, List<Typ
     }
 
     @Override
-    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, int typeHeadId, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         if (generics.size() != 0)
             throw new IllegalStateException("Enum should not have generics? Bug in compiler, please report!");
         TypeDef.InstantiationStackFrame newStackFrame = new TypeDef.InstantiationStackFrame(instantiationLoc, currentType, cause);

@@ -32,8 +32,8 @@ public record BuiltinTypeResolvedTypeDef(BuiltinType builtin) implements TypeRes
     public void verifyGenericCounts(GenericVerifier verifier) throws CompilationException {}
 
     @Override
-    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame instantiationStackFrame) {
-        return new BuiltinTypeDef(builtin, generics, checker, instantiationLoc, instantiationStackFrame);
+    public TypeDef instantiate(TypeDef currentType, TypeChecker checker, int typeHeadId, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame instantiationStackFrame) {
+        return new BuiltinTypeDef(builtin, typeHeadId, generics, checker, instantiationLoc, instantiationStackFrame);
     }
 
 }

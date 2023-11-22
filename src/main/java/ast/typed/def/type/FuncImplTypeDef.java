@@ -40,6 +40,11 @@ public class FuncImplTypeDef implements TypeDef {
         methods.add(generatedMethod);
     }
 
+    @Override
+    public List<TypeDef> generics() {
+        throw new IllegalStateException("Generic getting not implemented on FuncImpl types, they should never have this called on them");
+    }
+
     //Finalizes the impl!
     public void finalizeImpl(TypeChecker checker) throws CompilationException {
         //Check the method body

@@ -13,20 +13,29 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-public class ClassDef implements TypeDef {
+public class ClassDef implements TypeDef, FromTypeHead {
 
     public final Loc loc;
     private final String name;
     private final LateInit<TypeDef, CompilationException> supertype;
+    private final List<TypeDef> generics;
     private final List<FieldDef> fields;
     private final ArrayList<MethodDef> methods;
+    private final int typeHeadId;
 
-    public ClassDef(Loc loc, String name, LateInit<TypeDef, CompilationException> supertype, List<FieldDef> fields, List<MethodDef> methods) {
+    public ClassDef(Loc loc, String name, LateInit<TypeDef, CompilationException> supertype, int typeHeadId, List<TypeDef> generics, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
         this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.supertype = supertype;
+        this.typeHeadId = typeHeadId;
+        this.generics = generics;
         this.fields = fields;
         this.methods = new ArrayList<>(methods);
+    }
+
+    @Override
+    public int getTypeHeadId() {
+        return typeHeadId;
     }
 
     @Override
@@ -36,6 +45,11 @@ public class ClassDef implements TypeDef {
             field.checkCode();
         for (MethodDef method : methods)
             method.checkCode();
+    }
+
+    @Override
+    public List<TypeDef> generics() {
+        return generics;
     }
 
     @Override

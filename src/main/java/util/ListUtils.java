@@ -74,6 +74,20 @@ public class ListUtils {
         return null;
     }
 
+    public static <T, E extends Throwable> boolean any(List<T> list, ThrowingFunction<T, Boolean, E> pred) throws E {
+        for (T elem : list)
+            if (pred.apply(elem))
+                return true;
+        return false;
+    }
+
+    public static <T, E extends Throwable> boolean all(List<T> list, ThrowingFunction<T, Boolean, E> pred) throws E {
+        for (T elem : list)
+            if (!pred.apply(elem))
+                return false;
+        return true;
+    }
+
     public static <T> void setExpand(List<T> list, int index, T element) {
         while (list.size() <= index)
             list.add(null);

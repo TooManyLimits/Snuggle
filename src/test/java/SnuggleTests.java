@@ -88,6 +88,36 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testMonad() throws CompilationException, SnuggleException {
+        test("""
+                fn bind<T, R>(opt: T?, func: T -> R?): R?
+                    if opt func(*opt) else new()
+                
+                var a: str? = new("i am present")
+                var b: str? = new() //i am not
+                
+                var alen: u32? = a|bind(x -> new u32?(#x))
+                var blen: u32? = b|bind(x -> new u32?(#x))
+                
+                if alen System.print(*alen)
+                if blen System.print(*blen)
+                
+                """);
+    }
+
+    @Test
+    public void testMethodGenericInference() throws CompilationException, SnuggleException {
+        test("""
+                var x: List<i32> =  new()
+                x += 1
+                x += 2
+                x += 3
+                
+                x.map(i -> i.str()).forEach(i -> System.print("\\"" + i + "\\""))
+                """);
+    }
+
+    @Test
     public void testPipe() throws CompilationException, SnuggleException {
         test("""
                 fn rep(x: str, y: u32): str {

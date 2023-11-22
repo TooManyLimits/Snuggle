@@ -23,6 +23,6 @@ public interface TypeResolvedTypeDef {
     /**
      * Instantiate this annotatedType with the given list of generics.
      */
-    TypeDef instantiate(TypeDef currentType, TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause);
+    TypeDef instantiate(TypeDef currentType, TypeChecker checker, int typeHeadId, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause);
 
 }

@@ -10,20 +10,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class StructDef implements TypeDef {
+public class StructDef implements TypeDef, FromTypeHead {
 
     public final Loc loc;
     private final String name, returnTypeDescriptor;
     private final List<String> descriptor;
     private final List<FieldDef> fields;
     private final ArrayList<MethodDef> methods;
+    private final List<TypeDef> generics;
+    private final int typeHeadId;
     private final int stackSlots;
 
-    public StructDef(Loc loc, String name, List<FieldDef> fields, List<MethodDef> methods) {
+    public StructDef(Loc loc, String name, int typeHeadId, List<TypeDef> generics, List<FieldDef> fields, List<MethodDef> methods) {
         this.loc = loc;
         this.name = "snuggle/" + loc.fileName() + "/" + name;
         this.fields = fields;
         this.methods = new ArrayList<>(methods);
+        this.typeHeadId = typeHeadId;
+        this.generics = generics;
         this.stackSlots = fields.stream().filter(f -> !f.isStatic()).map(f -> f.type().stackSlots()).reduce(Integer::sum).orElse(0);
         this.descriptor = ListUtils.join(ListUtils.map(nonStaticFields(), f -> f.type().getDescriptor()));
         this.returnTypeDescriptor = "V";
@@ -35,6 +39,16 @@ public class StructDef implements TypeDef {
             field.checkCode();
         for (MethodDef method : methods)
             method.checkCode();
+    }
+
+    @Override
+    public int getTypeHeadId() {
+        return typeHeadId;
+    }
+
+    @Override
+    public List<TypeDef> generics() {
+        return generics;
     }
 
     @Override

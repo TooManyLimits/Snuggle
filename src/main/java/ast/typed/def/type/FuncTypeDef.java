@@ -7,6 +7,7 @@ import ast.typed.def.method.InterfaceMethodDef;
 import builtin_types.types.ObjType;
 import exceptions.compile_time.CompilationException;
 import util.GenericStringUtil;
+import util.ListUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -36,6 +37,11 @@ public class FuncTypeDef implements TypeDef {
         ));
         this.paramTypes = paramTypes;
         this.resultType = resultType;
+    }
+
+    @Override
+    public List<TypeDef> generics() {
+        return ListUtils.join(List.of(resultType), paramTypes);
     }
 
     @Override

@@ -16,9 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class BuiltinTypeDef implements TypeDef {
+public class BuiltinTypeDef implements TypeDef, FromTypeHead {
 
     private final BuiltinType builtin;
+    public final int typeHeadId;
     public final List<TypeDef> generics;
     private final String name, runtimeName, returnDescriptor;
     private final List<String> descriptor;
@@ -29,8 +30,9 @@ public class BuiltinTypeDef implements TypeDef {
     private final List<FieldDef> fields;
     private final ArrayList<MethodDef> methods;
 
-    public BuiltinTypeDef(BuiltinType builtinType, List<TypeDef> generics, TypeChecker checker, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
+    public BuiltinTypeDef(BuiltinType builtinType, int typeHeadId, List<TypeDef> generics, TypeChecker checker, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         this.builtin = builtinType;
+        this.typeHeadId = typeHeadId;
         this.generics = List.copyOf(generics);
         this.name = builtinType.genericName(checker, generics);
         this.descriptor = builtinType.descriptor(checker, generics);
@@ -48,6 +50,11 @@ public class BuiltinTypeDef implements TypeDef {
         this.methods = new ArrayList<>(builtinType.getMethods(checker, generics, instantiationLoc, cause));
     }
 
+    @Override
+    public int getTypeHeadId() {
+        return typeHeadId;
+    }
+
     //Whether this should generate a struct class at runtime.
     //Usually no, except for certain builtin cases, such as
     //Option<T> where T is not a reference type.
@@ -55,6 +62,10 @@ public class BuiltinTypeDef implements TypeDef {
         return shouldGenerateStructClassAtRuntime;
     }
 
+    @Override
+    public List<TypeDef> generics() {
+        return generics;
+    }
 
     @Override
     public BuiltinType builtin() {
