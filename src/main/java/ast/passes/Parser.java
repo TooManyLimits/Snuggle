@@ -627,6 +627,7 @@ public class Parser {
             //Control flow
             case IF -> parseIf(typeGenerics, methodGenerics);
             case WHILE -> parseWhile(typeGenerics, methodGenerics);
+            case FOR -> parseFor(typeGenerics, methodGenerics);
             case LEFT_CURLY -> parseBlock(typeGenerics, methodGenerics);
             case RETURN -> new ParsedReturn(lexer.last().loc(), parseExpr(typeGenerics, methodGenerics, false, true));
 
@@ -742,6 +743,70 @@ public class Parser {
         ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false, true);
         Loc fullLoc = whileLoc.merge(body.loc());
         return new ParsedWhile(fullLoc, cond, body);
+    }
+
+    /**
+     * Syntax sugar!
+     * for a: T in b body
+     * //becomes:
+     * {
+     *     var temp$iter = b.iter()
+     *     var temp$value: T? = new()
+     *     while temp$value = temp$iter() {
+     *         var a: T = *temp$value
+     *         body
+     *     }
+     * }
+     */
+    private ParsedExpr parseFor(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
+        Loc forLoc = lexer.last().loc();
+        String varName = lexer.expect(IDENTIFIER, "Expected identifier after \"for\"", forLoc).string();
+        lexer.expect(COLON, "Expected type annotation on loop variable \"" + varName + "\"", forLoc);
+        ParsedType varType = parseType(":", lexer.last().loc(), typeGenerics, methodGenerics);
+        lexer.expect(IN, "Expected \"in\" after variable in \"for\" loop", forLoc);
+        ParsedExpr iteratee = parseExpr(typeGenerics, methodGenerics, false, true);
+        ParsedExpr body = parseExpr(typeGenerics, methodGenerics, false, true);
+        //Now emit result
+        String iterName = "temp$iter";
+        String iterValue = "temp$value";
+        //Overall block
+        return new ParsedBlock(forLoc, List.of(
+                //var temp$iter = b.iter()
+                new ParsedDeclaration(forLoc, iterName, null,
+                        new ParsedMethodCall(forLoc, iteratee, "iter", List.of(), List.of())
+                ),
+                //var temp$value: T? = new()
+                new ParsedDeclaration(forLoc, iterValue,
+                        new ParsedType.Basic("Option", List.of(varType)),
+                        new ParsedConstructor(forLoc, null, List.of())
+                ),
+                //while loop
+                new ParsedWhile(forLoc,
+                        wrapTruthy(
+                                new ParsedAssignment(forLoc,
+                                        new ParsedVariable(forLoc, iterValue),
+                                        new ParsedMethodCall(forLoc,
+                                                new ParsedVariable(forLoc, iterName),
+                                                "invoke",
+                                                List.of(),
+                                                List.of()
+                                        )
+                                )
+                        ),
+                        //Body of while, a block
+                        new ParsedBlock(forLoc, List.of(
+                                new ParsedDeclaration(forLoc, varName, varType,
+                                        new ParsedMethodCall(forLoc,
+                                                new ParsedVariable(forLoc, iterValue),
+                                                "get",
+                                                List.of(),
+                                                List.of()
+                                        )
+                                ),
+                                body
+                        ))
+                )
+        ));
     }
 
     //"{" has already been parsed

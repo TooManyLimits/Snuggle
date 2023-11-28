@@ -49,7 +49,7 @@ public record TypeResolvedWhile(Loc loc, TypeResolvedExpr cond, TypeResolvedExpr
             //Return the result
             return new TypedWhile(loc, checkedCond, typedBody, expected);
         } else {
-            throw new TypeCheckingException("Expected type \"" + expected.name() + "\", but while loop returns Option", loc, cause);
+            throw new TypeCheckingException("Expected type \"" + expected.name() + "\", but loop returns Option", loc, cause);
         }
     }
 }

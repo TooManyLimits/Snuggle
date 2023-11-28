@@ -94,10 +94,22 @@ public class SnuggleTests {
                 7u32.printSquared() //print 49
                 
                 """, "lib", """
+                //Removing "pub" should make this not work
                 pub fn printSquared(this: u32)
                     System.print(this * this)
-                
                 """));
+    }
+
+    @Test
+    public void testForLoop() throws CompilationException, SnuggleException {
+        test("""
+                var x = new List<i32>()
+                x += 1
+                x += 4
+                x += 9
+                for a: i32 in x System.print(a)
+                
+                """);
     }
 
     @Test
@@ -145,7 +157,7 @@ public class SnuggleTests {
                 }
                 
                 System.print("hi" * 10)
-                Test.assertEquals(":D :D :D ", ":D " * 3)
+                Test.assertEquals("CutieCutieCutie", "Cutie" * 3)
                 """);
     }
 
@@ -235,12 +247,13 @@ public class SnuggleTests {
                 l += 3
                 l += 4
                 
-                var c = l.map::<str>(x -> x.str());
+                var c = l.map(x -> x.str());
                 Test.assertEquals("1", c[0])
                 Test.assertEquals("2", c[1])
                 Test.assertEquals("3", c[2])
                 Test.assertEquals("4", c[3])
                 
+                //explicit generic isn't necessary, just showing how it works
                 var d = l.map::<i32>(x => x * x);
                 Test.assertEquals(1, d[0])
                 Test.assertEquals(4, d[1])
@@ -248,7 +261,7 @@ public class SnuggleTests {
                 Test.assertEquals(16, d[3])
                 
                 var quoteWrap: str -> str = e -> "\\"" + e + "\\""
-                c.map::<str>(quoteWrap).forEach(e -> System.print(e))
+                c.map(quoteWrap).forEach(e -> System.print(e))
                 d.forEach(e -> System.print(e))
                 """);
     }

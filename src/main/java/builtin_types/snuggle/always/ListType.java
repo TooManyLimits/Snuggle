@@ -82,13 +82,20 @@ public class ListType extends SnuggleDefinedType {
                     }
                     
                     //Functional helpers
-                    
                     pub fn forEach(func: T -> ()) {
-                        var i = 0u32
-                        while i < #this {
-                            func(this[i])
-                            i += 1;
-                        };
+                        for x: T in this func(x);
+                    }
+                    
+                    pub fn iter(): () -> T? {
+                        var i: Box<u32> = new(0);
+                        () -> {
+                            if *i >= #this
+                                new()
+                            else {
+                                *i += 1
+                                new(this[*i - 1])
+                            }
+                        }
                     }
                     
                     pub fn map<R>(func: T -> R): List<R> {
