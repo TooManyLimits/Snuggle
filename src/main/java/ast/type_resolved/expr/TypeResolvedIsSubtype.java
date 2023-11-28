@@ -3,8 +3,6 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
-import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;

@@ -5,7 +5,6 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
-import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import util.ListUtils;

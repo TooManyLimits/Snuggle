@@ -35,7 +35,8 @@ public record ConstMethodDef(String name, int numGenerics, boolean isStatic, Lis
 
     @Override
     public void checkCode() throws CompilationException {
-        throw new IllegalStateException("Cannot check code of ConstMethodDef - bug in compiler, please report!");
+        //No code to check
+//        throw new IllegalStateException("Cannot check code of ConstMethodDef - bug in compiler, please report!");
     }
 
     @Override

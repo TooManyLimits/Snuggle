@@ -143,6 +143,7 @@ public class TypeResolver {
                     f.name(),
 //                    ListUtils.map(f.imports(), i -> new TypeResolvedImport(i.loc(), i.fileName())),
                     ListUtils.map(f.topLevelTypeDefs(), t -> new ResolvedType.Basic(allTypeDefsInverse.get(t), List.of())),
+                    ListUtils.map(f.topLevelExtensionMethods(), m -> m.resolve(this)),
                     ListUtils.map(f.code(), e -> e.resolve(this))
             ));
             //Pop scope

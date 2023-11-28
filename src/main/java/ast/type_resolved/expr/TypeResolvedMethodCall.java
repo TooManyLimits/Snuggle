@@ -33,7 +33,7 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
         TypeChecker.BestMethodInfo bestMethod;
         try {
-            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, null, cause);
+            bestMethod = checker.getBestMethod(loc, currentType, receiver(), typedReceiver, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, null, cause);
         } catch (CompilationException e) {
             //If the method wasn't found, then try moving on to the next one using the nextSupplier
             if (nextSupplier == null)
@@ -56,7 +56,7 @@ public record TypeResolvedMethodCall(Loc loc, TypeResolvedExpr receiver, String 
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
         TypeChecker.BestMethodInfo bestMethod;
         try {
-            bestMethod = checker.getBestMethod(loc, currentType, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, expected, cause);
+            bestMethod = checker.getBestMethod(loc, currentType, receiver(), typedReceiver, typedReceiver.type(), methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, false, expected, cause);
         } catch (CompilationException e) {
             //If the method wasn't found, then try moving on to the next one using the nextSupplier
             if (nextSupplier == null)

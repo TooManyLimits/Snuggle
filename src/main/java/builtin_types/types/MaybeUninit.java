@@ -4,19 +4,14 @@ import ast.ir.helper.BytecodeHelper;
 import ast.passes.TypeChecker;
 import ast.typed.def.field.BuiltinFieldDef;
 import ast.typed.def.field.FieldDef;
-import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.method.BytecodeMethodDef;
 import ast.typed.def.method.MethodDef;
-import ast.typed.def.type.IndirectTypeDef;
-import ast.typed.def.type.StructDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import lexing.Loc;
-import org.objectweb.asm.Opcodes;
 import util.ListUtils;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 //Used for data structures, like Array<T> where T is a reference type or contains a reference type
 public class MaybeUninit implements BuiltinType {

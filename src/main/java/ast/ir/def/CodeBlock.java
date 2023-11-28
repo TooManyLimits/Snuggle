@@ -50,11 +50,12 @@ public class CodeBlock {
     //Returns the "cost" of the script as calculated by the IR
     public void writeJvmBytecode(MethodVisitor jvmBytecode) throws CompilationException {
         //TODO: Make this not just be some random static field
-        jvmBytecode.visitLdcInsn(cost);
-        jvmBytecode.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
-        jvmBytecode.visitInsn(Opcodes.LADD);
-        jvmBytecode.visitFieldInsn(Opcodes.PUTSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
-
+        if (cost > 0) {
+            jvmBytecode.visitLdcInsn(cost);
+            jvmBytecode.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
+            jvmBytecode.visitInsn(Opcodes.LADD);
+            jvmBytecode.visitFieldInsn(Opcodes.PUTSTATIC, Type.getInternalName(SnuggleInstance.class), "INSTRUCTIONS", "J");
+        }
         for (Instruction i : instructions)
             i.accept(this, jvmBytecode);
     }

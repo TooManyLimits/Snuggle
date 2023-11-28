@@ -31,7 +31,7 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
         //Lookup best method
         TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, methodGenerics, loc, cause);
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, null, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, null, null, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, null, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call
@@ -45,7 +45,7 @@ public record TypeResolvedStaticMethodCall(Loc loc, ResolvedType type, String me
         //Lookup best method
         TypeDef receiverType = checker.getOrInstantiate(type, typeGenerics, methodGenerics, loc, cause);
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, expected, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, null, null, receiverType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, true, false, expected, cause);
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
         //Create typed call

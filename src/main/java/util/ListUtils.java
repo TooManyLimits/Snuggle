@@ -151,9 +151,9 @@ public class ListUtils {
     /**
      * Join all into one
      */
-    public static <T> List<T> join(List<List<T>> lists) {
+    public static <T> List<T> join(Collection<? extends Collection<T>> lists) {
         ArrayList<T> res = new ArrayList<>();
-        for (List<T> list : lists)
+        for (Collection<T> list : lists)
             res.addAll(list);
         res.trimToSize();
         return res;
@@ -168,7 +168,7 @@ public class ListUtils {
     }
 
     @SafeVarargs
-    public static <T> List<T> join(List<T>... lists) {
+    public static <T> List<T> join(Collection<T>... lists) {
         return join(List.of(lists));
     }
 

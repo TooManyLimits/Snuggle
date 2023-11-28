@@ -3,7 +3,6 @@ package ast.type_resolved.def.type;
 import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
-import ast.typed.def.method.SnuggleMethodDef;
 import ast.typed.def.type.ClassDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.ObjType;

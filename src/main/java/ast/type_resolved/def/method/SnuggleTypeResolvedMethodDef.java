@@ -29,21 +29,21 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
     }
 
     //allMethods are passed in for disambiguating between method names.
-    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) {
+    public SnuggleMethodDef instantiateType(int disambiguationIndex, TypeDef owningType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) {
         LateInitFunction<List<TypeDef>, List<TypeDef>, RuntimeException> newParamTypes = new LateInitFunction<>(methodGenerics -> ListUtils.map(paramTypes, t -> checker.getOrInstantiate(t, typeGenerics, methodGenerics, loc, cause)));
         LateInitFunction<List<TypeDef>, TypeDef, RuntimeException> newReturnType = new LateInitFunction<>(methodGenerics -> checker.getOrInstantiate(returnType, typeGenerics, methodGenerics, loc, cause));
         //TypedBody must be computed later, once we know method signatures and such
         LateInitFunction<List<TypeDef>, TypedExpr, CompilationException> typedBody = new LateInitFunction<>(methodGenerics -> {
             checker.pushNewEnv(false, new LateInit<>(() -> newReturnType.get(methodGenerics)));
             if (!isStatic) {
-                if (!isConstructor() || !currentType.isPlural()) //Don't give a "this" local to plural-type constructors
-                    checker.declare(loc, "this", currentType);
+                if (!isConstructor() || !owningType.isPlural()) //Don't give a "this" local to plural-type constructors
+                    checker.declare(loc, "this", owningType);
             }
 
             for (int i = 0; i < paramNames.size(); i++)
                 checker.declare(loc, paramNames.get(i), newParamTypes.get(methodGenerics).get(i));
             try {
-                TypedExpr res = body.check(currentType, checker, typeGenerics, methodGenerics, newReturnType.get(methodGenerics), cause);
+                TypedExpr res = body.check(owningType, checker, typeGenerics, methodGenerics, newReturnType.get(methodGenerics), cause);
                 checker.popEnv();
                 return res;
             } catch (Throwable t) {
@@ -52,6 +52,10 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
             }
         });
 
+        return new SnuggleMethodDef(loc, pub, name, disambiguationIndex, numGenerics, isStatic, false, owningType, paramNames.size(), paramNames, newParamTypes, newReturnType, typedBody);
+    }
+
+    public SnuggleMethodDef instantiateType(List<? extends TypeResolvedMethodDef> allMethods, TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause) {
         int disambiguationIndex = 0;
         for (TypeResolvedMethodDef method : allMethods) {
             if (this == method)
@@ -59,7 +63,7 @@ public record SnuggleTypeResolvedMethodDef(Loc loc, boolean pub, boolean isStati
             if (method.name().equals(name))
                 disambiguationIndex++;
         }
-        return new SnuggleMethodDef(loc, pub, name, disambiguationIndex, numGenerics, isStatic, false, currentType, paramNames.size(), paramNames, newParamTypes, newReturnType, typedBody);
+        return instantiateType(disambiguationIndex, currentType, checker, typeGenerics, cause);
     }
 
 }

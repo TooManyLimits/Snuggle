@@ -59,7 +59,7 @@ public class BuiltinTypes {
     }
 
     public BuiltinTypes addStandardTypes() {
-        //Add snuggle-defined topLevelTypes:
+        //Add snuggle-defined builtins:
         //Always in:
         addType(ListType.INSTANCE);
         addType(BoxType.INSTANCE);
@@ -67,8 +67,11 @@ public class BuiltinTypes {
         //Extra:
         addType(ComplexType.INSTANCE);
 
-        //Add builtin java-defined topLevelTypes:
+        //Add java-defined builtins:
         addType(SystemType.class);
+
+        //"Native" builtins
+        addType(ExtensionMethods.INSTANCE); //Special, container for extension methods
 
         addType(OptionType.INSTANCE);
         addType(ArrayType.INSTANCE);

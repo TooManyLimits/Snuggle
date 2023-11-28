@@ -1,7 +1,6 @@
 package builtin_types;
 
 import ast.passes.TypeChecker;
-import ast.type_resolved.def.type.TypeResolvedTypeDef;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.def.method.MethodDef;

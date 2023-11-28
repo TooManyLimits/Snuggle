@@ -5,7 +5,6 @@ import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedBlock;
 import ast.typed.expr.TypedExpr;
-import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedStructConstructor;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;

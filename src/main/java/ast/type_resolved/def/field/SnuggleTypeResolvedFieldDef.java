@@ -4,7 +4,6 @@ import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
 import ast.type_resolved.expr.TypeResolvedExpr;
-import ast.typed.def.field.FieldDef;
 import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
@@ -27,11 +26,11 @@ public record SnuggleTypeResolvedFieldDef(Loc loc, boolean pub, boolean isStatic
         TypeDef initializedType = checker.getOrInstantiate(annotatedType, generics, List.of(), loc, cause);
         return new SnuggleFieldDef(loc, pub, name, currentType, initializedType, isStatic,
                 initializer == null ? null : new LateInit<>(() -> {
-                    checker.push();
+                    checker.pushNewEnv(false, null);
                     if (!isStatic) //Declare "this" if not static
                         checker.declare(loc, "this", currentType);
                     TypedExpr res = initializer.check(currentType, checker, generics, List.of(), initializedType, cause);
-                    checker.pop();
+                    checker.popEnv();
                     return res;
                 })
         );

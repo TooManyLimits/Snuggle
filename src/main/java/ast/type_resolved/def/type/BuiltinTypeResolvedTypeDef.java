@@ -7,7 +7,6 @@ import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import lexing.Loc;
-import util.LateInit;
 
 import java.util.List;
 

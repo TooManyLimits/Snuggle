@@ -21,6 +21,7 @@ public record TypeResolvedImport(Loc loc, String fileName) implements TypeResolv
 
     @Override
     public TypedImport infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        checker.importExtensionMethods(fileName, false, cause);
         TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         return new TypedImport(loc, fileName, bool);
     }

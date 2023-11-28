@@ -7,7 +7,6 @@ import ast.typed.def.type.FromTypeHead;
 import ast.typed.def.type.FuncTypeDef;
 import ast.typed.def.type.TupleTypeDef;
 import ast.typed.def.type.TypeDef;
-import ast.typed.expr.TypedExpr;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;

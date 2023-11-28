@@ -88,10 +88,23 @@ public class SnuggleTests {
     }
 
     @Test
-    public void testSillyMonadOperator() throws CompilationException, SnuggleException {
+    public void testExtensionMethodImport() throws CompilationException, SnuggleException {
+        test(Map.of("main", """
+                import "lib" //Get the extension method
+                7u32.printSquared() //print 49
+                
+                """, "lib", """
+                pub fn printSquared(this: u32)
+                    System.print(this * this)
+                
+                """));
+    }
+
+    @Test
+    public void testSillyBindOperator() throws CompilationException, SnuggleException {
         test("""
-                // >>= operator overload
-                fn shrAssign<T, R>(this: T?, func: T -> R?): R?
+                // silly little >>= operator overload
+                pub fn shrAssign<T, R>(this: T?, func: T -> R?): R?
                     if this func(*this) else new()
                 
                 var a: str? = new("i am present")
@@ -132,7 +145,7 @@ public class SnuggleTests {
                 }
                 
                 System.print("hi" * 10)
-                Test.assertEquals("CutieCutieCutie", "Cutie".rep(3))
+                Test.assertEquals(":D :D :D ", ":D " * 3)
                 """);
     }
 

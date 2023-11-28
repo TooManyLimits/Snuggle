@@ -14,6 +14,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import util.GenericStringUtil;
 import util.LateInitFunction;
+import util.ListUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +49,13 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
 
     @Override
     public TypedExpr constantFold(TypedMethodCall call) {
-        if (isStatic) throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
+        if (isStatic)
+            //throw new IllegalStateException("Calling non-static method statically? Bug in compiler, please report");
+            return constantFold(new TypedStaticMethodCall(
+                    call.loc(), call.receiver().type(), call.method(),
+                    ListUtils.join(List.of(call.receiver()), call.args()),
+                    call.type()
+            ));
         //If the body is just a literal, then constant fold the method call into that literal
         //ACTUALLY NO, SINCE RECEIVER/ARGS COULD HAVE SIDE EFFECTS
 //        if (body.tryGet(b -> b) instanceof TypedLiteral literalBody)
@@ -121,7 +128,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
             instruction = Opcodes.INVOKESPECIAL; //Super calls and constructor calls use InvokeSpecial
 
         //Invoke the instruction
-        jvm.visitMethodInsn(instruction, owningType.name(), dedupName(), getDescriptor(), false);
+        jvm.visitMethodInsn(instruction, owningType.runtimeName(), dedupName(), getDescriptor(), false);
     }
 
     @Override

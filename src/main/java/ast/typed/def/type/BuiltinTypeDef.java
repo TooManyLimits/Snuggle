@@ -10,7 +10,6 @@ import builtin_types.types.numbers.IntLiteralType;
 import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
-import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,6 +87,8 @@ public class BuiltinTypeDef implements TypeDef, FromTypeHead {
 
     @Override
     public void checkCode() throws CompilationException {
+        for (MethodDef m : methods)
+            m.checkCode();
         //No code to check here
     }
 

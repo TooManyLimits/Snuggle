@@ -3,8 +3,6 @@ package ast.type_resolved.expr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
-import ast.type_resolved.def.field.SnuggleTypeResolvedFieldDef;
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.field.SnuggleFieldDef;
 import ast.typed.def.type.TypeDef;

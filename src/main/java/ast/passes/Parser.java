@@ -17,7 +17,6 @@ import lexing.Loc;
 import lexing.Token;
 import lexing.TokenType;
 import util.ListUtils;
-import util.throwing_interfaces.ThrowingFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -72,15 +71,19 @@ public class Parser {
     private ParsedFile parseFile(String fileName) throws CompilationException {
         ArrayList<ParsedExpr> code = new ArrayList<>();
         ArrayList<ParsedTypeDef> topLevelTypes = new ArrayList<>();
+        ArrayList<ParsedExtensionMethod> topLevelExtensionMethods = new ArrayList<>();
         while (!lexer.check(EOF)) {
             ParsedExpr e = parseExpr(List.of(), List.of(), true, false);
             if (e instanceof ParsedTypeDefExpr topLevelTypeDef)
                 topLevelTypes.add(topLevelTypeDef.typeDef());
+            else if (e instanceof ParsedExtensionMethod topLevelExtensionMethod)
+                topLevelExtensionMethods.add(topLevelExtensionMethod);
             code.add(e);
         }
         code.trimToSize();
         topLevelTypes.trimToSize();
-        return new ParsedFile(fileName, topLevelTypes, code);
+        topLevelExtensionMethods.trimToSize();
+        return new ParsedFile(fileName, topLevelTypes, topLevelExtensionMethods, code);
     }
 
     //The "class"/"struct" token was just consumed
@@ -783,7 +786,10 @@ public class Parser {
         ParsedType resultType = lexer.consume(COLON) ? parseType(":", lexer.last().loc(), typeGenerics, methodGenerics) : ParsedType.Tuple.UNIT;
         //Generate the method def
         SnuggleParsedMethodDef parsedMethodDef = new SnuggleParsedMethodDef(
-                fnLoc, true, true, "invoke", newGenerics.size(),
+                fnLoc, pub, true,
+                //Name depends on whether this was an extension function or not
+                params.size() > 0 && params.get(0).name.equals("this") ? nameTok.string() : "invoke",
+                newGenerics.size(),
                 ListUtils.map(params, ParsedParam::name),
                 ListUtils.map(params, ParsedParam::type),
                 resultType,
@@ -792,7 +798,7 @@ public class Parser {
         //Decide what to do with the method def, based on whether this is an extension method or not.
         if (params.size() > 0 && params.get(0).name.equals("this")) {
             //It's an extension method
-            return new ParsedExtensionMethod(nameTok.loc(), pub, nameTok.string(), parsedMethodDef);
+            return new ParsedExtensionMethod(nameTok.loc(), parsedMethodDef);
         } else {
             //Not an extension method
             return new ParsedTypeDefExpr(nameTok.loc(), new ParsedClassDef(

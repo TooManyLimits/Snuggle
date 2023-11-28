@@ -11,7 +11,6 @@ import builtin_types.types.StringType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import lexing.Loc;
-import util.throwing_interfaces.ThrowingTriFunction;
 
 import java.lang.reflect.AnnotatedArrayType;
 import java.lang.reflect.AnnotatedType;

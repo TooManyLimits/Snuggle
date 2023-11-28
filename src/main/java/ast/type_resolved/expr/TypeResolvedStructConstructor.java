@@ -1,7 +1,5 @@
 package ast.type_resolved.expr;
 
-import ast.parsed.ParsedType;
-import ast.parsed.expr.ParsedExpr;
 import ast.passes.GenericVerifier;
 import ast.passes.TypeChecker;
 import ast.type_resolved.ResolvedType;
@@ -13,7 +11,6 @@ import ast.typed.expr.TypedStructConstructor;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
-import util.ListUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;

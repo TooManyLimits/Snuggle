@@ -35,7 +35,7 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
             throw new ParsingException("Attempt to use super, but type \"" + currentType.name() + "\" has no supertype", loc);
         //Lookup best method
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, true, null, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, null, null, currentType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, true, null, cause);
         TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();
@@ -50,7 +50,7 @@ public record TypeResolvedSuperMethodCall(Loc loc, String methodName, List<Resol
             throw new ParsingException("Attempt to use super outside of any type definition", loc);
         //Lookup best method
         List<TypeDef> instantiatedGenericArgs = ListUtils.map(genericArgs, g -> checker.getOrInstantiate(g, typeGenerics, methodGenerics, loc, cause));
-        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, currentType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, true, expected, cause);
+        TypeChecker.BestMethodInfo bestMethod = checker.getBestMethod(loc, currentType, null, null, currentType, methodName, args, instantiatedGenericArgs, typeGenerics, methodGenerics, false, true, expected, cause);
         TypeDef actualReceiverType = bestMethod.receiverType();
         MethodDef matchingMethod = bestMethod.methodDef();
         List<TypedExpr> typedArgs = bestMethod.typedArgs();

@@ -27,7 +27,7 @@ public record TypeResolvedConstructor(Loc loc, ResolvedType type, List<TypeResol
         //Get the expected return type of the new() method
         TypeDef expectedConstructorOutput = typeToConstruct.get() instanceof StructDef sd ? sd : checker.getTuple(List.of());
         //Lookup the best method
-        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, typeToConstruct, "new", args, List.of(), typeGenerics, methodGenerics, false, false, expectedConstructorOutput, cause);
+        TypeChecker.BestMethodInfo best = checker.getBestMethod(loc, currentType, null, null, typeToConstruct, "new", args, List.of(), typeGenerics, methodGenerics, false, false, expectedConstructorOutput, cause);
         return new TypedConstructor(loc, typeToConstruct, best.methodDef(), best.typedArgs());
     }
 

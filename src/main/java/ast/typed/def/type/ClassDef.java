@@ -1,16 +1,13 @@
 package ast.typed.def.type;
 
-import ast.passes.TypeChecker;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import exceptions.compile_time.CompilationException;
-import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 import util.LateInit;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 public class ClassDef implements TypeDef, FromTypeHead {

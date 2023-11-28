@@ -1,6 +1,5 @@
 package ast.type_resolved.expr;
 
-import ast.type_resolved.def.field.TypeResolvedFieldDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.numbers.FloatLiteralType;
 import exceptions.compile_time.CompilationException;
@@ -17,7 +16,6 @@ import lexing.Loc;
 import util.Fraction;
 import util.IntLiteralData;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 
