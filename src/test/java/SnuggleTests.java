@@ -103,11 +103,40 @@ public class SnuggleTests {
     @Test
     public void testForLoop() throws CompilationException, SnuggleException {
         test("""
+                //Original test
                 var x = new List<i32>()
                 x += 1
                 x += 4
                 x += 9
                 for a: i32 in x System.print(a)
+                
+                //Extension methods, allow things like:
+                //for a: i32 in x.iter()
+                //for a: i32 in x.iter().indexed()
+                
+                //All iterators can now call .iter() and just return themselves
+                pub fn iter<T>(this: () -> T?): () -> T? this
+                
+                //Can call .indexed() on an iterator to return a new iterator which is a pair of the element and its index
+                pub fn indexed<T>(this: () -> T?): () -> (T, u32)? {
+                    var i: Box<u32> = new(0); //store the current index
+                    //return a new closure
+                    () -> {
+                        var t = this() //Call the base iterator
+                        if t {
+                            //If the original iterator was present, return a present tuple
+                            *i += 1; //increment i
+                            new((*t, *i-1)) //return a tuple of the original and the current index
+                        } else {
+                            //Return empty
+                            new()
+                        }
+                    }
+                }
+                
+                for a: i32 in x.iter() System.print(a)
+                //This'll be better once we have pattern matching
+                for pair: (i32, u32) in x.iter().indexed() System.print(pair.v1.str() + ": " + pair.v0.str())
                 
                 """);
     }
