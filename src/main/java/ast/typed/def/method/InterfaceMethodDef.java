@@ -6,6 +6,7 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.GenericStringUtil;
 
 import java.util.List;
 
@@ -21,6 +22,6 @@ public record InterfaceMethodDef(String name, int numGenerics, boolean isStatic,
     public void compileCall(boolean isSuperCall, CodeBlock block, List<FieldDef> desiredFields, MethodVisitor jvm) throws CompilationException {
         int instruction = Opcodes.INVOKEINTERFACE; //interface
         //Invoke the instruction
-        jvm.visitMethodInsn(instruction, owningType.runtimeName(), name, getDescriptor(), true);
+        jvm.visitMethodInsn(instruction, owningType.runtimeName(), GenericStringUtil.mangleSlashes(name), getDescriptor(), true);
     }
 }

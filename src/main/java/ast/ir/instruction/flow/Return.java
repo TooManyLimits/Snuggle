@@ -9,6 +9,7 @@ import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.GenericStringUtil;
 import util.ListUtils;
 
 public record Return(MethodDef methodDef, TypeDef returnType) implements Instruction {
@@ -46,7 +47,7 @@ public record Return(MethodDef methodDef, TypeDef returnType) implements Instruc
                     storePluralFieldsRecurse(jvm, pluralType, namePrefix + "$" + field.name(), field.type());
             });
         } else {
-            jvm.visitFieldInsn(Opcodes.PUTSTATIC, runtimeName, namePrefix, curType.getDescriptor().get(0));
+            jvm.visitFieldInsn(Opcodes.PUTSTATIC, runtimeName, GenericStringUtil.mangleSlashes(namePrefix), curType.getDescriptor().get(0));
         }
     }
 

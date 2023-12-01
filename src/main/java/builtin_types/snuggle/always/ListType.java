@@ -81,6 +81,19 @@ public class ListType extends SnuggleDefinedType {
                         elem
                     }
                     
+                    //Remove the first element of the list
+                    pub fn dequeue(): T {
+                        size -= 1
+                        var elem = backing[0].get()
+                        var i: u32 = 1
+                        while i <= size {
+                            backing[i-1] = new(*backing[i])
+                            i += 1
+                        }
+                        backing[size] = new()
+                        elem
+                    }
+                    
                     //Functional helpers
                     pub fn forEach(func: T -> ()) {
                         for x: T in this func(x);

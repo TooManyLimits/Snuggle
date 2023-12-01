@@ -25,7 +25,7 @@ public class ComplexType extends SnuggleDefinedType {
                         e.real + e.imag
                     
                     pub fn eq(o: Complex<T>): bool
-                        real == o.real && imag == o.imag
+                        real == o.real & imag == o.imag
                     
                     pub fn add(o: Complex<T>): Complex<T>
                         new {real + o.real, imag + o.imag}

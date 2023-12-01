@@ -70,20 +70,26 @@ public class Parser {
 
     private ParsedFile parseFile(String fileName) throws CompilationException {
         ArrayList<ParsedExpr> code = new ArrayList<>();
+        ArrayList<ParsedImport> topLevelImports = new ArrayList<>();
         ArrayList<ParsedTypeDef> topLevelTypes = new ArrayList<>();
         ArrayList<ParsedExtensionMethod> topLevelExtensionMethods = new ArrayList<>();
         while (!lexer.check(EOF)) {
             ParsedExpr e = parseExpr(List.of(), List.of(), true, false);
-            if (e instanceof ParsedTypeDefExpr topLevelTypeDef)
+            if (e instanceof ParsedImport topLevelImport) {
+                topLevelImports.add(topLevelImport);
+                topLevelImport.isTopLevel().v = true;
+            }
+            else if (e instanceof ParsedTypeDefExpr topLevelTypeDef)
                 topLevelTypes.add(topLevelTypeDef.typeDef());
             else if (e instanceof ParsedExtensionMethod topLevelExtensionMethod)
                 topLevelExtensionMethods.add(topLevelExtensionMethod);
             code.add(e);
         }
         code.trimToSize();
+        topLevelImports.trimToSize();
         topLevelTypes.trimToSize();
         topLevelExtensionMethods.trimToSize();
-        return new ParsedFile(fileName, topLevelTypes, topLevelExtensionMethods, code);
+        return new ParsedFile(fileName, topLevelImports, topLevelTypes, topLevelExtensionMethods, code);
     }
 
     //The "class"/"struct" token was just consumed
@@ -240,8 +246,6 @@ public class Parser {
             lexer.expect(LEFT_PAREN, "Expected ( to begin params list for method \"" + methodName + "\"", methodLoc);
             List<ParsedParam> params = parseParams(typeGenerics, methodGenerics, methodLoc, "method \"" + methodName + "\"", false);
 
-            //TODO: Fix unit type
-            //ParsedType returnTypeGetter = ParsedType.Tuple.UNIT;
             AtomicInteger i = new AtomicInteger(); //cursed
             ParsedType returnType = switch (typeType) {
                 case CLASS -> ParsedType.Tuple.UNIT; //Class constructors return unit
@@ -311,7 +315,10 @@ public class Parser {
         ParsedExpr initializer = null;
         if (lexer.consume(ASSIGN))
             if (isClass)
-                initializer = parseExpr(typeGenerics, methodGenerics, false, true);
+                if (!isStatic)
+                    initializer = parseExpr(typeGenerics, methodGenerics, false, true);
+                else
+                    throw new ParsingException("WIP feature - static fields cannot have initializers. Initialize the variable inside a static block instead!", lexer.last().loc());
             else
                 throw new ParsingException("Unexpected \"=\" : Struct fields cannot cannot have initializers!", lexer.last().loc());
         return new SnuggleParsedFieldDef(varLoc.merge(lexer.last().loc()), pub, isStatic, fieldName.string(), annotatedType, initializer);
@@ -359,9 +366,9 @@ public class Parser {
                 case PERCENT -> "rem";
                 case POWER -> "pow";
 
-                case AMPERSAND -> "band";
-                case PIPE -> "bor";
-                case CARAT -> "bxor";
+                case BITWISE_AND -> "band";
+                case BITWISE_OR -> "bor";
+                case BITWISE_XOR -> "bxor";
 
                 //Special
                 case AND, OR -> "SPECIAL_IGNORE_SHOULD_NEVER_SEE";
@@ -370,14 +377,12 @@ public class Parser {
                 case GREATER -> {
                     if (lexer.consume(GREATER)) //Bit shift
                         yield "shr";
-                    else
-                        yield "gt";
+                    yield "gt";
                 }
                 case LESS -> {
                     if (lexer.consume(LESS)) //Bit shift
                         yield "shl";
-                    else
-                        yield "lt";
+                    yield "lt";
                 }
                 case GREATER_EQUAL -> "ge";
                 case LESS_EQUAL -> "le";
@@ -507,7 +512,6 @@ public class Parser {
 
     private ParsedExpr parseCallOrField(List<GenericDef> typeGenerics, List<GenericDef> methodGenerics, boolean canBeDeclaration, boolean isNested) throws CompilationException {
         //If we find STAR, then output is automatically recurse().get()
-        //no, no, bad, do not, the syntax is not enjoyable
         if (lexer.consume(STAR))
             return new ParsedMethodCall(lexer.last().loc(), parseCallOrField(typeGenerics, methodGenerics, canBeDeclaration, true), "get", List.of(), List.of());
         //Get the lhs
@@ -926,8 +930,8 @@ public class Parser {
         register(false, AND);
         register(false, EQUAL, NOT_EQUAL);
         register(false, GREATER, LESS, GREATER_EQUAL, LESS_EQUAL);
-        register(false, PLUS, MINUS, PIPE, CARAT); //a + b + c == (a + b) + c
-        register(false, STAR, SLASH, PERCENT, AMPERSAND);
+        register(false, PLUS, MINUS, BITWISE_OR, BITWISE_XOR); //a + b + c == (a + b) + c
+        register(false, STAR, SLASH, PERCENT, BITWISE_AND);
         register(true, POWER); //a ** b ** c == a ** (b ** c)
     }
 
@@ -946,10 +950,6 @@ public class Parser {
      */
 
     private ParsedType parseType(String startTokString, Loc startTokLoc, List<GenericDef> typeGenerics, List<GenericDef> methodGenerics) throws CompilationException {
-        //bad bad bad
-        //go away
-//        if (lexer.consume(AMPERSAND))
-//            return new ParsedType.Basic("Box", List.of(parseType(startTokString, startTokLoc, typeGenerics, methodGenerics)));
 
         if (lexer.consume(LEFT_PAREN)) {
             //Tuple time

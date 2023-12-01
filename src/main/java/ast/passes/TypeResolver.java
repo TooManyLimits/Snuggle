@@ -131,8 +131,8 @@ public class TypeResolver {
             push();
             //Import itself, including non-pub members
             doImport(new ParsedImport(new Loc(f.name(), 0,0,0,0), f.name()), true); //Import itself
-//            for (ParsedImport parsedImport : f.imports()) //Import everything it imports, without non-pub members
-//                doImport(parsedImport, false);
+            for (ParsedImport parsedImport : f.topLevelImports()) //Import everything it imports, without non-pub members
+                doImport(parsedImport, false);
             //For each top level type def in the file:
             for (ParsedTypeDef typeDef : f.topLevelTypeDefs()) {
                 //Resolve the typedef and store

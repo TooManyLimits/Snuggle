@@ -21,16 +21,16 @@ public enum TokenType {
     STAR("*"),
     SLASH("/"),
     PERCENT("%"),
-    POWER("**"),
+    POWER("^"),
 
     //Bitwise operators
-    AMPERSAND("&"),
-    PIPE("|"),
-    CARAT("^"),
+    BITWISE_AND("&&"),
+    BITWISE_OR("||"),
+    BITWISE_XOR("^^"),
 
     //Boolean operators
-    AND("&&"),
-    OR("||"),
+    AND("&"),
+    OR("|"),
     //Range operator
     RANGE(".."),
 
@@ -41,14 +41,14 @@ public enum TokenType {
     TIMES_ASSIGN("*="),
     DIVIDE_ASSIGN("/="),
     MODULO_ASSIGN("%="),
-    POWER_ASSIGN("**="),
-    BITWISE_AND_ASSIGN("&="),
-    BITWISE_OR_ASSIGN("|="),
-    BITWISE_XOR_ASSIGN("^="),
+    POWER_ASSIGN("^="),
+    BITWISE_AND_ASSIGN("&&="),
+    BITWISE_OR_ASSIGN("||="),
+    BITWISE_XOR_ASSIGN("^^="),
     LEFT_SHIFT_ASSIGN("<<="),
     RIGHT_SHIFT_ASSIGN(">>="),
-    AND_ASSIGN("&&="),
-    OR_ASSIGN("||="),
+    AND_ASSIGN("&="),
+    OR_ASSIGN("|="),
 
     //Comparisons
     GREATER(">"),

@@ -128,7 +128,7 @@ public record SnuggleMethodDef(Loc loc, boolean pub, String name, int disambigua
             instruction = Opcodes.INVOKESPECIAL; //Super calls and constructor calls use InvokeSpecial
 
         //Invoke the instruction
-        jvm.visitMethodInsn(instruction, owningType.runtimeName(), dedupName(), getDescriptor(), false);
+        jvm.visitMethodInsn(instruction, owningType.runtimeName(), GenericStringUtil.mangleSlashes(dedupName()), getDescriptor(), false);
     }
 
     @Override

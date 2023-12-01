@@ -9,6 +9,23 @@ import builtin_types.reflect.annotations.*;
 @SnuggleWhitelist
 public class SystemType {
 
+    public static @Unsigned long getMillis() {
+        return System.currentTimeMillis();
+    }
+
+    public static void waitMillis(@Unsigned long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ignored) {
+
+        }
+    }
+
+    //Not quite sure what this does but somebody recommended it for the async test
+    public static void onSpinWait() {
+        Thread.onSpinWait();
+    }
+
     public static void print(float f) { System.out.println(f); }
     public static void print(double d) { System.out.println(d); }
     public static void print(byte b) { System.out.println(b); }

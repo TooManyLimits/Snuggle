@@ -8,6 +8,7 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.GenericStringUtil;
 
 import java.util.List;
 
@@ -51,7 +52,7 @@ public record GetField(List<FieldDef> fieldsToFollow) implements Instruction {
                 BytecodeHelper.visitVariable(maxIndex, ownerType, false, jvm); //load variable
 //                BytecodeHelper.swap(jvm, type, ownerType); //swap
             }
-            jvm.visitFieldInsn(opcode, owner, fieldName, type.getDescriptor().get(0)); //get field
+            jvm.visitFieldInsn(opcode, owner, GenericStringUtil.mangleSlashes(fieldName), type.getDescriptor().get(0)); //get field
         }
     }
 

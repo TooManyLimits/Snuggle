@@ -88,6 +88,105 @@ public class SnuggleTests {
     }
 
     @Test
+    public void testAsyncFunnies() throws CompilationException, SnuggleException {
+        test(Map.of("main", """
+                import "async"
+                
+                fn wait(millis: u64): AsyncTask<()> {
+                    var start = System.getMillis()
+                    new(() -> {
+                        if System.getMillis() > start + millis
+                            new(;)
+                        else
+                            new()
+                    })
+                }
+                
+                Async.submit(
+                    wait(1000)
+                    .then(_ -> new(System.print("1000 ms complete!")))
+                )
+                Async.submit(
+                    wait(2500)
+                    .then(_ -> new(System.print("2500 ms complete!")))
+                )
+                System.print("Submitted both tasks!")
+                
+                Async.run()
+                while Async.run() System.waitMillis(10) //thread.sleep version
+                //while Async.run() System.onSpinWait() //onSpinWait version
+                //while Async.run() ; //busy wait version
+                
+                """, "async", """
+                
+                pub class Async {
+                    
+                    //Hmm... is this finally a use-case for a wildcard generic?
+                    //Why can they only be unit?
+                    static var tasks: List<AsyncTask<()>>
+                    
+                    static {
+                        Async.tasks = new();
+                    }
+                    
+                    pub static fn submit(task: AsyncTask<()>) {
+                        Async.tasks += task;
+                    }
+                    
+                    //Runs all of the tasks *currently* in the queue
+                    //Returns true if there is more left to do, next time
+                    pub static fn run(): bool {
+                        //System.print("running event loop")
+                        var count: u32 = #Async.tasks
+                        //System.print(count)
+                        while count > 0 {
+                            var task = Async.tasks.dequeue()
+                            if !task.poll().isPresent() //If it's not done yet, add it back into the queue
+                                Async.tasks += task
+                            count -= 1
+                        }
+                        #Async.tasks > 0 //return whether there are remaining tasks
+                    }
+                    
+                }
+                
+                pub class AsyncTask<T> {
+                
+                    //Return an empty option if the task is not yet complete
+                    //Return a full option with the result if it is complete
+                    var poller: () -> T?
+                    
+                    pub fn new(poller: () -> T?) {
+                        super()
+                        this.poller = poller;
+                        //System.print("created task")
+                    }
+                    
+                    //Just call the poller to poll
+                    fn poll(): T? poller()
+                    
+                    pub fn then<U>(func: T -> U?): AsyncTask<U> {
+                        var firstOutput: Box<T?> = new(new())
+                        new(() -> {
+                            if !(firstOutput.v.isPresent()) {
+                                //If the first output hasn't been gotten yet, try polling
+                                if *firstOutput = this.poll() {
+                                    //If it works, we're good
+                                } else {
+                                    //If not, return empty
+                                    return new()
+                                }
+                            }
+                            //First is done, now poll second
+                            func(**firstOutput)
+                        })
+                    }
+                }
+                
+                """));
+    }
+
+    @Test
     public void testExtensionMethodImport() throws CompilationException, SnuggleException {
         test(Map.of("main", """
                 import "lib" //Get the extension method
@@ -729,7 +828,7 @@ public class SnuggleTests {
                 class IsSameGeneric<A, B> {
                     fn new() super()
                     fn isSame(): bool
-                        is A B && is B A
+                        is A B & is B A
                 }
                 
                 Test.assertTrue(is str Obj)
@@ -763,7 +862,7 @@ public class SnuggleTests {
                     var y: f32
                     var z: f32
                     fn eq(o: Vec3): bool
-                        x == o.x && y == o.y && z == o.z
+                        x == o.x & y == o.y & z == o.z
                     fn add(o: Vec3): Vec3
                         new Vec3 { x + o.x, y + o.y, z + o.z }
                     fn str(): str
@@ -906,7 +1005,7 @@ public class SnuggleTests {
                 class Leap {
                     fn new() super()
                     fn check(year: u32): bool
-                        year % 4 == 0 && year % 100 != 0 || year % 400 == 0
+                        year % 4 == 0 & year % 100 != 0 | year % 400 == 0
                 }
                 var l = new Leap()
                 Test.assertFalse(l.check(3))
@@ -1165,8 +1264,8 @@ public class SnuggleTests {
                 System.print(~y)
                 System.print(-y)
                 System.print(y / y)
-                System.print(y & y)
-                System.print(y ^ y)
+                System.print(y && y)
+                System.print(y ^^ y)
                 
                 var x: i32 = ~10
                 System.print(x)

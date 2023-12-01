@@ -12,6 +12,7 @@ import lexing.Loc;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import util.GenericStringUtil;
 import util.ListUtils;
 import util.throwing_interfaces.ThrowingConsumer;
 
@@ -72,7 +73,7 @@ public class ReflectedClassMethod {
                 jvm -> jvm.visitMethodInsn(
                         isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
                         owner,
-                        origName,
+                        GenericStringUtil.mangleSlashes(origName),
                         descriptor,
                         false
                 )

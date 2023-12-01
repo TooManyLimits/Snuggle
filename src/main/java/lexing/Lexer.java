@@ -27,8 +27,8 @@ public class Lexer {
             "//.*" + "|" +
             //Multi line comments
             "/\\*(\\*(?!/)|[^*])*\\*/" + "|" + //https://stackoverflow.com/questions/16160190/regular-expression-to-find-c-style-block-comments
-            //Unique 2-character operators and ASSIGN variants, **, &&, ||, **=, &&=, ||=
-            "(?:(\\*\\*)|&&|\\|\\|)=?" + "|" +
+            //Unique 2-character operators and ASSIGN variants, ^^, &&, ||, ^^=
+            "(?:&&|\\|\\||\\^\\^)=?" + "|" +
             //Assign variants for bit shifts, <<= and >>=
             ">>=|<<=" + "|" +
             //Other 2-character symbols, .. :: -> =>

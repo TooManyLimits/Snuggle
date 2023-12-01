@@ -9,6 +9,7 @@ import ast.typed.def.type.TypeDef;
 import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import util.GenericStringUtil;
 
 import java.util.List;
 
@@ -56,7 +57,7 @@ public record MethodCall(boolean isSuperCall, MethodDef methodToCall, List<Field
                     fetchPluralFieldsRecurse(jvm, pluralType, namePrefix + "$" + field.name(), field.type());
             }
         } else {
-            jvm.visitFieldInsn(Opcodes.GETSTATIC, runtimeName, namePrefix, curType.getDescriptor().get(0));
+            jvm.visitFieldInsn(Opcodes.GETSTATIC, runtimeName, GenericStringUtil.mangleSlashes(namePrefix), curType.getDescriptor().get(0));
         }
     }
 

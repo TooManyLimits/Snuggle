@@ -22,7 +22,7 @@ public class TupleTypeDef implements TypeDef {
 
     public TupleTypeDef(List<TypeDef> elements) {
         elementTypes = elements;
-        name = GenericStringUtil.instantiateName("", elementTypes);
+        name = elementTypes.size() == 0 ? "()" : GenericStringUtil.instantiateName("", elementTypes);
         runtimeName = "tuples/" + name;
         stackSlots = elements.stream().map(TypeDef::stackSlots).reduce(Integer::sum).orElse(0);
         fields = ListUtils.mapIndexed(elements, (e, i) ->

@@ -3,6 +3,7 @@ package ast.ir.def;
 import ast.typed.def.field.FieldDef;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
+import util.GenericStringUtil;
 
 public record GeneratedField(boolean isMemberOfPluralType, FieldDef fieldDef) {
 
@@ -21,7 +22,7 @@ public record GeneratedField(boolean isMemberOfPluralType, FieldDef fieldDef) {
             //If non-plural, add the field.
             int access = Opcodes.ACC_PUBLIC;
             if (this.fieldDef.isStatic() || isMemberOfPluralType) access |= Opcodes.ACC_STATIC;
-            writer.visitField(access, namePrefix + curFieldDef.name(), curFieldDef.type().getDescriptor().get(0), null, null).visitEnd();
+            writer.visitField(access, GenericStringUtil.mangleSlashes(namePrefix + curFieldDef.name()), curFieldDef.type().getDescriptor().get(0), null, null).visitEnd();
         }
     }
 

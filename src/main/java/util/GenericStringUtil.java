@@ -23,4 +23,16 @@ public class GenericStringUtil {
     public static String instantiateName(String name, List<TypeDef> generics) {
         return instantiateName(name, generics, "(", ")");
     }
+
+    //Cursed. Horrifying if you will
+    //Use this whenever we send something into an actual
+    //JVM-adjacent method, like something from ASM. We don't
+    //need to mangle until then.
+
+    //ClassVisitor.visitField/visitMethod()
+    //MethodVisitor.visitFieldInsn/visitMethodInsn()
+    public static String mangleSlashes(String name) {
+        return name.replace('/', '\\');
+    }
+
 }
