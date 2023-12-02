@@ -24,19 +24,36 @@ public class StringType implements BuiltinType {
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
         TypeDef string = checker.getBasicBuiltin(INSTANCE);
         TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
+        TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
         return ListUtils.join(
+                //Add two strings together to concat
                 DefineConstWithFallback.defineBinary("add", String::concat, string, string, string, v -> {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
                 }),
+                //Length of string
                 DefineConstWithFallback.defineUnary("size", (String x) -> BigInteger.valueOf(x.length()), string, u32, v -> {
                     v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
+                }),
+                //Equality of strings
+                DefineConstWithFallback.defineBinary("eq", (String x, String y) -> x.equals(y), string, string, bool, v -> {
+                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
+                }),
+                //Get "char" at given pos
+                DefineConstWithFallback.defineBinary("get", (String str, Integer pos) -> str.substring(pos, pos + 1), string, u32, string, v -> {
+                    //Dup integer
+                    v.visitInsn(Opcodes.DUP);
+                    //Add 1
+                    v.visitInsn(Opcodes.ICONST_1);
+                    v.visitInsn(Opcodes.IADD);
+                    //Call
+                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "substring", "(II)Ljava/lang/String;", false);
                 })
         );
     }
 
     @Override
     public String name() {
-        return "str";
+        return "Str";
     }
 
     @Override

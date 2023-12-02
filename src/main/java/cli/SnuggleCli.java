@@ -28,7 +28,7 @@ public class SnuggleCli {
         }
         CompileAll.compileAllToJar(
                 new File("output.jar"),
-                new BuiltinTypes(),
+                BuiltinTypes.standard(),
                 srcMap
         );
     }

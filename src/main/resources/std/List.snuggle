@@ -1,0 +1,197 @@
+
+import "std/Box"
+
+//A growing array of values.
+
+pub class List<T> {
+
+    var backing: MaybeUninit<T>[]
+    var size: u32 = 0
+
+    //Create a new List<T> with backing size assumed to be 5
+    pub fn new() {
+        super()
+        backing = new(5);
+    }
+
+    //Create a new List<T> with the passed backing size
+    pub fn new(startingBackingSize: u32) {
+        super()
+        backing = new(startingBackingSize);
+    }
+
+    //Get the i'th element of the list.
+    //Operator overload: `myList[i]`
+    pub fn get(i: u32): T {
+        if i >= size {
+            //TODO: Better error system
+            var x = 0i32
+            1i32 / x
+            new MaybeUninit<T>().get()
+        } else {
+            backing[i].get()
+        }
+    }
+
+    //Set the i'th element of the list to the given value.
+    //Operator overload: `myList[i] = elem`
+    pub fn set(i: u32, elem: T): T {
+        if i >= size {
+            //error :P
+            var x = 0i32
+            1i32 / x;
+        } else {
+            backing[i] = new(elem);
+        }
+        elem
+    }
+
+    //The number of elements in the list.
+    //Operator overload: `#myList`
+    pub fn size(): u32 size
+
+    //Add an element onto the end of the list.
+    pub fn push(elem: T): List<T> {
+
+        //If it's full, then grow the backing array
+        if size == #backing {
+            //Create a new backing array
+            var newBacking = new MaybeUninit<T>[](size * 2 + 1)
+
+            //Iterate and copy the elements from the old into the new
+            var i: u32 = 0
+            while i < #backing {
+                newBacking[i] = new(backing[i].get())
+                i += 1
+            }
+
+            //Reassign the field
+            backing = newBacking
+        }
+        //Now that it's big enough, add the elem to the backing array
+        backing[size] = new(elem)
+        size += 1 //Increment size
+        this
+    }
+
+    //Operator overload for push: `myList += elem`
+    pub fn addAssign(elem: T): List<T>
+        this.push(elem)
+
+    //Remove the last element of the list and return it.
+    //TODO: Error better if the list is empty
+    pub fn pop(): T {
+        size -= 1
+        var elem = backing[size].get()
+        backing[size] = new()
+        elem
+    }
+
+    //Remove the first element of the list and return it.
+    //TODO: Error better if the list is empty
+    pub fn dequeue(): T {
+        size -= 1
+        var elem = backing[0].get()
+        var i: u32 = 1
+        while i <= size {
+            backing[i-1] = backing[i]
+            i += 1
+        }
+        backing[size] = new()
+        elem
+    }
+
+    //Functional helpers
+
+    //Execute the lambda for each element of this list, in order.
+    pub fn forEach(func: T -> ()) {
+        for x: T in this func(x);
+    }
+
+    //Create an iterator over the elements in this list.
+    //Implements for loop syntax for lists:
+    //`for elem: T in myList { ... }`
+    pub fn iter(): () -> T? {
+        var i: Box<u32> = new(0);
+        () -> {
+            if *i >= #this
+                new()
+            else {
+                *i += 1
+                new(this[*i - 1])
+            }
+        }
+    }
+
+    //Create a new List of type R, where the elements
+    //of said list are constructed by applying the given
+    //function to each element of this list.
+    pub fn map<R>(func: T -> R): List<R> {
+        var res = new List<R>(#this)
+        var i = 0u32
+        while i < #this {
+            res += func(this[i])
+            i += 1;
+        }
+        res
+    }
+
+    //Same as above, except the function also accepts
+    //an index as the second parameter, which is the
+    //index of the element being mapped.
+    pub fn mapIndexed<R>(func: (T, u32) -> R): List<R> {
+        var res = new List<R>(#this)
+        var i = 0u32
+        while i < #this {
+            res += func(this[i], i)
+            i += 1;
+        }
+        res
+    }
+
+    //Return a new list, composed of all elements
+    //of this list for which the provided function
+    //returns true.
+    pub fn filter(predicate: T -> bool): List<T> {
+        var res = new List<T>()
+        var i = 0u32
+        while i < #this {
+            if predicate(this[i])
+                res += this[i]
+            i += 1;
+        }
+        res
+    }
+
+    //Get the first element in the list that
+    //satisfies the predicate. If no element
+    //satisfies it, returns an empty option.
+    pub fn first(predicate: T -> bool): T? {
+        for x: T in this
+            if predicate(x)
+                return new T?(x)
+        new()
+    }
+
+    //Get the last element in the list that
+    //satisfies the predicate. If no element
+    //satisfies it, returns an empty option.
+    pub fn last(func: T -> bool): T? {
+        var i: u32 = #this - 1
+        while i >= 0 {
+            if func(this[i])
+                return new T?(this[i])
+            i -= 1
+        }
+        new()
+    }
+
+    //Fold the list from the left into a value.
+    pub fn fold<U>(start: U, func: (U, T) -> U): U {
+        var res = start
+        for x: T in this
+            res = func(res, x)
+        res
+    }
+
+}

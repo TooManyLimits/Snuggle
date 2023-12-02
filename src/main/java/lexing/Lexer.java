@@ -43,7 +43,7 @@ public class Lexer {
             //Identifiers
             "[a-zA-Z_]\\w*" + "|" +
             //String literals
-            "\"(?:\\\\.|[^\\\\\"])*\"" + "|" +
+            "\"(?:\\\\.|[^\\\\\"])*+\"" + "|" +
             //Newlines
             "\n" + "|" +
             //Anything else

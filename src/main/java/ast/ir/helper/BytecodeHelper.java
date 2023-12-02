@@ -3,6 +3,7 @@ package ast.ir.helper;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.BoolType;
+import builtin_types.types.OptionType;
 import builtin_types.types.numbers.FloatType;
 import builtin_types.types.numbers.IntegerType;
 import org.objectweb.asm.MethodVisitor;
@@ -75,7 +76,7 @@ public class BytecodeHelper {
         if (def.isPlural()) {
             for (FieldDef field : def.nonStaticFields())
                 pushDefaultValue(jvm, field.type());
-        } else if (def.isReferenceType()) {
+        } else if (def.isReferenceType() || def.builtin() == OptionType.INSTANCE && def.generics().get(0).isReferenceType()) {
             jvm.visitInsn(Opcodes.ACONST_NULL);
         } else if (def.builtin() instanceof IntegerType i) {
             switch (i.bits) {

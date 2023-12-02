@@ -310,7 +310,7 @@ public class TypeChecker {
             if (output != null) return output;
             //Finally, extension methods. Call was non-special.
             //We pass true as the second parameter, and checkMethods() handles the differences itself.
-            List<MethodDef> extensions = ListUtils.join(checker.extensionMethods.peek());
+            List<MethodDef> extensions = ListUtils.join(ListUtils.join(checker.extensionMethods));
             checkMethods(extensions, true);
             output = getResultingBestMethodInfo(true); //we should error now if nothing was found
             if (output != null) return output;

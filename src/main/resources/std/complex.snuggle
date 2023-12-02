@@ -1,0 +1,63 @@
+
+//Designed mostly for fun and to test operator overloading, but it's here!
+
+//Represents a complex number where each component is a T.
+//Generally expects T to be a basic builtin number type.
+
+pub struct complex<T> {
+    pub var real: T
+    pub var imag: T
+
+    //Check if both are equal
+    //Operator overload: `a == b` and `a != b`
+    pub fn eq(o: complex<T>): bool
+        real == o.real & imag == o.imag
+
+    //Add two complex numbers together. Operator overload.
+    pub fn add(o: complex<T>): complex<T>
+        new {real + o.real, imag + o.imag}
+    //Add a real number to this complex number. Operator overload.
+    pub fn add(o: T): complex<T>
+        new {real + o, imag}
+
+    //Subtract two complex numbers. Operator overload.
+    pub fn sub(o: complex<T>): complex<T>
+        new {real - o.real, imag - o.imag}
+    //Subtract a real number from this complex number. Operator overload.
+    pub fn sub(o: T): complex<T>
+        new {real - o, imag}
+
+    //Get the squared magnitude of this complex number.
+    pub fn len2(): T
+        real * real + imag * imag
+
+    //Multiply two complex numbers together: Operator overload.
+    pub fn mul(o: complex<T>): complex<T>
+        new {real * o.real - imag * o.imag, real * o.imag + imag * o.real}
+    //Multiply a complex number by a real number. Operator overload.
+    pub fn mul(o: T): complex<T>
+        new {real * o, imag * o}
+
+    //Divide two complex numbers. Operator overload.
+    pub fn div(o: complex<T>): complex<T> {
+        var len2 = o.len2()
+        new {
+            {real * o.real + imag * o.imag} / len2,
+            {imag * o.real - real * o.imag} / len2
+        }
+    }
+    //Divide a complex number by a real number. Operator overload.
+    pub fn div(o: T): complex<T>
+        new {real / o, imag / o}
+}
+
+//Operator overloads in the other direction, allowing things like `1 + mycomplex` instead of just `mycomplex + 1`.
+pub fn add<T>(this: T, o: complex<T>): complex<T>
+    o + this
+pub fn sub<T>(this: T, o: complex<T>): complex<T>
+    new {this, 0} - o
+pub fn mul<T>(this: T, o: complex<T>): complex<T>
+    o * this
+pub fn div<T>(this: T, o: complex<T>): complex<T>
+    new {this, 0} / o
+

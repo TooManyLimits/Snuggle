@@ -1,0 +1,27 @@
+
+//A simple wrapper over interior mutability.
+//Useful in closures, where you can't assign
+//to outside variables.
+
+pub class Box<T> {
+    //Field. Pub, so you can access it, in case that syntax is cleaner sometimes.
+    pub var v: T
+
+    //Construct from a starting value. A box must always have a starting value.
+    pub fn new(e: T) {
+        super()
+        v = e;
+    }
+
+    //Get the element in the box.
+    //Operator overload: `*myBox`
+    //Operator overload, but more cursed: `myBox[]`
+    //Can also use direct field access instead, `myBox.v`
+    pub fn get(): T v
+
+    //Set the element in the box.
+    //Operator overload: `*myBox = e`
+    //Operator overload, but more cursed: `myBox[] = e`
+    //Can also use direct field access instead, `myBox.v = e`
+    pub fn set(e: T): T v = e
+}

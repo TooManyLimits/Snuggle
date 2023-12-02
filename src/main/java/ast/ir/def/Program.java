@@ -13,6 +13,7 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import runtime.SnuggleInstance;
 import runtime.SnuggleRuntime;
+import util.GenericStringUtil;
 import util.ListUtils;
 import util.MapUtils;
 

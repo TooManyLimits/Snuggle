@@ -84,12 +84,14 @@ public class SnuggleTests {
             throw new UncheckedIOException(e);
         }
 
-        test(new BuiltinTypes(), files, null);
+        test(BuiltinTypes.standard(), files, null);
     }
 
     @Test
     public void testAsyncFunnies() throws CompilationException, SnuggleException {
         test(Map.of("main", """
+                import "std/List"
+                import "std/Box"
                 import "async"
                 
                 fn wait(millis: u64): AsyncTask<()> {
@@ -103,12 +105,12 @@ public class SnuggleTests {
                 }
                 
                 Async.submit(
-                    wait(1000)
-                    .then(_ -> new(System.print("1000 ms complete!")))
+                    wait(100)
+                    .then(_ -> new(System.print("100 ms complete!")))
                 )
                 Async.submit(
-                    wait(2500)
-                    .then(_ -> new(System.print("2500 ms complete!")))
+                    wait(250)
+                    .then(_ -> new(System.print("250 ms complete!")))
                 )
                 System.print("Submitted both tasks!")
                 
@@ -118,6 +120,8 @@ public class SnuggleTests {
                 //while Async.run() ; //busy wait version
                 
                 """, "async", """
+                import "std/List"
+                import "std/Box"
                 
                 pub class Async {
                     
@@ -202,6 +206,9 @@ public class SnuggleTests {
     @Test
     public void testForLoop() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                import "std/Box"
+                
                 //Original test
                 var x = new List<i32>()
                 x += 1
@@ -247,8 +254,8 @@ public class SnuggleTests {
                 pub fn shrAssign<T, R>(this: T?, func: T -> R?): R?
                     if this func(*this) else new()
                 
-                var a: str? = new("i am present")
-                var b: str? = new() //i am not
+                var a: Str? = new("i am present")
+                var b: Str? = new() //i am not
                 
                 var alen: u32? = a >>= x -> new(#x)
                 var blen: u32? = b >>= x -> new(#x)
@@ -262,6 +269,8 @@ public class SnuggleTests {
     @Test
     public void testMethodGenericInference() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                
                 var x: List<i32> = new()
                 x += 1
                 x += 2
@@ -274,7 +283,7 @@ public class SnuggleTests {
     @Test
     public void testExtensionMethod() throws CompilationException, SnuggleException {
         test("""
-                fn mul(this: str, count: u32): str {
+                fn mul(this: Str, count: u32): Str {
                     if count == 0 return ""
                     var res = this
                     while count > 1 {
@@ -292,6 +301,8 @@ public class SnuggleTests {
     @Test
     public void testEvent() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                
                 class Event<InputType> : List<InputType -> ()> {
                     pub fn new() super()
                     pub fn invoke(input: InputType)
@@ -311,6 +322,8 @@ public class SnuggleTests {
     @Test
     public void testClosure2() throws CompilationException, SnuggleException {
         test("""
+                import "std/Box"
+                
                 fn incrementor(): () -> i32 {
                     var x: Box<i32> = new(0);
                     () -> *x += 1
@@ -344,7 +357,7 @@ public class SnuggleTests {
                 System.print(square(5))
                 System.print(square(7))
                 System.print(genericSquare(10.5f32))
-                //System.print(genericSquare.invoke::<str>("hi")) //error, genericSquare<str> doesn't work
+                //System.print(genericSquare.invoke::<Str>("hi")) //error, genericSquare<Str> doesn't work
                 
                 Test.assertEquals(10001, square(square(10)) + 1)
                 """);
@@ -369,6 +382,8 @@ public class SnuggleTests {
     @Test
     public void testLambdas() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                
                 var l = new List<i32>()
                 l += 1
                 l += 2
@@ -388,7 +403,7 @@ public class SnuggleTests {
                 Test.assertEquals(9, d[2])
                 Test.assertEquals(16, d[3])
                 
-                var quoteWrap: str -> str = e -> "\\"" + e + "\\""
+                var quoteWrap: Str -> Str = e -> "\\"" + e + "\\""
                 c.map(quoteWrap).forEach(e -> System.print(e))
                 d.forEach(e -> System.print(e))
                 """);
@@ -397,6 +412,8 @@ public class SnuggleTests {
     @Test
     public void testMethodGenerics() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                
                 class Mapper<T, R> {
                     var default: R //used because we have no abstract/interface
                     fn new(e: R) {
@@ -419,9 +436,9 @@ public class SnuggleTests {
                     }
                 }
                 
-                class StringMapper : Mapper<i32, str> {
+                class StringMapper : Mapper<i32, Str> {
                     fn new() super("")
-                    fn invoke(x: i32): str
+                    fn invoke(x: i32): Str
                         x.str()
                 }
                 
@@ -436,7 +453,7 @@ public class SnuggleTests {
                 l += 2
                 l += 3
                 
-                var c = l.map::<str>(new StringMapper());
+                var c = l.map::<Str>(new StringMapper());
                 Test.assertEquals("1", c[0])
                 Test.assertEquals("2", c[1])
                 Test.assertEquals("3", c[2])
@@ -481,6 +498,8 @@ public class SnuggleTests {
     @Test
     public void weirdSubtyping() throws CompilationException, SnuggleException {
         test("""
+                import "std/List"
+                
                 class Mapper<T, R> {
                     var default: R //used because we have no abstract/interface
                     fn new(e: R) {
@@ -492,8 +511,8 @@ public class SnuggleTests {
                 
                 class FunnyList<T> : List<T> {
                     fn new() super()
-                    fn mapstr(func: Mapper<T, str>): List<str> {
-                        var res = new List<str>()
+                    fn mapstr(func: Mapper<T, Str>): List<Str> {
+                        var res = new List<Str>()
                         var i = 0u32
                         while i < #this {
                             res += func(this[i])
@@ -503,9 +522,9 @@ public class SnuggleTests {
                     }
                 }
                 
-                class ToStringMapper<T> : Mapper<T, str> {
+                class ToStringMapper<T> : Mapper<T, Str> {
                     fn new() super("")
-                    fn invoke(e: T): str
+                    fn invoke(e: T): Str
                         e.str()
                 }
                 
@@ -530,7 +549,7 @@ public class SnuggleTests {
                             var b: Y
                         }
                         var inner1 = new Inner<i32> {10, 30}
-                        var inner2 = new Inner<str> {15, "cutie"}
+                        var inner2 = new Inner<Str> {15, "cutie"}
                         Test.assertEquals(10, inner1.a)
                         Test.assertEquals(30, inner1.b)
                         Test.assertEquals(15, inner2.a)
@@ -560,23 +579,22 @@ public class SnuggleTests {
                 new Silly<Hello>().callStaticOnGeneric()
                 Silly::<Hello>.callStaticOnGenericFromStatic()
                 
-//                //Error :( str doesn't have a static .hello()
-//                new Silly<str>().callStaticOnGeneric()
+//                //Error :( Str doesn't have a static .hello()
+//                new Silly<Str>().callStaticOnGeneric()
                 """);
     }
 
     @Test
     public void testComplex() throws CompilationException, SnuggleException {
         test("""
-                import "complex"
-                var a: Complex<f32> = new {1, 2}
-                var b: Complex<f32> = new {3, 4}
+                import "std/complex"
+                var a: complex<f32> = new {1, 2}
+                var b: complex<f32> = new {3, 4}
 
                 Test.assertEquals(-5, {a * b}.real)
                 Test.assertEquals(10, {a * b}.imag)
                 Test.assertTrue(a * b == new { -5, 10 })
-                Test.assertTrue(a * b == Complex::<f32>.ONE * -5 + Complex::<f32>.I * 10)
-                Test.assertEquals(5, Complex::<f32>.sumComponents(a * b))
+                Test.assertEquals(125, (a * b).len2())
                 """);
     }
 
@@ -593,6 +611,8 @@ public class SnuggleTests {
     @Test
     public void testBox() throws CompilationException, SnuggleException {
         test("""
+                import "std/Box"
+                
                 struct Vec2 {
                     var x: f32
                     var y: f32
@@ -673,7 +693,7 @@ public class SnuggleTests {
     @Test
     public void testConstructorInfer() throws CompilationException, SnuggleException {
         test("""
-                var x: str? = new()
+                var x: Str? = new()
                 x = new("helo cutie :D")
                 System.print(x[])
                 Test.assertEquals(#"helo cutie :D", #x[])
@@ -684,8 +704,8 @@ public class SnuggleTests {
     @Test
     public void testMaybeUninit() throws CompilationException, SnuggleException {
         test("""
-                var x = new Array<MaybeUninit<str>>(1)[0]
-                var y = new MaybeUninit<str>("hi")
+                var x = new Array<MaybeUninit<Str>>(1)[0]
+                var y = new MaybeUninit<Str>("hi")
                 System.print(y[])
                 System.print(x[])
                 """);
@@ -695,7 +715,7 @@ public class SnuggleTests {
     public void testStaticInitializer() throws CompilationException, SnuggleException {
         test("""
                 class catplant {
-                    static var e: str
+                    static var e: Str
                     static {
                         catplant.e = ":catplant:";
                     }
@@ -709,16 +729,16 @@ public class SnuggleTests {
     public void testEnum() throws CompilationException, SnuggleException {
         test("""
                 struct LittleScary {
-                    var x: str //non nullable struct-nested reference type!! aaa!!
+                    var x: Str //non nullable struct-nested reference type!! aaa!!
                     var y: u64
                 }
                 
                 struct Scary {
                     var little: LittleScary
-                    var z: str //AAAA!!! ANOTHER ONE!!
+                    var z: Str //AAAA!!! ANOTHER ONE!!
                 }
                 
-                enum Day(isWeekend: bool, emotion: str, scary: Scary) {
+                enum Day(isWeekend: bool, emotion: Str, scary: Scary) {
                     SUNDAY(true, ":)", new Scary { new LittleScary { "a", 1 }, "A" })
                     MONDAY(false, ":((", new Scary { new LittleScary { "aa", 2 }, "AA" })
                     TUESDAY(false, ":(", new Scary { new LittleScary { "aaa", 3 }, "AAA" })
@@ -742,7 +762,7 @@ public class SnuggleTests {
         assertThrows(NullPointerException.class, () -> test("""
                 class NPE {
                     var x: f32
-                    var y: str
+                    var y: Str
                     fn new() {
                         super()
                         System.print(x)
@@ -831,15 +851,15 @@ public class SnuggleTests {
                         is A B & is B A
                 }
                 
-                Test.assertTrue(is str Obj)
-                Test.assertFalse(is Obj str)
+                Test.assertTrue(is Str Obj)
+                Test.assertFalse(is Obj Str)
                 Test.assertFalse(is i64 i32)
-                Test.assertTrue(is Array<Array<str>> Obj)
+                Test.assertTrue(is Array<Array<Str>> Obj)
                 Test.assertFalse(is Array<Vec2> Obj)
                 Test.assertFalse(new IsMyGenericI32<f32>().isIt())
                 Test.assertTrue(new IsMyGenericI32<i32>().isIt())
-                Test.assertFalse(new IsSameGeneric<Obj, str>().isSame())
-                Test.assertFalse(new IsSameGeneric<str, Obj>().isSame())
+                Test.assertFalse(new IsSameGeneric<Obj, Str>().isSame())
+                Test.assertFalse(new IsSameGeneric<Str, Obj>().isSame())
                 Test.assertTrue(new IsSameGeneric<Vec2, Vec2>().isSame())
                 """);
     }
@@ -865,7 +885,7 @@ public class SnuggleTests {
                         x == o.x & y == o.y & z == o.z
                     fn add(o: Vec3): Vec3
                         new Vec3 { x + o.x, y + o.y, z + o.z }
-                    fn str(): str
+                    fn str(): Str
                         x.str() + ", " + y.str() + ", " + z.str()
                 }
                 
@@ -913,19 +933,19 @@ public class SnuggleTests {
     public void testReferenceTypeOption() throws CompilationException, SnuggleException {
         test("""
                 class A {
-                    var x: str?
+                    var x: Str?
                     var y: B?
                     fn new() {
                         super()
-                        x = new str?("i am an A")
+                        x = new Str?("i am an A")
                         y = new B?(new B());
                     }
                 }
                 class B {
-                    var y: str?
+                    var y: Str?
                     fn new() {
                         super()
-                        y = new str?("i am a B");
+                        y = new Str?("i am a B");
                     }
                 }
                 
@@ -985,7 +1005,7 @@ public class SnuggleTests {
                     var z: f32
                     fn new(x: f32, y: f32, z: f32)
                         new Vec3 { x, y, z }
-                    fn str(): str
+                    fn str(): Str
                         "{" + x.str() + ", " + y.str() + ", " + z.str() + "}"
                     fn add(o: Vec3): Vec3
                         new Vec3 {x + o.x, y + o.y, z + o.z}
@@ -1033,6 +1053,8 @@ public class SnuggleTests {
     @Test
     public void testFunFakeVarargs() throws CompilationException, SnuggleException, IOException {
         test("""
+                import "std/List"
+                
                 class FakeVarargsPrinter<T> {
                     var elems: List<T>
                     fn new(firstElem: T) {
@@ -1081,8 +1103,8 @@ public class SnuggleTests {
     @Test
     public void testOption() {
         assertThrows(SnuggleException.class, () -> test("""
-                var x = new str?()
-                var y = new str?("hi")
+                var x = new Str?()
+                var y = new Str?("hi")
                 
                 //x.get() //error, x is empty
                 x.get("Silly custom error message") //error, x is empty
@@ -1167,8 +1189,8 @@ public class SnuggleTests {
 
     @Test
     public void testOverloads() throws CompilationException, SnuggleException {
-        var types = new BuiltinTypes()
-                .addType(TestReflectedClass.class);
+        var types = BuiltinTypes.standard()
+                .reflectType(TestReflectedClass.class);
         test(types, """
                 class Silly {
                     fn new() super()
@@ -1223,9 +1245,9 @@ public class SnuggleTests {
 
     @Test
     public void testReflectionExtend() throws CompilationException, SnuggleException {
-        var types = new BuiltinTypes()
-                .addType(TestReflectedClass.class)
-                .addType(TestReflectedClass2.class);
+        var types = BuiltinTypes.standard()
+                .reflectType(TestReflectedClass.class)
+                .reflectType(TestReflectedClass2.class);
         test(types, """
                 var x: TestClass = TestClass.get()
                 var y: i32 = x.beeg()
@@ -1241,8 +1263,8 @@ public class SnuggleTests {
 
     @Test
     public void testReflection() throws CompilationException, SnuggleException {
-        var types = new BuiltinTypes()
-                .addType(TestReflectedClass.class);
+        var types = BuiltinTypes.standard()
+                .reflectType(TestReflectedClass.class);
         test(types, """
                 TestClass.printSilly()
                 TestClass.printSilly()
@@ -1292,11 +1314,11 @@ public class SnuggleTests {
 
 //    public void test(@Language("TEXT") str main) throws CompilationException, SnuggleException {
     public void test(String main) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), Map.of("main", main), null);
+        test(BuiltinTypes.standard(), Map.of("main", main), null);
     }
 
     public void test(String main, File file) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), Map.of("main", main), file);
+        test(BuiltinTypes.standard(), Map.of("main", main), file);
     }
 
 //    public void test(BuiltinTypes topLevelTypes, @Language("TEXT") str main) throws CompilationException, SnuggleException {
@@ -1305,11 +1327,11 @@ public class SnuggleTests {
     }
 
     public void test(Map<String, String> files) throws CompilationException, SnuggleException {
-        test(new BuiltinTypes(), files, null);
+        test(BuiltinTypes.standard(), files, null);
     }
 
     public void test(BuiltinTypes types, Map<String, String> files, File export) throws CompilationException, SnuggleException {
-        types.addType(TestBindings.class);
+        types.reflectType(TestBindings.class);
         try {
             var before = System.nanoTime();
             var instance = CompileAll.compileAllToInstance(types, files);

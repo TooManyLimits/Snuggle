@@ -2,6 +2,7 @@ package ast.ir.helper;
 
 import org.objectweb.asm.*;
 import org.objectweb.asm.util.CheckClassAdapter;
+import util.GenericStringUtil;
 import util.ListUtils;
 
 /**
@@ -13,8 +14,8 @@ public class NameHelper {
     //Helpers to generate certain strings given from a number.
     public static String getRuntimeClassName() { return "snuggle/Runtime"; }
     public static String getFilesClassName() { return "snuggle/Files"; }
-    public static String getImportMethodName(String fileName) { return "importFile_" + fileName; }
-    public static String getImportFieldName(String fileName) { return "hasImported_" + fileName; }
+    public static String getImportMethodName(String fileName) { return "importFile_" + GenericStringUtil.mangleSlashes(fileName); }
+    public static String getImportFieldName(String fileName) { return "hasImported_" + GenericStringUtil.mangleSlashes(fileName); }
 
     //If ASM throws a cryptic error, enable this to figure out what's wrong
     public static final boolean DEBUG_BYTECODE_GENERATION = true;
