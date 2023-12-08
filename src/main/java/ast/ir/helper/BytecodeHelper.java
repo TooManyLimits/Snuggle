@@ -2,10 +2,10 @@ package ast.ir.helper;
 
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.BoolType;
+import builtin_types.types.primitive.BoolType;
 import builtin_types.types.OptionType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;

@@ -1,11 +1,10 @@
-package builtin_types.types.numbers;
+package builtin_types.types.primitive;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
-import builtin_types.types.BoolType;
 import ast.ir.helper.BytecodeHelper;
 import builtin_types.types.StringType;
 import exceptions.compile_time.CompilationException;
@@ -35,7 +34,7 @@ public class IntegerType implements BuiltinType {
     public final String name;
     public final String descriptor;
 
-    private IntegerType(boolean signed, int bits) {
+    protected IntegerType(boolean signed, int bits) {
         this.signed = signed;
         this.bits = bits;
         this.name = (signed ? "i" : "u") + bits;
@@ -175,14 +174,14 @@ public class IntegerType implements BuiltinType {
         ));
     }
 
-    private ThrowingConsumer<MethodVisitor, CompilationException> doOperationThenConvert(ThrowingConsumer<MethodVisitor, CompilationException> doOperation) {
+    protected ThrowingConsumer<MethodVisitor, CompilationException> doOperationThenConvert(ThrowingConsumer<MethodVisitor, CompilationException> doOperation) {
         return v -> {
             doOperation.accept(v);
             convert(v);
         };
     }
 
-    private void convert(MethodVisitor v) {
+    protected void convert(MethodVisitor v) {
         switch (bits) {
             case 8 -> {
                 v.visitInsn(Opcodes.I2B);
@@ -203,7 +202,7 @@ public class IntegerType implements BuiltinType {
     }
 
 
-    private ThrowingConsumer<MethodVisitor, CompilationException> intCompare(int intCompareOp) {
+    protected ThrowingConsumer<MethodVisitor, CompilationException> intCompare(int intCompareOp) {
         return v -> {
             Label pushTrue = new Label();
             Label end = new Label();

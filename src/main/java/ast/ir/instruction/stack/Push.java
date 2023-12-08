@@ -4,9 +4,8 @@ import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.StringType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
-import ast.ir.helper.BytecodeHelper;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
@@ -39,6 +38,8 @@ public record Push(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, T
         }
 
         //Push the value on the stack!
+        if (obj instanceof Character c)
+            obj = BigInteger.valueOf(c);
         if (obj instanceof BigInteger v) {
             if (type.builtin() instanceof IntegerType i) {
                 if (!i.fits(v))

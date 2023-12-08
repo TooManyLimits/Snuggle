@@ -2,14 +2,10 @@ package ast.typed.expr;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.stack.Push;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.numbers.IntegerType;
 import exceptions.compile_time.CompilationException;
-import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
 
-import java.math.BigInteger;
 import java.util.Set;
 
 public record TypedLiteral(TypeDef.InstantiationStackFrame cause, Loc loc, Object obj, TypeDef type) implements TypedExpr {

@@ -81,8 +81,10 @@ public class Parser {
             }
             else if (e instanceof ParsedTypeDefExpr topLevelTypeDef)
                 topLevelTypes.add(topLevelTypeDef.typeDef());
-            else if (e instanceof ParsedExtensionMethod topLevelExtensionMethod)
+            else if (e instanceof ParsedExtensionMethod topLevelExtensionMethod) {
                 topLevelExtensionMethods.add(topLevelExtensionMethod);
+                topLevelExtensionMethod.isTopLevel().v = true;
+            }
             code.add(e);
         }
         code.trimToSize();
@@ -600,6 +602,7 @@ public class Parser {
             //Things
             case    INT_LITERAL,
                     BOOL_LITERAL,
+                    CHAR_LITERAL,
                     STRING_LITERAL,
                     FLOAT_LITERAL -> new ParsedLiteral(lexer.last().loc(), lexer.last().value());
             case NEW -> parseConstructor(typeGenerics, methodGenerics);

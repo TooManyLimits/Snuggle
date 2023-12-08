@@ -9,8 +9,9 @@ import ast.typed.expr.TypedCast;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedLiteral;
 import builtin_types.types.OptionType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.CharType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;
@@ -27,7 +28,7 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
     }
 
     //There's going to need to be special casing for this.
-    //1. Special Case: Any numeric primitive can be cast into any numeric primitive, without fail.
+    //1. Special Case: Any numeric primitive (or char, equivalent to u16) can be cast into any numeric primitive (or char, equivalent to u16), without fail.
     //1a. For this reason, the "as?" operator does not make sense if casting into a numeric type, so this is a type check error.
     //2. If the two topLevelTypes we're casting between have no supertyping relationship (ignoring the numeric case) this is a type check error.
     //2a. In the same vein, if the two topLevelTypes are the same, this cast is useless and so is labeled a type check error as well (since you almost certainly didn't mean to do it)
@@ -45,12 +46,12 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
         TypedExpr inferredLhs = lhs.infer(currentType, checker, typeGenerics, methodGenerics, cause);
         TypeDef lhsTypeDef = inferredLhs.type();
 
-        //Case 1: numeric type -> numeric type:
+        //Case 1: numeric type (or char) -> numeric type (or char):
         if (myTypeDef.builtin() instanceof IntegerType || myTypeDef.builtin() instanceof FloatType) {
             if (isMaybe)
                 throw new TypeCheckingException("The \"as?\" operator cannot be used to convert to a numeric type; the conversion will always succeed! Use regular \"as\".", loc, cause);
             if (lhsTypeDef.isNumeric()) {
-                //Happy path: lhs is numeric; this cast will succeed!
+                //Happy path: lhs is numeric or a char; this cast will succeed!
 
                 //Just do a quick check if lhs is a literal; if it is,
                 //then perform the cast at compile time for constant folding.
@@ -95,9 +96,19 @@ public record TypeResolvedCast(Loc loc, int tokenLine, TypeResolvedExpr lhs, boo
 
     //Deal with compile time casting, for constant folding
     private Object compileTimeCast(TypedLiteral leftLit, BuiltinTypeDef myTypeDef, TypeDef.InstantiationStackFrame cause) throws CompilationException {
-        //This handles BigInteger, Fraction, Float, and Double
-        if (leftLit.obj() instanceof Number number) {
-            if (myTypeDef.builtin() instanceof IntegerType integerType) {
+        //This handles BigInteger, Fraction, Float, Double, and Character
+        Object leftObj = leftLit.obj();
+
+        //If LHS is a char, convert to integer
+        if (leftObj instanceof Character c) {
+            leftObj = BigInteger.valueOf(c);
+        }
+
+        if (leftObj instanceof Number number) {
+            if (myTypeDef.builtin() == CharType.INSTANCE) {
+                //Num -> Char
+                return (char) number.shortValue();
+            } else if (myTypeDef.builtin() instanceof IntegerType integerType) {
                 //Num -> Int type
                 BigInteger intValue = BigInteger.valueOf(switch (integerType.bits) {
                     case 8 -> number.byteValue();

@@ -1,8 +1,8 @@
 package ast.ir.helper;
 
 import ast.typed.def.type.TypeDef;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import lexing.Loc;
 import util.MapStack;
 

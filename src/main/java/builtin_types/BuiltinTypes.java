@@ -2,10 +2,7 @@ package builtin_types;
 
 import builtin_types.reflect.Reflector;
 import builtin_types.types.*;
-import builtin_types.types.numbers.FloatLiteralType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntLiteralType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.*;
 import builtin_types.types.reflected.SystemType;
 import util.IOUtil;
 
@@ -69,12 +66,12 @@ public class BuiltinTypes {
     //Add the standard types to a new instance and return it.
     public static BuiltinTypes standard() {
         return new BuiltinTypes()
-                //obj and str
+                //object and string
                 .addType(ObjType.INSTANCE)
                 .addType(StringType.INSTANCE)//.autoImportResource("std/StringExtensions")
-                //Bool
+                //Primitives
                 .addType(BoolType.INSTANCE)
-                //Numbers
+                .addType(CharType.INSTANCE)
                 .addType(IntLiteralType.INSTANCE)
                 .addType(IntegerType.I8)
                 .addType(IntegerType.U8)
@@ -106,13 +103,14 @@ public class BuiltinTypes {
         try {
             Path p = Path.of(Thread.currentThread().getContextClassLoader().getResource("std").toURI());
             IOUtil.applyRecursive(p, path -> {
-                String name = "std/" + p.relativize(path);
+                String name = "std/" + p.relativize(path).toString().replace('\\', '/');
                 if (!name.endsWith(".snuggle"))
                     throw new IllegalStateException("Files in standard library should end with .snuggle, but got \"" + name + "\"");
-                addFile(name.substring(0, name.length() - ".snuggle".length()), IOUtil.getResource(name));
+                String withoutExtension = name.substring(0, name.length() - ".snuggle".length());
+                addFile(withoutExtension, IOUtil.getResource(name));
                 //Auto-import extensions
                 if (name.startsWith("std/extensions/"))
-                    autoImport(name);
+                    autoImport(withoutExtension);
             });
             return this;
         } catch (Exception e) {

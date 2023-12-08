@@ -254,8 +254,8 @@ public class SnuggleTests {
                 pub fn shrAssign<T, R>(this: T?, func: T -> R?): R?
                     if this func(*this) else new()
                 
-                var a: Str? = new("i am present")
-                var b: Str? = new() //i am not
+                var a: String? = new("i am present")
+                var b: String? = new() //i am not
                 
                 var alen: u32? = a >>= x -> new(#x)
                 var blen: u32? = b >>= x -> new(#x)
@@ -283,7 +283,7 @@ public class SnuggleTests {
     @Test
     public void testExtensionMethod() throws CompilationException, SnuggleException {
         test("""
-                fn mul(this: Str, count: u32): Str {
+                fn mul(this: String, count: u32): String {
                     if count == 0 return ""
                     var res = this
                     while count > 1 {
@@ -403,7 +403,7 @@ public class SnuggleTests {
                 Test.assertEquals(9, d[2])
                 Test.assertEquals(16, d[3])
                 
-                var quoteWrap: Str -> Str = e -> "\\"" + e + "\\""
+                var quoteWrap: String -> String = e -> "\\"" + e + "\\""
                 c.map(quoteWrap).forEach(e -> System.print(e))
                 d.forEach(e -> System.print(e))
                 """);
@@ -436,9 +436,9 @@ public class SnuggleTests {
                     }
                 }
                 
-                class StringMapper : Mapper<i32, Str> {
+                class StringMapper : Mapper<i32, String> {
                     fn new() super("")
-                    fn invoke(x: i32): Str
+                    fn invoke(x: i32): String
                         x.str()
                 }
                 
@@ -453,7 +453,7 @@ public class SnuggleTests {
                 l += 2
                 l += 3
                 
-                var c = l.map::<Str>(new StringMapper());
+                var c = l.map::<String>(new StringMapper());
                 Test.assertEquals("1", c[0])
                 Test.assertEquals("2", c[1])
                 Test.assertEquals("3", c[2])
@@ -511,8 +511,8 @@ public class SnuggleTests {
                 
                 class FunnyList<T> : List<T> {
                     fn new() super()
-                    fn mapstr(func: Mapper<T, Str>): List<Str> {
-                        var res = new List<Str>()
+                    fn mapstr(func: Mapper<T, String>): List<String> {
+                        var res = new List<String>()
                         var i = 0u32
                         while i < #this {
                             res += func(this[i])
@@ -522,9 +522,9 @@ public class SnuggleTests {
                     }
                 }
                 
-                class ToStringMapper<T> : Mapper<T, Str> {
+                class ToStringMapper<T> : Mapper<T, String> {
                     fn new() super("")
-                    fn invoke(e: T): Str
+                    fn invoke(e: T): String
                         e.str()
                 }
                 
@@ -549,7 +549,7 @@ public class SnuggleTests {
                             var b: Y
                         }
                         var inner1 = new Inner<i32> {10, 30}
-                        var inner2 = new Inner<Str> {15, "cutie"}
+                        var inner2 = new Inner<String> {15, "cutie"}
                         Test.assertEquals(10, inner1.a)
                         Test.assertEquals(30, inner1.b)
                         Test.assertEquals(15, inner2.a)
@@ -693,7 +693,7 @@ public class SnuggleTests {
     @Test
     public void testConstructorInfer() throws CompilationException, SnuggleException {
         test("""
-                var x: Str? = new()
+                var x: String? = new()
                 x = new("helo cutie :D")
                 System.print(x[])
                 Test.assertEquals(#"helo cutie :D", #x[])
@@ -704,8 +704,8 @@ public class SnuggleTests {
     @Test
     public void testMaybeUninit() throws CompilationException, SnuggleException {
         test("""
-                var x = new Array<MaybeUninit<Str>>(1)[0]
-                var y = new MaybeUninit<Str>("hi")
+                var x = new Array<MaybeUninit<String>>(1)[0]
+                var y = new MaybeUninit<String>("hi")
                 System.print(y[])
                 System.print(x[])
                 """);
@@ -715,7 +715,7 @@ public class SnuggleTests {
     public void testStaticInitializer() throws CompilationException, SnuggleException {
         test("""
                 class catplant {
-                    static var e: Str
+                    static var e: String
                     static {
                         catplant.e = ":catplant:";
                     }
@@ -729,16 +729,16 @@ public class SnuggleTests {
     public void testEnum() throws CompilationException, SnuggleException {
         test("""
                 struct LittleScary {
-                    var x: Str //non nullable struct-nested reference type!! aaa!!
+                    var x: String //non nullable struct-nested reference type!! aaa!!
                     var y: u64
                 }
                 
                 struct Scary {
                     var little: LittleScary
-                    var z: Str //AAAA!!! ANOTHER ONE!!
+                    var z: String //AAAA!!! ANOTHER ONE!!
                 }
                 
-                enum Day(isWeekend: bool, emotion: Str, scary: Scary) {
+                enum Day(isWeekend: bool, emotion: String, scary: Scary) {
                     SUNDAY(true, ":)", new Scary { new LittleScary { "a", 1 }, "A" })
                     MONDAY(false, ":((", new Scary { new LittleScary { "aa", 2 }, "AA" })
                     TUESDAY(false, ":(", new Scary { new LittleScary { "aaa", 3 }, "AAA" })
@@ -762,7 +762,7 @@ public class SnuggleTests {
         assertThrows(NullPointerException.class, () -> test("""
                 class NPE {
                     var x: f32
-                    var y: Str
+                    var y: String
                     fn new() {
                         super()
                         System.print(x)
@@ -851,15 +851,15 @@ public class SnuggleTests {
                         is A B & is B A
                 }
                 
-                Test.assertTrue(is Str Obj)
-                Test.assertFalse(is Obj Str)
+                Test.assertTrue(is String Object)
+                Test.assertFalse(is Object String)
                 Test.assertFalse(is i64 i32)
-                Test.assertTrue(is Array<Array<Str>> Obj)
-                Test.assertFalse(is Array<Vec2> Obj)
+                Test.assertTrue(is Array<Array<String>> Object)
+                Test.assertFalse(is Array<Vec2> Object)
                 Test.assertFalse(new IsMyGenericI32<f32>().isIt())
                 Test.assertTrue(new IsMyGenericI32<i32>().isIt())
-                Test.assertFalse(new IsSameGeneric<Obj, Str>().isSame())
-                Test.assertFalse(new IsSameGeneric<Str, Obj>().isSame())
+                Test.assertFalse(new IsSameGeneric<Object, String>().isSame())
+                Test.assertFalse(new IsSameGeneric<String, Object>().isSame())
                 Test.assertTrue(new IsSameGeneric<Vec2, Vec2>().isSame())
                 """);
     }
@@ -885,7 +885,7 @@ public class SnuggleTests {
                         x == o.x & y == o.y & z == o.z
                     fn add(o: Vec3): Vec3
                         new Vec3 { x + o.x, y + o.y, z + o.z }
-                    fn str(): Str
+                    fn str(): String
                         x.str() + ", " + y.str() + ", " + z.str()
                 }
                 
@@ -933,19 +933,19 @@ public class SnuggleTests {
     public void testReferenceTypeOption() throws CompilationException, SnuggleException {
         test("""
                 class A {
-                    var x: Str?
+                    var x: String?
                     var y: B?
                     fn new() {
                         super()
-                        x = new Str?("i am an A")
+                        x = new String?("i am an A")
                         y = new B?(new B());
                     }
                 }
                 class B {
-                    var y: Str?
+                    var y: String?
                     fn new() {
                         super()
-                        y = new Str?("i am a B");
+                        y = new String?("i am a B");
                     }
                 }
                 
@@ -1005,7 +1005,7 @@ public class SnuggleTests {
                     var z: f32
                     fn new(x: f32, y: f32, z: f32)
                         new Vec3 { x, y, z }
-                    fn str(): Str
+                    fn str(): String
                         "{" + x.str() + ", " + y.str() + ", " + z.str() + "}"
                     fn add(o: Vec3): Vec3
                         new Vec3 {x + o.x, y + o.y, z + o.z}
@@ -1103,8 +1103,8 @@ public class SnuggleTests {
     @Test
     public void testOption() {
         assertThrows(SnuggleException.class, () -> test("""
-                var x = new Str?()
-                var y = new Str?("hi")
+                var x = new String?()
+                var y = new String?("hi")
                 
                 //x.get() //error, x is empty
                 x.get("Silly custom error message") //error, x is empty
@@ -1129,7 +1129,7 @@ public class SnuggleTests {
                 """
                         pub class Cutie {
                             pub fn new() super()
-                            fn bad() System.print(new Obj() as Cutie)
+                            fn bad() System.print(new Object() as Cutie)
                             pub fn good() System.print("good cutie :D")
                         }
                         new Cutie().bad() //error!

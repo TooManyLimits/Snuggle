@@ -12,6 +12,7 @@ import ast.typed.expr.TypedLiteral;
 import ast.typed.expr.TypedMethodCall;
 import builtin_types.BuiltinType;
 import ast.ir.helper.BytecodeHelper;
+import builtin_types.types.primitive.BoolType;
 import exceptions.runtime.SnuggleException;
 import lexing.Loc;
 import org.objectweb.asm.Label;

@@ -16,10 +16,10 @@ import util.Mutable;
 
 import java.util.List;
 
-public record TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef typeResolvedMethodDef, Mutable<SnuggleMethodDef> methodDef) implements TypeResolvedExpr {
+public record TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef typeResolvedMethodDef, boolean isTopLevel, Mutable<SnuggleMethodDef> methodDef) implements TypeResolvedExpr {
 
-    public TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef typeResolvedMethodDef) {
-        this(loc, typeResolvedMethodDef, new Mutable<>());
+    public TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef typeResolvedMethodDef, boolean isTopLevel) {
+        this(loc, typeResolvedMethodDef, isTopLevel, new Mutable<>());
     }
 
     @Override
@@ -27,8 +27,7 @@ public record TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef 
         typeResolvedMethodDef.verifyGenericCounts(verifier);
     }
 
-    @Override
-    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+    public void addToCheckerEnvironment(TypeChecker checker, List<TypeDef> typeGenerics, TypeDef.InstantiationStackFrame cause, boolean importingForTopLevel) throws CompilationException {
         if (methodDef.v == null) {
             //Get the type that is to contain all the extension methods
             TypeDef extensionMethodsType = checker.getBasicBuiltin(ExtensionMethods.INSTANCE);
@@ -43,8 +42,14 @@ public record TypeResolvedExtensionMethod(Loc loc, SnuggleTypeResolvedMethodDef 
             //And add it to the ExtensionMethods type.
             extensionMethodsType.addMethod(typeInstantiated);
         }
-        //Now methodDef.v is initialized, so add the extension method.
-        checker.addExtensionMethod(methodDef.v);
+        if (importingForTopLevel == isTopLevel)
+            checker.addExtensionMethod(methodDef.v);
+        methodDef.v.checkCode();
+    }
+
+    @Override
+    public TypedExpr infer(TypeDef currentType, TypeChecker checker, List<TypeDef> typeGenerics, List<TypeDef> methodGenerics, TypeDef.InstantiationStackFrame cause) throws CompilationException {
+        addToCheckerEnvironment(checker, typeGenerics, cause, false);
         //And return a simple unit as the type
         return new TypedStructConstructor(loc, checker.getTuple(List.of()), List.of());
     }

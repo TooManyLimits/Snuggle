@@ -1,10 +1,9 @@
-package builtin_types.types.numbers;
+package builtin_types.types.primitive;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.method.ConstMethodDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedMethodCall;
-import builtin_types.types.BoolType;
 import exceptions.compile_time.CompilationException;
 import ast.typed.def.method.MethodDef;
 import ast.typed.expr.TypedLiteral;

@@ -42,7 +42,7 @@ public class CompileAll {
         //4. Verify generics
         GenericVerifier.verifyGenerics(typeResolvedAST);
         //5. Type check to TypedAST
-        TypedAST typedAST = TypeChecker.type(typeResolvedAST);
+        TypedAST typedAST = TypeChecker.type(types, typeResolvedAST);
         for (TypeDef d : typedAST.typeDefs())
             System.out.println(d);
         //6. Compile to instance and return
@@ -62,7 +62,7 @@ public class CompileAll {
         //4. Verify generics
         GenericVerifier.verifyGenerics(typeResolvedAST);
         //5. Type check to TypedAST
-        TypedAST typedAST = TypeChecker.type(typeResolvedAST);
+        TypedAST typedAST = TypeChecker.type(types, typeResolvedAST);
 //        for (TypeDef d : typedAST.topLevelTypeDefs())
 //            System.out.println(d);
         //6. Compile to instance and return

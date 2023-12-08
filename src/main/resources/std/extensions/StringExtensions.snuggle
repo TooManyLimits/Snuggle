@@ -1,0 +1,44 @@
+import "std/List"
+
+//Get a substring of this string
+fn get(this: String, start: u32, end: u32): String {
+    var res = ""
+    var index = start
+    while index < end {
+        res += this[index].str()
+        index += 1
+    }
+    res
+}
+
+//Get this string as a list of chars
+pub fn chars(this: String): List<char> {
+    var res: List<char> = new(#this)
+    var i = 0u32
+    while i < #this {
+        res += this[i]
+        i += 1
+    }
+    res
+}
+
+//Split this string on the given char delimiter
+pub fn split(this: String, delimiter: char): List<String> {
+    var res: List<String> = new()
+    var cur: String = ""
+    var i = 0u32
+    while i < #this {
+        if this[i] == delimiter {
+            res += cur
+            cur = "";
+        } else {
+            cur += this[i].str();
+        }
+        i += 1
+    }
+    res
+}
+
+//Get the lines of this string (split on newline)
+pub fn lines(this: String): List<String>
+    this.split('\n')

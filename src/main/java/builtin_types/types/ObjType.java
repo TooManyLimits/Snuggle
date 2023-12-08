@@ -28,7 +28,7 @@ public class ObjType implements BuiltinType {
 
     @Override
     public String name() {
-        return "Obj";
+        return "Object";
     }
 
     @Override

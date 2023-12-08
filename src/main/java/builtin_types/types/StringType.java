@@ -5,7 +5,9 @@ import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.BoolType;
+import builtin_types.types.primitive.CharType;
+import builtin_types.types.primitive.IntegerType;
 import lexing.Loc;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -22,38 +24,29 @@ public class StringType implements BuiltinType {
 
     @Override
     public List<MethodDef> getMethods(TypeChecker checker, List<TypeDef> generics, Loc instantiationLoc, TypeDef.InstantiationStackFrame cause) {
-        TypeDef string = checker.getBasicBuiltin(INSTANCE);
-        TypeDef u32 = checker.getBasicBuiltin(IntegerType.U32);
-        TypeDef bool = checker.getBasicBuiltin(BoolType.INSTANCE);
+        TypeDef stringType = checker.getBasicBuiltin(INSTANCE);
+        TypeDef charType = checker.getBasicBuiltin(CharType.INSTANCE);
+        TypeDef u32Type = checker.getBasicBuiltin(IntegerType.U32);
+        TypeDef boolType = checker.getBasicBuiltin(BoolType.INSTANCE);
         return ListUtils.join(
                 //Add two strings together to concat
-                DefineConstWithFallback.defineBinary("add", String::concat, string, string, string, v -> {
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false);
-                }),
+                DefineConstWithFallback.defineBinary("add", String::concat, stringType, stringType, stringType,
+                        v -> v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "concat", "(Ljava/lang/String;)Ljava/lang/String;", false)),
                 //Length of string
-                DefineConstWithFallback.defineUnary("size", (String x) -> BigInteger.valueOf(x.length()), string, u32, v -> {
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
-                }),
+                DefineConstWithFallback.defineUnary("size", (String x) -> BigInteger.valueOf(x.length()), stringType, u32Type,
+                        v -> v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "length", "()I", false)),
                 //Equality of strings
-                DefineConstWithFallback.defineBinary("eq", (String x, String y) -> x.equals(y), string, string, bool, v -> {
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false);
-                }),
-                //Get "char" at given pos
-                DefineConstWithFallback.defineBinary("get", (String str, Integer pos) -> str.substring(pos, pos + 1), string, u32, string, v -> {
-                    //Dup integer
-                    v.visitInsn(Opcodes.DUP);
-                    //Add 1
-                    v.visitInsn(Opcodes.ICONST_1);
-                    v.visitInsn(Opcodes.IADD);
-                    //Call
-                    v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "substring", "(II)Ljava/lang/String;", false);
-                })
+                DefineConstWithFallback.defineBinary("eq", (String x, String y) -> x.equals(y), stringType, stringType, boolType,
+                        v -> v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "equals", "(Ljava/lang/Object;)Z", false)),
+                //Get char at given index
+                DefineConstWithFallback.defineBinary("get", String::charAt, stringType, u32Type, charType,
+                        v -> v.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/lang/String", "charAt", "(I)C", false))
         );
     }
 
     @Override
     public String name() {
-        return "Str";
+        return "String";
     }
 
     @Override

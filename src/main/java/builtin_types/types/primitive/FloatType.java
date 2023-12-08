@@ -1,11 +1,10 @@
-package builtin_types.types.numbers;
+package builtin_types.types.primitive;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.helpers.DefineConstWithFallback;
-import builtin_types.types.BoolType;
 import builtin_types.types.StringType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;

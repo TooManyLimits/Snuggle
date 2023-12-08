@@ -7,6 +7,7 @@ public enum TokenType {
 
     //Types with elements
     BOOL_LITERAL, //Boolean
+    CHAR_LITERAL, //Character
     STRING_LITERAL, //String
     INT_LITERAL, //BigInteger
     FLOAT_LITERAL, //Float, Double, or Fraction

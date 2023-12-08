@@ -1,4 +1,4 @@
-package builtin_types.types;
+package builtin_types.types.primitive;
 
 import ast.passes.TypeChecker;
 import ast.typed.def.method.MethodDef;

@@ -4,10 +4,10 @@ import ast.passes.TypeChecker;
 import ast.typed.def.field.FieldDef;
 import ast.typed.def.method.MethodDef;
 import builtin_types.BuiltinType;
-import builtin_types.types.numbers.FloatLiteralType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntLiteralType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.FloatLiteralType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntLiteralType;
+import builtin_types.types.primitive.IntegerType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 

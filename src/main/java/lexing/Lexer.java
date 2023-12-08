@@ -42,8 +42,10 @@ public class Lexer {
             "\\d+(?:(\\.\\d+(?:f32|f64)?)|(?:i8|u8|i16|u16|i32|u32|i64|u64|f32|f64)?)?" + "|" +
             //Identifiers
             "[a-zA-Z_]\\w*" + "|" +
-            //String literals
-            "\"(?:\\\\.|[^\\\\\"])*+\"" + "|" +
+            //Char literals (quote, (escape sequence | regular character), quote)
+            "'(?:\\\\(?:[btnfr\"'\\\\]|u[\\da-fA-F]{4}|(?:[0-3][0-7]{2}|[0-7]{2}|[0-7]))|[^\\\\'])'" + "|" +
+            //String literals (quote, (escape sequence | regular character)*, quote)
+            "\"(?:\\\\(?:[btnfr\"'\\\\]|u[\\da-fA-F]{4}|(?:[0-3][0-7]{2}|[0-7]{2}|[0-7]))|[^\\\\\"])*+\"" + "|" +
             //Newlines
             "\n" + "|" +
             //Anything else

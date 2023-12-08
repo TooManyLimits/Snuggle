@@ -2,13 +2,11 @@ package ast.ir.instruction.objects;
 
 import ast.ir.def.CodeBlock;
 import ast.ir.instruction.Instruction;
-import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import ast.ir.helper.BytecodeHelper;
-import exceptions.compile_time.CompilationException;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -28,7 +26,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
             if (isMaybe) {
                 performMaybeCast(jvm);
             } else
-                jvm.visitTypeInsn(Opcodes.CHECKCAST, to.name()); //[from] -> [to]
+                jvm.visitTypeInsn(Opcodes.CHECKCAST, to.runtimeName()); //[from] -> [to]
         } else {
             throw new IllegalStateException("Unrecognized casting operation? Bug in compiler, please report!");
         }
@@ -44,7 +42,7 @@ public record Cast(TypeDef from, TypeDef to, boolean isMaybe) implements Instruc
     //from and to are both reference topLevelTypes. Stack goes [from] -> [to?]
     private void performMaybeCast(MethodVisitor jvm) {
         jvm.visitInsn(Opcodes.DUP); //dup value [from, from]
-        jvm.visitTypeInsn(Opcodes.INSTANCEOF, to.name()); //instanceof [from, bool]
+        jvm.visitTypeInsn(Opcodes.INSTANCEOF, to.runtimeName()); //instanceof [from, bool]
         //If the bool is false, then pop and push null. If it's true, do nothing.
         Label ifTrue = new Label();
         jvm.visitJumpInsn(Opcodes.IFNE, ifTrue);

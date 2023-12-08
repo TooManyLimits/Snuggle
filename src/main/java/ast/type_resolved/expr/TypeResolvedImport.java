@@ -5,7 +5,7 @@ import ast.passes.TypeChecker;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedImport;
-import builtin_types.types.BoolType;
+import builtin_types.types.primitive.BoolType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
 import lexing.Loc;

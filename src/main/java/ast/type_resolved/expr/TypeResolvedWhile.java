@@ -7,7 +7,7 @@ import ast.typed.def.type.BuiltinTypeDef;
 import ast.typed.def.type.TypeDef;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedWhile;
-import builtin_types.types.BoolType;
+import builtin_types.types.primitive.BoolType;
 import builtin_types.types.OptionType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;

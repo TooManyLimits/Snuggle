@@ -65,25 +65,27 @@ public record Token(Loc loc, TokenType type, Object value) {
         if (WORD_REGEX.matcher(text).matches())
             return new Token(loc, TokenType.IDENTIFIER, text);
 
+        //Char literal
+        if (text.startsWith("'")) {
+            int[] i = new int[]{1};
+            char c = text.charAt(i[0]);
+            if (c == '\\') {
+                return new Token(loc, TokenType.CHAR_LITERAL, handleEscape(text, i, loc));
+            } else {
+                return new Token(loc, TokenType.CHAR_LITERAL, c);
+            }
+        }
+
         //String literal
         if (text.startsWith("\"")) {
             if (text.length() == 1 || !text.endsWith("\""))
                 throw new LexingException("Encountered unmatched quote", loc);
-
             StringBuilder builder = new StringBuilder();
-            for (int i = 1; i < text.length()-1; i++) {
-                char c = text.charAt(i);
+            for (int[] i = new int[]{1}; i[0] < text.length()-1; i[0]++) {
+                char c = text.charAt(i[0]);
                 if (c == '\\') {
-                    i++;
-                    char next = text.charAt(i);
-                    builder.append(switch (next) {
-                        case '\\' -> '\\';
-                        case 'n' -> '\n';
-                        case 't' -> '\t';
-                        case 'r' -> '\r';
-                        case '"' -> '"';
-                        default -> throw new LexingException("Illegal escape character \"\\" + next + "\"", loc);
-                    });
+
+                    builder.append(handleEscape(text, i, loc));
                 } else {
                     builder.append(c);
                 }
@@ -95,6 +97,55 @@ public record Token(Loc loc, TokenType type, Object value) {
         //If none of these, must be an error
         throw new LexingException("Encountered invalid token \"" + text + "\"", loc);
     }
+
+    //i[0] currently points to a backslash in text
+    private static char handleEscape(String text, int[] i, Loc loc) throws CompilationException {
+        i[0]++;
+        char next = text.charAt(i[0]);
+        return switch (next) {
+            case 'b' -> '\b';
+            case 't' -> '\t';
+            case 'n' -> '\n';
+            case 'f' -> '\f';
+            case 'r' -> '\r';
+            case '\'' -> '\'';
+            case '"' -> '"';
+            case '\\' -> '\\';
+            case 'u' -> {
+                int num = 0;
+                for (int j = 0; j < 4; j++) {
+                    i[0]++;
+                    num = num * 16 + Character.digit(text.charAt(i[0]), 16);
+                }
+                yield (char) num;
+            }
+            case '0', '1', '2', '3' -> {
+                char digit2 = text.charAt(i[0] + 1);
+                if ('0' <= digit2 && digit2 <= '7') {
+                    char digit3 = text.charAt(i[0] + 2);
+                    if ('0' <= digit3 && digit3 <= '7') {
+                        i[0] += 2;
+                        yield (char) (Character.digit(next, 8) * 64 + Character.digit(digit2, 8) * 8 + Character.digit(digit3, 8));
+                    } else {
+                        i[0] += 1;
+                        yield (char) (Character.digit(next, 8) * 8 + Character.digit(digit2, 8));
+                    }
+                } else {
+                    yield (char) (Character.digit(next, 8));
+                }
+            }
+            case '4', '5', '6', '7' -> {
+                char digit2 = text.charAt(i[0] + 1);
+                if ('0' <= digit2 && digit2 <= '7') {
+                    i[0] += 1;
+                    yield (char) (Character.digit(next, 8) * 8 + Character.digit(digit2, 8));
+                }
+                yield (char) (Character.digit(next, 8));
+            }
+            default -> throw new LexingException("Illegal escape character \"\\" + next + "\"", loc);
+        };
+    }
+
     @Override
     public String toString() {
         String x = type.toString();

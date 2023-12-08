@@ -16,6 +16,7 @@ import ast.type_resolved.prog.TypeResolvedAST;
 import ast.typed.prog.TypedAST;
 import ast.typed.prog.TypedFile;
 import builtin_types.BuiltinType;
+import builtin_types.BuiltinTypes;
 import builtin_types.types.ExtensionMethods;
 import exceptions.compile_time.*;
 import lexing.Loc;
@@ -91,7 +92,7 @@ public class TypeChecker {
             if (extensionMethod.typeResolvedMethodDef().pub() || importNonPub) {
                 //Call infer. The implementation of infer shouldn't need any information
                 //other than the checker and the cause, which are known here.
-                extensionMethod.infer(null, this, List.of(), null, cause);
+                extensionMethod.addToCheckerEnvironment(this, List.of(), cause, true);
             }
         }
     }
@@ -223,12 +224,14 @@ public class TypeChecker {
     /**
      * Method to fully convert a TypeResolvedAST into a TypedAST.
      */
-    public static TypedAST type(TypeResolvedAST resolvedAST) throws CompilationException {
+    public static TypedAST type(BuiltinTypes builtinTypes, TypeResolvedAST resolvedAST) throws CompilationException {
         //Create the checker
         TypeChecker checker = new TypeChecker(resolvedAST);
         //Type check all the top-level code
         Map<String, TypedFile> typedFiles = MapUtils.mapValues(resolvedAST.files(), file -> {
             checker.pushNewEnv(false, null);
+            for (String autoImport : builtinTypes.getAutoImports())
+                checker.importExtensionMethods(autoImport, false, null);
             TypedFile res;
             try {
                 res = file.type(checker);

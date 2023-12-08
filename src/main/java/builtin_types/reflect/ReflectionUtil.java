@@ -5,11 +5,11 @@ import ast.typed.def.type.TypeDef;
 import builtin_types.BuiltinType;
 import builtin_types.reflect.annotations.Unsigned;
 import builtin_types.types.ArrayType;
-import builtin_types.types.BoolType;
+import builtin_types.types.primitive.BoolType;
 import builtin_types.types.ObjType;
 import builtin_types.types.StringType;
-import builtin_types.types.numbers.FloatType;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.FloatType;
+import builtin_types.types.primitive.IntegerType;
 import lexing.Loc;
 
 import java.lang.reflect.AnnotatedArrayType;

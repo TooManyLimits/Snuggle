@@ -15,6 +15,7 @@ import java.util.List;
 public record TypeResolvedFile(String name, List<ResolvedType.Basic> topLevelTypes, List<TypeResolvedExtensionMethod> topLevelExtensionMethods, List<TypeResolvedExpr> code) {
 
     public TypedFile type(TypeChecker checker) throws CompilationException {
+        checker.importExtensionMethods(name, true, null);
         return new TypedFile(
                 name,
 //                ListUtils.map(imports, i -> i.infer(null, checker, List.of(), null)),

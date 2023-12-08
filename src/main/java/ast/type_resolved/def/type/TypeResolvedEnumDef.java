@@ -19,7 +19,7 @@ import ast.typed.def.type.EnumDef;
 import ast.typed.def.type.TypeDef;
 import builtin_types.types.ArrayType;
 import builtin_types.types.MaybeUninit;
-import builtin_types.types.numbers.IntegerType;
+import builtin_types.types.primitive.IntegerType;
 import exceptions.compile_time.CompilationException;
 import lexing.Loc;
 import org.objectweb.asm.Opcodes;

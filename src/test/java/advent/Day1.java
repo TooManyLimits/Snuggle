@@ -6,83 +6,26 @@ public class Day1 {
 
     public static void main(String[] args) throws Exception {
         String inputFormatted = puzzleInput.replace("\n", "\\n");
-        String code = "var input = \"" + inputFormatted + "\"" +
+        String code = "var input = \"" + inputFormatted + "\"\n" +
                 """
                 import "std/List"
                 
-                fn isDigit(x: Str): bool {
-                    x == "0" | x == "1" | x == "2" | x == "3" | x == "4" | x == "5" | x == "6" | x == "7" | x == "8" | x == "9"
-                }
+                fn digit(this: char): u32
+                    (this - '0') as u32
                 
-                fn parseDigit(x: Str): u32 {
-                    if x == "0" 0
-                    else if x == "1" 1
-                    else if x == "2" 2
-                    else if x == "3" 3
-                    else if x == "4" 4
-                    else if x == "5" 5
-                    else if x == "6" 6
-                    else if x == "7" 7
-                    else if x == "8" 8
-                    else 9
-                }
-                
-                fn lines(text: Str): List<Str> {
-                    var res: List<Str> = new()
-                    var cur: Str = ""
-                    var i = 0u32
-                    while i < #text {
-                        if text[i] == "\\n" {
-                            res += cur
-                            cur = "";
-                        } else {
-                            cur += text[i];
-                        }
-                        i += 1
-                    }
-                    res
-                }
-                
-                fn chars(line: Str): List<Str> {
-                    var res: List<Str> = new(#line)
-                    var i = 0u32
-                    while i < #line {
-                        res += line[i]
-                        i += 1
-                    }
-                    res
-                }
-                
-                //Find the first digit using part 1 rules
-                fn firstDigitP1(line: Str): u32 {
-                    parseDigit(*chars(line).first(x -> isDigit(x)))
-                }
-                
-                fn lastDigitP1(line: Str): u32 {
-                    parseDigit(*chars(line).last(x -> isDigit(x)))
-                }
-                
-                //Question 1
-                var sum = lines(input)
-                    .map(line -> firstDigitP1(line) * 10 + lastDigitP1(line))
-                    .fold(0u32, (accum, elem) -> accum + elem)
-
-                System.print(sum)
+                System.print(
+                    input.lines()
+                    .map(line -> {
+                        var chars = line.chars()
+                        chars.first(x -> x.isDigit()).digit() * 10 + chars.last(x -> x.isDigit()).digit()
+                    })
+                    .fold(0u32, (a, b) -> a + b)
+                )
                 
                 //Question 2
                 
-                fn get(this: Str, start: u32, end: u32): Str {
-                    var res = ""
-                    var index = start
-                    while index < end {
-                        res += this[index]
-                        index += 1
-                    }
-                    res
-                }
-                
-                fn getDigitAt(line: Str, i: u32): u32 {
-                    if isDigit(line[i]) parseDigit(line[i])
+                fn getDigitAt(line: String, i: u32): u32 {
+                    if line[i].isDigit() line[i].digit()
                     else if i + #"zero" <= #line & line[i, i+#"zero"] == "zero" 0
                     else if i + #"one" <= #line & line[i, i+#"one"] == "one" 1
                     else if i + #"two" <= #line & line[i, i+#"two"] == "two" 2
@@ -96,8 +39,8 @@ public class Day1 {
                     else 100 //sentinel
                 }
                 
-                var sum2 = 0u32
-                for line: Str in lines(input) {
+                var sum = 0u32
+                for line: String in input.lines() {
                     var i: u32 = 0
                     var firstDigit: u32 = 100
                     var lastDigit: u32 = 0
@@ -110,9 +53,9 @@ public class Day1 {
                         }
                         i += 1
                     }
-                    sum2 += (firstDigit * 10 + lastDigit)
+                    sum += (firstDigit * 10 + lastDigit)
                 }
-                System.print(sum2)
+                System.print(sum)
                 
                 """;
         System.out.println(code);

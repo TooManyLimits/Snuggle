@@ -9,7 +9,7 @@ import ast.typed.expr.TypedConstructor;
 import ast.typed.expr.TypedExpr;
 import ast.typed.expr.TypedIf;
 import ast.typed.expr.TypedLiteral;
-import builtin_types.types.BoolType;
+import builtin_types.types.primitive.BoolType;
 import builtin_types.types.OptionType;
 import exceptions.compile_time.CompilationException;
 import exceptions.compile_time.TypeCheckingException;
